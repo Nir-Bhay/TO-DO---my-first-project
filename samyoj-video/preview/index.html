@@ -102,7 +102,7 @@
   </div>
 </div>
 
-<script>
+<script type="module">
 const SCENES = [
   ['hook',      'Hook — the channel they already open',  'Every business runs on conversations.'],
   ['broadcast', 'Broadcast — thousands, one tap',         'Official WhatsApp broadcasts.'],
@@ -146,18 +146,21 @@ v.addEventListener('timeupdate', () => {
   }
 });
 
-// The film has sound. The page should not let you "watch" it with the mix muted by accident.
+// The film has sound. The page should not let you "watch" it with the mix muted by accident —
+// but browsers refuse to start audio without a gesture, so the button (or the play button) is it.
 const soundBtn = document.getElementById('sound');
-v.muted = true;                       // browsers block sound until a gesture; the button is the gesture
+const wantSound = () => { v.muted = false; soundBtn.textContent = '🔊 Sound on'; soundBtn.classList.add('wa'); };
+v.muted = true;
 soundBtn.onclick = () => {
-  v.muted = !v.muted;
-  soundBtn.textContent = v.muted ? '🔇 Sound off' : '🔊 Sound on';
-  soundBtn.classList.toggle('wa', !v.muted);
-  if (!v.muted) v.play();
+  const mute = !v.muted;
+  v.muted = mute;
+  soundBtn.textContent = mute ? '🔇 Sound off' : '🔊 Sound on';
+  soundBtn.classList.toggle('wa', !mute);
+  if (!mute) v.play();
 };
+v.addEventListener('play', () => { if (v.muted) wantSound(); }, { once: true });
 document.getElementById('restart').onclick = () => { v.currentTime = 0; v.play(); };
 document.getElementById('loop').onclick = (e) => { v.loop = !v.loop; e.target.classList.toggle('on', v.loop); };
-v.addEventListener('play', () => { if (!soundBtn.classList.contains('wa')) { v.muted = false; soundBtn.textContent = '🔊 Sound on'; soundBtn.classList.add('wa'); } });
 </script>
 </body>
 </html>

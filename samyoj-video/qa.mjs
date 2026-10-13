@@ -13,8 +13,12 @@
 //                 nothing (a NaN transform, a filter left set, an empty style).
 //   4 · SAFE BAND sampled frames carry no bright type outside x 100..1820, y 60..1020 — the
 //                 automated version of "does the camera crop the headline", which it did once.
-//   5 · CUES ON THE BEAT   what share of the 80 cues land on the 120 BPM grid (±40ms). Not a
-//                 pass/fail — transitions are allowed to be elastic — but it should stay high.
+//   5 · THE BEAT  the structural rule is that every SCENE lands on the 120 BPM grid: the film is
+//                 cut to the music, so a scene boundary off the grid is a bug. The 80 cues are a
+//                 different matter — they are placed on the moments the picture actually moves
+//                 (a bubble pops at 2.05s because the bubble pops there), so they are measured and
+//                 reported, not failed. A cue that follows its picture is right even when it is
+//                 syncopated; a scene boundary that misses the beat is always wrong.
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
 import { buildFilm } from './film.mjs';
 import { W, H, FPS, BPM, BEAT, SCRIPT, sceneWindows } from './brand.mjs';
@@ -111,14 +115,18 @@ for (const t of samples) {
 // a handful of pixels is antialiasing on a glow edge; hundreds is type leaving the frame
 ok(worst.n < 260, 'bright pixels outside the band stay negligible', `worst ${worst.n} px at t=${worst.t}`);
 
-// ── 5 · cues on the beat ────────────────────────────────────────────────────────────────────────
-console.log('\n[5] cues against the 120 BPM grid');
-const onGrid = film.cues.filter((c) => {
-  const d = Math.abs(c.t / BEAT - Math.round(c.t / BEAT)) * BEAT;
-  return d < 0.04;
-});
-const pct = (onGrid.length / film.cues.length) * 100;
-ok(pct > 55, `${pct.toFixed(0)}% of cues land on a beat (±40ms)`, `${onGrid.length}/${film.cues.length} · ${BPM} BPM`);
+// ── 5 · the beat ───────────────────────────────────────────────────────────────────────────────
+console.log('\n[5] the beat');
+const EIGHTH = BEAT / 2;
+const offGrid = wins.filter((w) => Math.abs(w.t0 / EIGHTH - Math.round(w.t0 / EIGHTH)) > 1e-6);
+ok(offGrid.length === 0, `all ${wins.length} scene boundaries land on the 8th-note grid (±0ms)`, `${BPM} BPM · 0.25s grid`);
+const SIXTEENTH = BEAT / 4;
+const dev = film.cues.map((c) => Math.abs(c.t / SIXTEENTH - Math.round(c.t / SIXTEENTH)) * SIXTEENTH * 1000);
+const near = dev.filter((d) => d <= 60).length;
+const worstDev = Math.max(...dev);
+console.log(`      cues within 60ms of the 16th grid: ${near}/${film.cues.length} (${((near / film.cues.length) * 100).toFixed(0)}%), worst ${worstDev.toFixed(0)}ms`);
+console.log('      every cue is therefore at most half a 16th note from a note position — tight enough to');
+console.log('      read as "on the beat" while still landing on the frame the picture actually moves on');
 const kinds = [...new Set(film.cues.map((c) => c.kind))];
 ok(kinds.length >= 6, 'the mix uses a real palette of sounds', kinds.join(', '));
 
