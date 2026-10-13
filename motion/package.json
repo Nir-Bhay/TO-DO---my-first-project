@@ -1,0 +1,17 @@
+{
+  "name": "todo-launch-film",
+  "private": true,
+  "type": "module",
+  "description": "The TO-DO launch film: one shape, never cut. Built to the motion-launch-video skill.",
+  "scripts": {
+    "preview": "python3 serve.py 8000",
+    "test": "node test/timeline.test.mjs",
+    "test:dom": "node test/film.dom.test.mjs",
+    "qa": "node qa.mjs",
+    "render": "node render.mjs --out renders/todo-launch.mp4"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0",
+    "playwright": "^1.48.0"
+  }
+}

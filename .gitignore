@@ -1,0 +1,7 @@
+# upstream's conventions, plus this project's
+node_modules/
+renders/
+snapshots/
+deliver/
+*.log
+.DS_Store

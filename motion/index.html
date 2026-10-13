@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TO-DO — launch film (one shape, never cut)</title>
+  <!--
+    A launch film for the TO-DO app, built to the rules in
+    ../.claude/skills/motion-launch-video/SKILL.md
+
+      · one shape, never cut: every state is #shape morphing size, radius and colour
+      · content swaps with a short blur; every slot has its own enter and a short early exit
+      · springs everywhere: closed-form damped steps, never bouncy easing
+      · the cursor drives every change, with real clicks, ripples and a real drag
+      · the camera frames every state; the pull-back at 18.0s reveals scale
+      · music first: 120 BPM, and the drop lands on the pull-back
+      · every sound is synthesized here `play … ` — no samples, no library
+
+    Every pixel on screen is a pure function of time: window.__film.seek(t). No CSS transition
+    anywhere in this file, on purpose — a transition cannot be seeked, so a renderer cannot
+    trust it.
+  -->
+  <style>
+    :root {
+      --ink: #111827;
+      --paper: #FAFAFB;
+      --indigo: #4F46E5;
+      --violet: #7C3AED;
+      --teal: #14B8A6;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; height: 100%; }
+
+    body {
+      background: #0d0f16;
+      color: #E8EAF2;
+      font: 600 16px/1.4 Inter, "Inter var", ui-sans-serif, -apple-system, "Segoe UI", Roboto,
+        "Helvetica Neue", "Noto Sans", Arial, sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── the viewer: scales the 1920x1080 stage to fit. Not part of the film. ───────────────── */
+    #view { position: fixed; inset: 0; display: grid; place-items: center; }
+    #stage {
+      position: relative;
+      width: 1920px; height: 1080px;
+      overflow: hidden;
+      transform-origin: center center;
+      background: var(--paper);
+      border-radius: 6px;
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55);
+    }
+
+    /* ── layers ─────────────────────────────────────────────────────────────────────────────── */
+    #bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 44% 40% at 12% -6%, rgba(124, 58, 237, 0.13), rgba(124, 58, 237, 0) 62%),
+        radial-gradient(ellipse 40% 36% at 96% 8%, rgba(20, 184, 166, 0.10), rgba(20, 184, 166, 0) 66%),
+        radial-gradient(ellipse 70% 50% at 50% 108%, rgba(79, 70, 229, 0.07), rgba(79, 70, 229, 0) 70%),
+        var(--paper);
+    }
+    #thr { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+    #world { position: absolute; inset: 0; transform-origin: 0 0; }
+    #hud { position: absolute; inset: 0; pointer-events: none; }
+    #hud .vig {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 78% 74% at 50% 46%, rgba(17, 24, 39, 0) 52%, rgba(17, 24, 39, 0.16) 100%);
+    }
+    .layer { position: absolute; inset: 0; }
+    .slot { position: absolute; inset: 0; }
+
+    /* ── the one shape ──────────────────────────────────────────────────────────────────────── */
+    #shape {
+      position: absolute; left: 0; top: 0;
+      border: 1.5px solid transparent;
+      /* never `will-change` here: the camera scales this node and the text would go blurry */
+    }
+    .wordmark {
+      position: absolute; inset: 0;
+      display: grid; place-items: center;
+      font-size: 31px; font-weight: 800; letter-spacing: 0.2em; text-indent: 0.2em;
+    }
+
+    /* ── the composer ───────────────────────────────────────────────────────────────────────── */
+    .typed, .placeholder {
+      position: absolute; font-size: 40px; font-weight: 650; white-space: pre;
+      letter-spacing: -0.01em;
+    }
+    .caret { position: absolute; width: 3px; border-radius: 2px; }
+    .chip {
+      position: absolute; display: grid; place-items: center;
+      border: 1.5px solid rgba(17, 24, 39, 0.14);
+      border-radius: 24px; font-size: 19px; font-weight: 650;
+    }
+    .micro { position: absolute; font-size: 13px; font-weight: 800; letter-spacing: 0.18em; }
+    .track, .fill { position: absolute; border-radius: 99px; }
+    .knob { position: absolute; border-radius: 99px; box-shadow: 0 6px 18px rgba(17, 24, 39, 0.22); }
+    .addBtn {
+      position: absolute; display: grid; place-items: center;
+      color: #fff; font-size: 23px; font-weight: 750; letter-spacing: 0.01em;
+      box-shadow: 0 12px 28px rgba(79, 70, 229, 0.34);
+    }
+    .right { text-align: right; }
+
+    /* ── the list ───────────────────────────────────────────────────────────────────────────── */
+    .checkbox { position: absolute; border: 1.5px solid; border-radius: 9px; background: #fff; }
+    .tick, .toastTick { position: absolute; }
+    .tick path, .toastTick path {
+      fill: none; stroke: #fff; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .rowLabel { position: absolute; font-size: 27px; font-weight: 650; letter-spacing: -0.01em; }
+    .rowChip { position: absolute; font-size: 17px; font-weight: 650; }
+
+    /* ── the plate: tabs + ring ─────────────────────────────────────────────────────────────── */
+    .tabBar { position: absolute; }
+    .indicator { position: absolute; box-shadow: 0 8px 22px rgba(79, 70, 229, 0.32); }
+    .tabLabel {
+      position: absolute; text-align: center; font-size: 21px; font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .ring { position: absolute; }
+    .ring circle { fill: none; stroke-width: 12; }
+    .ringBg { stroke: rgba(17, 24, 39, 0.1); }
+    .ringFg { stroke: var(--indigo); transform: rotate(-90deg); }
+    .ringNum {
+      position: absolute; text-align: center;
+      font-size: 46px; font-weight: 800; letter-spacing: -0.02em;
+    }
+    .ringCap { position: absolute; text-align: center; font-size: 17px; font-weight: 650; }
+
+    /* ── the toast ──────────────────────────────────────────────────────────────────────────── */
+    .toastText { position: absolute; font-size: 29px; font-weight: 700; letter-spacing: -0.01em; }
+
+    /* ── the wall of completed tasks + the odometer (the pull-back) ─────────────────────────── */
+    .wall { position: absolute; inset: 0; }
+    .tile {
+      position: absolute; border-radius: 16px;
+      background: #fff; border: 1.5px solid #E7E7EF;
+      box-shadow: 0 10px 26px rgba(17, 24, 39, 0.06);
+    }
+    .tileTick { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; }
+    .tileTick path {
+      fill: none; stroke: rgba(79, 70, 229, 0.55); stroke-width: 3.6;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .odo { position: absolute; width: 600px; }
+    .odoDigits { display: flex; justify-content: center; height: 96px; }
+    .odoSlot { position: relative; width: 66px; height: 96px; overflow: hidden; }
+    .odoCol { display: flex; flex-direction: column; }
+    .odoDigit {
+      height: 96px; line-height: 96px; text-align: center;
+      font-size: 88px; font-weight: 800; letter-spacing: -0.04em; color: transparent;
+      background-image: linear-gradient(90deg, var(--indigo), var(--teal));
+      background-repeat: no-repeat;
+      -webkit-background-clip: text; background-clip: text;
+    }
+    .odoCap { text-align: center; font-size: 17px; font-weight: 700; letter-spacing: 0.22em; }
+
+    /* ── the cursor: a stage prop, not a 16px arrow ─────────────────────────────────────────── */
+    .cursor { position: absolute; left: 0; top: 0; }
+    .cursorArrow {
+      position: absolute; left: -3px; top: -2px; width: 44px; height: 54px;
+      filter: drop-shadow(0 8px 18px rgba(17, 24, 39, 0.3));
+    }
+    .cursorPath { fill: #111827; stroke: #fff; stroke-width: 2.6; stroke-linejoin: round; }
+    .pill {
+      position: absolute; left: 0; top: 0;
+      padding: 7px 13px; border-radius: 99px;
+      background: #111827; color: #fff; font-size: 15px; font-weight: 750; white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(17, 24, 39, 0.22);
+    }
+
+    /* ── viewer chrome (outside the stage; hidden in export mode) ───────────────────────────── */
+    #bar {
+      position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;
+      padding: 10px 14px; border-radius: 16px;
+      background: rgba(20, 23, 34, 0.82); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      max-width: min(94vw, 1000px);
+    }
+    #bar button {
+      font: inherit; font-size: 14px; font-weight: 700; color: #E8EAF2;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 14px; border-radius: 10px; cursor: pointer;
+    }
+    #bar button:hover { background: rgba(255, 255, 255, 0.16); }
+    #bar button.on { background: var(--indigo); border-color: transparent; }
+    #seek { width: min(46vw, 380px); accent-color: var(--violet); }
+    #readout { font-size: 12.5px; font-weight: 600; color: #A9B0C6; min-width: 260px; }
+    #hint { position: fixed; left: 18px; bottom: 18px; font-size: 12.5px; color: #7E8698; }
+    body.export #bar, body.export #hint { display: none; }
+    body.export #stage { border-radius: 0; box-shadow: none; }
+    body.export { background: var(--paper); }
+  </style>
+</head>
+
+<body>
+  <div id="view">
+    <div id="stage">
+      <div id="bg"></div>
+      <canvas id="thr" width="1920" height="1080"></canvas>
+      <div id="world">
+        <div id="shape"></div>
+      </div>
+      <div id="hud"><div class="vig"></div></div>
+    </div>
+  </div>
+
+  <div id="bar">
+    <button id="btnSound">🔊 Play with sound</button>
+    <button id="btnPlay">⏸ Pause</button>
+    <input id="seek" type="range" min="0" max="24" step="0.008333" value="0" aria-label="Scrub the film">
+    <span id="readout"></span>
+  </div>
+  <div id="hint">space = pause · s = sound · drag the slider to scrub (every frame is `seek(t)`)</div>
+
+  <script type="module">
+    import { mount } from './film.mjs';
+
+    const params = new URLSearchParams(location.search);
+    const exportMode = params.get('export') === '1';
+    if (exportMode) document.body.classList.add('export');
+
+    // The viewer scales the 1920x1080 stage to fit the window. It is not part of the film:
+    // in export mode the stage stays at exactly 1920x1080 for the renderer.
+    const stage = document.getElementById('stage');
+    function fit() {
+      if (exportMode) { stage.style.transform = 'none'; return; }
+      const k = Math.min(window.innerWidth / 1920, (window.innerHeight - 96) / 1080);
+      stage.style.transform = `scale(${k})`;
+    }
+    window.addEventListener('resize', fit);
+    fit();
+
+    const { film } = await mount({ autoplay: !exportMode });
+
+    const $ = (s) => document.querySelector(s);
+    const seek = $('#seek'), readout = $('#readout');
+    const btnSound = $('#btnSound'), btnPlay = $('#btnPlay');
+    seek.max = String(film.T);
+
+    if (!exportMode) {
+      seek.addEventListener('input', () => {
+        film.pause();
+        btnPlay.textContent = '▶ Play';
+        film.seek(Number(seek.value)); // pure f(t): scrubbing backwards is free
+      });
+      btnPlay.addEventListener('click', () => {
+        if (film.paused) { film.play(); btnPlay.textContent = '⏸ Pause'; }
+        else { film.pause(); btnPlay.textContent = '▶ Play'; }
+      });
+      btnSound.addEventListener('click', async () => {
+        if (film.soundEnabled) { film.soundOff(); btnSound.textContent = '🔊 Play with sound'; btnSound.classList.remove('on'); }
+        else { await film.soundOn(); btnSound.textContent = '🔇 Sound on'; btnSound.classList.add('on'); }
+      });
+      addEventListener('keydown', (e) => {
+        if (e.code === 'Space') { e.preventDefault(); btnPlay.click(); }
+        if (e.key === 's') btnSound.click();
+      });
+      const tick = () => {
+        if (!film.paused) seek.value = String(film.time ?? 0);
+        requestAnimationFrame(tick);
+      };
+      tick();
+    }
+  </script>
+</body>
+
+</html>
