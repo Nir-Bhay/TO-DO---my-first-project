@@ -175,7 +175,9 @@ parts.push(`[sum]acompressor=threshold=-12dB:ratio=2.4:attack=14:release=240:mak
 // the last beat: the film's final green pulse, decaying into silence
 parts.push(`[out]afade=t=out:st=${(T - 1.35).toFixed(3)}:d=1.35[final]`);
 
-const master = join(OUT, 'audio-master.wav');
+// `--out <file>` builds a variant mix beside the master without touching it (auditioning a voice,
+// comparing two beds, testing the chain with a scratch narration). Default = the deliverable.
+const master = typeof arg('out') === 'string' ? arg('out') : join(OUT, 'audio-master.wav');
 const filterFile = join(TMP, 'graph.txt');
 await writeFile(filterFile, parts.join(';\n'), 'utf8');
 console.log(`▸ mixing ${Object.keys(idx.music).length} music layers + ${Object.keys(idx.sfx).length} sound cues${idx.voice != null ? ' + narration' : ''}`);
@@ -198,9 +200,9 @@ const grab = (re) => {
 };
 const report = {
   duration: T, bpm: BPM, bars: BARS, sampleRate: SR,
-  integratedLUFS: grab(/I:\\s+(-?[\\d.]+)\\s+LUFS/),
-  truePeakDBTP: grab(/Peak:\\s+(-?[\\d.]+)\\s+dBFS/),
-  lraLU: grab(/LRA:\\s+(-?[\\d.]+)\\s+LU/),
+  integratedLUFS: grab(/I:\s+(-?[\d.]+)\s+LUFS/),
+  truePeakDBTP: grab(/Peak:\s+(-?[\d.]+)\s+dBFS/),
+  lraLU: grab(/LRA:\s+(-?[\d.]+)\s+LU/),
   musicLayers: Object.keys(idx.music), cues: sfxCues.length, narration: idx.voice != null,
 };
 await writeFile(join(OUT, 'audio-report.json'), JSON.stringify(report, null, 2));
