@@ -1,0 +1,19 @@
+{
+  "name": "samyoj-video",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Samyoj 60s launch film — canvas + ffmpeg, no footage, no editor",
+  "type": "module",
+  "scripts": {
+    "stills": "node render.mjs --stills 0.4,3,9,15,21,27,33,39,45,52",
+    "film": "node render.mjs --sub 2",
+    "film:hero": "node render.mjs --sub 4",
+    "audio": "node lib/audio-synth.mjs",
+    "bench": "node bench.mjs",
+    "serve": "node serve.mjs"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.80"
+  },
+  "engines": { "node": ">=20" }
+}

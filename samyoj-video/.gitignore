@@ -1,0 +1,14 @@
+# the film itself is an artefact, not source: 30–60 MB per render
+out/*.mp4
+out/*.wav
+out/*.m4a
+out/*.json
+# QA sheets and stills are artefacts too — regenerate with `node render.mjs --stills`
+out/*.png
+out/poster.jpg
+out/.audio/
+out/stills/
+out/voice/
+# a 50 MB static ffmpeg is fetched, not committed (see tools/README.md)
+tools/ffmpeg
+tools/ffmpeg-*

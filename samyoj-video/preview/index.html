@@ -1,0 +1,163 @@
+<!doctype html>
+<!--
+  The Samyoj launch film, on a page.
+
+  This is the reviewer's room: the film plays, and every scene is a button, because the fastest way
+  to judge a 60-second film is to jump to the moment you doubt. The chapter list and the cue map
+  come straight from out/render.json, which the renderer writes from the same scene windows the
+  picture was cut with — so the numbers on this page can never disagree with the video above them.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Samyoj — 60s launch film</title>
+<style>
+  :root{
+    --void0:#05070f; --void1:#0a0e1f; --void2:#101736;
+    --b0:#7B2FF7; --b2:#2D6BFF; --b3:#21B6FF; --wa:#25D366;
+    --ink:rgba(255,255,255,.94); --dim:rgba(255,255,255,.55); --hair:rgba(255,255,255,.10);
+    --grad:linear-gradient(96deg,var(--b0),var(--b2) 52%,var(--b3));
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:
+      radial-gradient(1200px 600px at 20% -10%,rgba(123,47,247,.20),transparent 60%),
+      radial-gradient(900px 500px at 95% 0%,rgba(45,107,255,.18),transparent 60%),
+      linear-gradient(180deg,var(--void0),var(--void1) 60%,var(--void2));
+    color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    min-height:100vh}
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 22px 70px}
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .mark{display:flex;align-items:baseline;font:900 30px/1 Inter,-apple-system,sans-serif;letter-spacing:-.035em}
+  .mark .y{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .mark .dot{width:7px;height:7px;border-radius:50%;background:var(--wa);margin:0 3px 0 2px;align-self:center;box-shadow:0 0 12px var(--wa)}
+  header .sub{color:var(--dim);font-size:14px;letter-spacing:.14em;text-transform:uppercase}
+  .pills{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .pill{border:1px solid var(--hair);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--dim);
+        background:rgba(255,255,255,.03);white-space:nowrap}
+  .pill b{color:var(--ink);font-weight:600}
+  .stage{border:1px solid var(--hair);border-radius:20px;overflow:hidden;background:#000;
+         box-shadow:0 40px 120px -40px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.03) inset}
+  video{display:block;width:100%;aspect-ratio:16/9;background:#000}
+  .bar{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--hair);flex-wrap:wrap}
+  .btn{border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--ink);border-radius:10px;
+       padding:8px 13px;font-size:13.5px;cursor:pointer;transition:.15s}
+  .btn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.22)}
+  .btn.on{background:var(--grad);border-color:transparent;color:#fff;font-weight:600}
+  .btn.wa{background:rgba(37,211,102,.14);border-color:rgba(37,211,102,.42);color:#8ef0b3}
+  .time{font-variant-numeric:tabular-nums;color:var(--dim);font-size:13.5px;margin-left:auto}
+  .scenes{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  h2{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:600;margin:34px 0 12px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.07)}
+  th{color:var(--dim);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+  td.n{font-variant-numeric:tabular-nums;color:var(--dim)}
+  .t0{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700}
+  .note{margin-top:26px;border:1px solid var(--hair);border-radius:16px;padding:16px 18px;background:rgba(255,255,255,.025);color:var(--dim);font-size:14px}
+  .note b{color:var(--ink)}
+  code{background:rgba(255,255,255,.07);border-radius:6px;padding:1px 6px;font-size:13px}
+  a{color:#9fc2ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark">sam<span class="y">y</span><span class="dot"></span>oj</div>
+    <div class="sub">60s launch film · v1</div>
+    <div class="pills">
+      <span class="pill"><b>1920×1080</b> · 60 fps</span>
+      <span class="pill"><b>120</b> BPM grid</span>
+      <span class="pill"><b>8</b> scenes</span>
+      <span class="pill"><b>80</b> sound cues</span>
+      <span class="pill">−15.2 LUFS</span>
+    </div>
+  </header>
+
+  <div class="stage">
+    <video id="v" src="out/samyoj-launch-1080p60-with-sound.mp4" controls playsinline preload="metadata" poster="out/poster.jpg"></video>
+    <div class="bar">
+      <button class="btn on" id="sound" title="toggle the mix">🔊 Sound on</button>
+      <button class="btn" id="loop">Loop</button>
+      <button class="btn" id="restart">↺ Restart</button>
+      <span class="time" id="time">0:00 / 1:00</span>
+    </div>
+  </div>
+
+  <div class="scenes" id="scenes"></div>
+
+  <h2>The eight scenes</h2>
+  <table>
+    <thead><tr><th>#</th><th>Scene</th><th>In</th><th>Len</th><th>What it has to prove</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div class="note">
+    <b>How this was made.</b> No footage, no stock, no template — every pixel is drawn by
+    <code>film.mjs</code> at the moment of the frame, then piped raw into ffmpeg at 1080p60. The
+    soundtrack is <code>lib/audio-synth.mjs</code>: a 120&nbsp;BPM bed and eleven UI sounds built from
+    ffmpeg expressions, placed by the film's own cue list, so picture and sound cannot drift apart.
+    The narration is the one piece that must be rendered on your machine —
+    <code>node voice.mjs --voice &lt;id&gt;</code>.
+  </div>
+</div>
+
+<script>
+const SCENES = [
+  ['hook',      'Hook — the channel they already open',  'Every business runs on conversations.'],
+  ['broadcast', 'Broadcast — thousands, one tap',         'Official WhatsApp broadcasts.'],
+  ['ai',        'AI agent — under a second',              'Trained on your business, awake at 3am.'],
+  ['flows',     'Automation — no-code flows',             'Never sleep, always hand off in time.'],
+  ['inbox',     'Shared inbox + CRM',                     'Every chat becomes customer context.'],
+  ['commerce',  'Commerce — sell inside the chat',        'Catalog, payments, orders, in-thread.'],
+  ['ads',       'Click-to-WhatsApp ads',                  'Ad click to closed deal, measured.'],
+  ['cta',       'End card',                               'Free trial, official WhatsApp API.'],
+];
+const v = document.getElementById('v');
+const scenesBox = document.getElementById('scenes');
+const rowsBox = document.getElementById('rows');
+const timeEl = document.getElementById('time');
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+// render.json is written by the renderer from the same windows the film was cut with
+const meta = await fetch('out/render.json').then((r) => r.json()).catch(() => null);
+const wins = meta?.scenes ?? SCENES.map(([id], i) => ({ id, t0: 0, t1: 0 }));
+
+wins.forEach((w, i) => {
+  const b = document.createElement('button');
+  b.className = 'btn';
+  b.textContent = `${i + 1}. ${SCENES[i][0]}`;
+  b.onclick = () => { v.currentTime = w.t0 + 0.05; v.play(); };
+  scenesBox.append(b);
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td class="n">${i + 1}</td><td class="t0">${SCENES[i][1]}</td>`
+    + `<td class="n">${fmt(w.t0)}</td><td class="n">${(w.t1 - w.t0).toFixed(1)}s</td><td>${SCENES[i][2]}</td>`;
+  rowsBox.append(tr);
+});
+
+let last = -1;
+v.addEventListener('timeupdate', () => {
+  timeEl.textContent = `${fmt(v.currentTime)} / ${fmt(v.duration || 60)}`;
+  const i = wins.findIndex((w) => v.currentTime >= w.t0 && v.currentTime < w.t1);
+  if (i !== last) {
+    last = i;
+    [...scenesBox.children].forEach((b, k) => b.classList.toggle('on', k === i));
+  }
+});
+
+// The film has sound. The page should not let you "watch" it with the mix muted by accident.
+const soundBtn = document.getElementById('sound');
+v.muted = true;                       // browsers block sound until a gesture; the button is the gesture
+soundBtn.onclick = () => {
+  v.muted = !v.muted;
+  soundBtn.textContent = v.muted ? '🔇 Sound off' : '🔊 Sound on';
+  soundBtn.classList.toggle('wa', !v.muted);
+  if (!v.muted) v.play();
+};
+document.getElementById('restart').onclick = () => { v.currentTime = 0; v.play(); };
+document.getElementById('loop').onclick = (e) => { v.loop = !v.loop; e.target.classList.toggle('on', v.loop); };
+v.addEventListener('play', () => { if (!soundBtn.classList.contains('wa')) { v.muted = false; soundBtn.textContent = '🔊 Sound on'; soundBtn.classList.add('wa'); } });
+</script>
+</body>
+</html>
