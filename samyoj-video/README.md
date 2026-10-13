@@ -12,7 +12,8 @@ ffmpeg, plus a soundtrack synthesised from ffmpeg expressions.
 | render it | `node render.mjs` (~9 min at `--sub 2`, ~27 min at `--sub 4`) |
 | just look at frames | `node render.mjs --stills 3,9,15,21,27,33,39,51` |
 | rebuild the soundtrack | `node lib/audio-synth.mjs` |
-| render the narration | `node voice.mjs --voice <id>` — see **VOICE.md** |
+| render the narration (ElevenLabs) | `node voice.mjs --voice <id>` — see **VOICE.md** |
+| render a scratch narration offline | `node piper-voice.mjs` (neural TTS, no account, no network) |
 | get a new mix into the picture | `node render.mjs --remux` (seconds, no re-render) |
 | change copy / timings / colours | `brand.mjs` → `SCRIPT`, `C`, `GRAD` |
 | change camera moves | `film.mjs` → `SCENE_CAM[]` (keep `z ≤ 1.20`, offsets ≤ 60px) |

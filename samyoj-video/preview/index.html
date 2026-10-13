@@ -75,11 +75,12 @@
   </header>
 
   <div class="stage">
-    <video id="v" src="out/samyoj-launch-1080p60-with-sound.mp4" controls playsinline preload="metadata" poster="out/poster.jpg"></video>
+    <video id="v" src="out/samyoj-launch-1080p60-with-voice.mp4" controls playsinline preload="metadata" poster="out/poster.jpg"></video>
     <div class="bar">
       <button class="btn on" id="sound" title="toggle the mix">🔊 Sound on</button>
       <button class="btn" id="loop">Loop</button>
       <button class="btn" id="restart">↺ Restart</button>
+      <button class="btn" id="mix" title="switch between the narrated cut and music only">🎙 Voice + music</button>
       <span class="time" id="time">0:00 / 1:00</span>
     </div>
   </div>
@@ -160,6 +161,20 @@ soundBtn.onclick = () => {
 };
 v.addEventListener('play', () => { if (v.muted) wantSound(); }, { once: true });
 document.getElementById('restart').onclick = () => { v.currentTime = 0; v.play(); };
+
+// Two cuts of the same picture exist: the narrated one and the music-only one. Switching holds the
+// playhead, because comparing two mixes is only meaningful at the same second of the film.
+const MIXES = [
+  ['out/samyoj-launch-1080p60-with-voice.mp4', '🎙 Voice + music'],
+  ['out/samyoj-launch-1080p60-with-sound.mp4', '🎵 Music only'],
+];
+let mixIx = 0;
+document.getElementById('mix').onclick = (e) => {
+  mixIx = (mixIx + 1) % MIXES.length;
+  const at = v.currentTime; const wasPlaying = !v.paused;
+  v.src = MIXES[mixIx][0]; e.target.textContent = MIXES[mixIx][1];
+  v.load(); v.currentTime = at; if (wasPlaying) v.play();
+};
 document.getElementById('loop').onclick = (e) => { v.loop = !v.loop; e.target.classList.toggle('on', v.loop); };
 </script>
 </body>

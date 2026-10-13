@@ -157,6 +157,11 @@ encoding alag process me chalti hai, is liye JS loop ko sirf apna kaam dekhna ho
 Number yahan is machine ke hain (2 vCPU, no GPU) — lekin **ratios** har machine par same rahenge, aur
 wahi faisla karte hain ki kya bake karna hai.
 
+**(f)** `ctx.filter` ke baad ek aur: **ffmpeg me ek link sirf ek dafa padha ja sakta hai.** Awaaz ko
+do jagah chahiye thi — music ko duck karne ke liye (sidechaincompress) aur final sum me. Bina
+`asplit` ke poora graph `Error binding filtergraph inputs/outputs` deta hai. Ye bug chhupa hua tha
+kyunki narration path pehli dafa tab chala jab asli voice thi — aur ab (Piper se) mila.
+
 ---
 
 ## 8 · Badalna kya hai, kahan badalna hai
@@ -219,6 +224,7 @@ logo.mjs          vector emblem + per-letter wordmark + lockup
 ui.mjs            atoms: bubble, chip, card, stat, ticks, typingDots…
 render.mjs        canvas → raw RGBA → ffmpeg (--stills / --from --to / --sub / --remux)
 voice.mjs         ElevenLabs narration → grid par placed timeline
+piper-voice.mjs   offline neural narration (Piper) — wahi output, wahi placement rules
 bench.mjs         per-frame cost + ETA
 serve.mjs         aap ka reviewer room (chapters, seek, sound)  →  :8100
 preview/          us room ka page

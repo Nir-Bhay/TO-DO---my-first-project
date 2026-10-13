@@ -30,7 +30,7 @@ const TMP = join(OUT, '.audio');
 const FFMPEG = process.env.FFMPEG ?? join(ROOT, 'tools', 'ffmpeg');
 const SR = 48000;
 const argv = process.argv.slice(2);
-const arg = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : null; };
+const arg = (n) => { const i = argv.indexOf(`--${n}`); return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : null; };
 const has = (n) => argv.includes(n);
 
 const film = buildFilm({});
@@ -133,7 +133,7 @@ const add = (file, af = null) => { inputs.push({ file, af }); return inputs.leng
 
 const idx = { music: {}, sfx: {} };
 for (const { name, f } of musicFiles) idx.music[name] = add(f);
-const voicePath = arg('--voice');
+const voicePath = arg('voice');
 if (voicePath && existsSync(voicePath)) idx.voice = add(voicePath);
 
 const cueGain = { click: 1.0, release: 0.8, tick: 0.55, pop: 0.9, blip: 0.8, chime: 0.85, shimmer: 0.6, whoosh: 0.8, thump: 1.0, riser: 0.7 };
@@ -161,9 +161,13 @@ parts.push(`${sfxLabels}amix=inputs=${Object.keys(idx.sfx).length}:normalize=0:d
 parts.push(`[music]volume=${has('--no-music') ? 0 : 0.62}[mus]`);
 parts.push(`[sfx]volume=0.85[sfxbus]`);
 if (idx.voice != null) {
-  parts.push(`[${idx.voice}:a]dynaudnorm=f=250:g=9,volume=1.5[vo]`);
-  parts.push(`[mus][vo]sidechaincompress=threshold=0.06:ratio=5:attack=12:release=320[musd]`);
-  parts.push(`[musd][sfxbus][vo]amix=inputs=3:normalize=0:duration=longest[sum]`);
+  // The voice is needed TWICE — once to duck the music (sidechaincompress) and once in the sum.
+  // In an ffmpeg filtergraph a link can only be consumed by ONE filter, so the voice is split
+  // first. Without the asplit the whole graph fails to bind ("Error binding filtergraph
+  // inputs/outputs"), which is exactly what happened the first time this path was exercised.
+  parts.push(`[${idx.voice}:a]dynaudnorm=f=250:g=9,volume=1.5,asplit=2[vo1][vo2]`);
+  parts.push(`[mus][vo1]sidechaincompress=threshold=0.06:ratio=5:attack=12:release=320[musd]`);
+  parts.push(`[musd][sfxbus][vo2]amix=inputs=3:normalize=0:duration=longest[sum]`);
 } else {
   parts.push(`[mus][sfxbus]amix=inputs=2:normalize=0:duration=longest[sum]`);
 }

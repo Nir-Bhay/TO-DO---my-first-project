@@ -93,10 +93,13 @@ if (arg('stills')) {
 // the sound are separate artefacts that get married at the end. This is that marriage.
 if (argv.includes('--remux')) {
   const silent = typeof arg('out') === 'string' ? arg('out') : join(OUT, 'samyoj-launch-1080p60.mp4');
-  const mix = join(OUT, 'audio-master.wav');
+  // --mix lets a variant soundtrack (a new narration, a different bed) marry the SAME picture
+  // without touching the original deliverable, and --suffix keeps both files on disk.
+  const mix = typeof arg('mix') === 'string' ? arg('mix') : join(OUT, 'audio-master.wav');
+  const suffix = typeof arg('suffix') === 'string' ? arg('suffix') : '';
   if (!existsSync(silent)) { console.error(`✋ no picture at ${silent} — render it first`); process.exit(1); }
   if (!existsSync(mix)) { console.error(`✋ no mix at ${mix} — run \`node lib/audio-synth.mjs\` first`); process.exit(1); }
-  const final = silent.replace(/\.mp4$/, '-with-sound.mp4');
+  const final = silent.replace(/\.mp4$/, suffix ? `${suffix}.mp4` : '-with-sound.mp4');
   await new Promise((res, rej) => {
     const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', silent, '-i', mix,
       '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', final]);

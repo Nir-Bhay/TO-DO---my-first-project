@@ -12,3 +12,6 @@ out/voice/
 # a 50 MB static ffmpeg is fetched, not committed (see tools/README.md)
 tools/ffmpeg
 tools/ffmpeg-*
+# 63MB neural voices: fetched automatically by piper-voice.mjs
+voices/*.onnx
+voices/*.tar.gz

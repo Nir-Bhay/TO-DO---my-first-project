@@ -92,7 +92,7 @@ export const SCRIPT = [
   },
   {
     id: 'ai', scene: 'AI agent',
-    vo: 'An AI that answers instantly, trained on your business. Awake at three in the morning.',
+    vo: 'AI that answers in under a second, trained on your business. Awake at 3am.',
     target: 7.0,
     head: 'Answers in\nunder a second.',
     emphasis: ['under', 'a', 'second'], label: 'AI TRAINED ON YOUR BUSINESS',
@@ -106,14 +106,14 @@ export const SCRIPT = [
   },
   {
     id: 'inbox', scene: 'Shared inbox',
-    vo: 'One shared inbox. Every chat becomes customer context: tags, stages, tickets, owners.',
+    vo: 'One shared inbox. Every chat becomes context — tags, stages, owners.',
     target: 7.0,
     head: 'One inbox.\nEvery customer, in context.',
     emphasis: ['context'], label: 'SHARED TEAM INBOX + CRM',
   },
   {
     id: 'commerce', scene: 'Commerce',
-    vo: 'Catalogs, payments and orders, closed inside the chat.',
+    vo: 'Catalogs, payments, orders — all inside the chat.',
     target: 5.0,
     head: 'Sell inside\nthe chat.',
     emphasis: ['chat'], label: 'CATALOGS · PAYMENTS · ORDERS',

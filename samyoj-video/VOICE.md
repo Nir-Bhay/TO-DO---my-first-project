@@ -108,6 +108,26 @@ node serve.mjs            # http://localhost:8100  — sun kar faisla karein
 4. **CTA ki aakhri line** ("your customers are already here") pe film ke aakhri green pulse par
    khatam ho — sabse zyada asar wahi 2 second dete hain.
 
+## Offline fallback (aur scratch track) — `piper-voice.mjs`
+
+Internet ya key ke bagair bhi film ki awaaz ki ja sakti hai. `piper-voice.mjs` ek **neural TTS**
+(Piper) chalata hai, aap ki machine par, bina account:
+
+```bash
+node piper-voice.mjs              # Amy · en-US female (default)
+node piper-voice.mjs --voice male # British male
+node piper-voice.mjs --length 1.12  # dheemi read
+```
+
+* Voice model (~63 MB) pehli baar apne aap download ho jata hai (`voices/` folder me — git me nahi).
+* Output wahi `out/voice/vo-timeline.wav` hai jo ElevenLabs path deta hai — matlab mix aur remux
+  bilkul same commands se chalti hain.
+* Ye **scratch track** ke liye perfect hai: ek minute me pata chal jata hai ki kaun si line apne
+  scene se lambi hai. Final film ke liye ElevenLabs (ya aap ki apni awaaz) behtar hai — Piper
+  theek hai, "premium presenter" nahi.
+* Ye tool line ko **faster bol kar** fit karta hai (`length_scale`), audio ko stretch karke nahi —
+  is liye awaaz me chipmunk effect nahi aata.
+
 ## Alternative: apni awaaz
 
 Agar aap khud bolein (ya koi team member bole) to **behtar** hai — brand ki apni awaaz banti hai.
