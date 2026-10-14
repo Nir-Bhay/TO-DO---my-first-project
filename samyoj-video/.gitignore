@@ -1,4 +1,6 @@
-# the film itself is an artefact, not source: 30–60 MB per render
+# The deliverable lives in deliver/ and IS committed on purpose: this project has already lost
+# its render twice to a sandbox reset, and an artefact nobody can play is not a deliverable.
+# Working files under out/ stay out of git (they are regenerable and large).
 out/*.mp4
 out/*.wav
 out/*.m4a

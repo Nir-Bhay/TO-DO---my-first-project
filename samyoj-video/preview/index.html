@@ -75,7 +75,7 @@
   </header>
 
   <div class="stage">
-    <video id="v" src="out/samyoj-launch-1080p60-with-voice.mp4" controls playsinline preload="metadata" poster="out/poster.jpg"></video>
+    <video id="v" src="deliver/samyoj-launch-1080p60-with-voice.mp4" controls playsinline preload="metadata" poster="deliver/poster.jpg"></video>
     <div class="bar">
       <button class="btn on" id="sound" title="toggle the mix">🔊 Sound on</button>
       <button class="btn" id="loop">Loop</button>
@@ -121,7 +121,7 @@ const timeEl = document.getElementById('time');
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 // render.json is written by the renderer from the same windows the film was cut with
-const meta = await fetch('out/render.json').then((r) => r.json()).catch(() => null);
+const meta = await fetch('deliver/render.json').then((r) => r.json()).catch(() => null);
 const wins = meta?.scenes ?? SCENES.map(([id], i) => ({ id, t0: 0, t1: 0 }));
 
 wins.forEach((w, i) => {
@@ -165,8 +165,8 @@ document.getElementById('restart').onclick = () => { v.currentTime = 0; v.play()
 // Two cuts of the same picture exist: the narrated one and the music-only one. Switching holds the
 // playhead, because comparing two mixes is only meaningful at the same second of the film.
 const MIXES = [
-  ['out/samyoj-launch-1080p60-with-voice.mp4', '🎙 Voice + music'],
-  ['out/samyoj-launch-1080p60-with-sound.mp4', '🎵 Music only'],
+  ['deliver/samyoj-launch-1080p60-with-voice.mp4', '🎙 Voice + music'],
+  ['deliver/samyoj-launch-1080p60-with-sound.mp4', '🎵 Music only'],
 ];
 let mixIx = 0;
 document.getElementById('mix').onclick = (e) => {
