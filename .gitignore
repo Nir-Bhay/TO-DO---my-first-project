@@ -2,6 +2,9 @@
 node_modules/
 renders/
 snapshots/
-deliver/
+# upstream keeps its own deliver/ at the repo root out of git. Our film deliverable lives at
+# samyoj-video/deliver/ and IS committed (the sandbox has eaten the render twice, and the user
+# asked for a video). Anchoring the pattern to the root is what keeps both true.
+/deliver/
 *.log
 .DS_Store

@@ -17,3 +17,5 @@ tools/ffmpeg-*
 # 63MB neural voices: fetched automatically by piper-voice.mjs
 voices/*.onnx
 voices/*.tar.gz
+# the narrated mix is 11MB of regenerable audio (one command); the two cuts travel instead
+deliver/audio-*.wav

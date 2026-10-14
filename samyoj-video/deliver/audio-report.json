@@ -1,0 +1,20 @@
+{
+  "duration": 60,
+  "bpm": 120,
+  "bars": 30,
+  "sampleRate": 48000,
+  "integratedLUFS": "-14.7",
+  "truePeakDBTP": "-3.5",
+  "lraLU": "2.9",
+  "musicLayers": [
+    "kick",
+    "ghost",
+    "hat",
+    "clap",
+    "bass",
+    "pad",
+    "riser"
+  ],
+  "cues": 80,
+  "narration": true
+}
