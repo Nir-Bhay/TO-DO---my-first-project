@@ -5,6 +5,10 @@ export function renderMarketingNavbar(activePath = "/") {
   const isDark = store.theme === "dark";
   const user = store.currentUser;
   return `
+    <div style="background:var(--bg-inverse);color:var(--ink-inverse);font-size:12.5px;padding:8px 16px;text-align:center;border-bottom:1px solid var(--border);">
+      <span style="font-weight:600;">Velora Studio 3.0</span> &mdash; Local MP4/Image Composer, Drag &amp; Drop Feed Grid, 16 Editorial Carousel Systems &amp; 58-Tool MCP API &middot;
+      <a href="/app/overview" data-link style="color:var(--brand);font-weight:700;margin-left:6px;text-decoration:underline;">Open Live Studio &rarr;</a>
+    </div>
     <header class="mkt-nav">
       <div class="mkt-nav-inner">
         <div style="display:flex;align-items:center;gap:28px;">
@@ -591,6 +595,65 @@ export function renderLandingPage() {
         </div>
       </section>
 
+      <!-- SECTION 2B: STOP DUCT-TAPING 5 DISCONNECTED TOOLS (BEFORE VS. AFTER) + 4-STEP FLOW -->
+      <section class="mkt-section" style="padding:84px 0;">
+        <div class="mkt-container">
+          <div class="mkt-sec-head-center">
+            <span class="badge badge-brand" style="margin-bottom:12px;">Why Studios Switch</span>
+            <h2 class="mkt-h2">Replace five disconnected subscriptions with one calm workspace.</h2>
+            <p style="font-size:15.5px;color:var(--ink-secondary);">
+              No more exporting slides in one tab, previewing grid crops in a second, scheduling in a third, running fragile DM bots in a fourth, and tracking sponsors in spreadsheets.
+            </p>
+          </div>
+
+          <div class="split-2" style="gap:24px;margin-bottom:44px;">
+            <div class="card card-pad" style="padding:30px;display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="badge badge-danger">Old Fragmented Workflow</span>
+                <span class="mono" style="color:var(--ink-muted);">~$148 / month</span>
+              </div>
+              <h3 style="font-size:20px;">Five tabs that never talk to each other</h3>
+              <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--ink-secondary);">
+                <div style="display:flex;gap:10px;align-items:center;">${icon("x", 16)}<span>Separate scheduler ($29/mo) with no 4:5 profile grid safe-zone view</span></div>
+                <div style="display:flex;gap:10px;align-items:center;">${icon("x", 16)}<span>Separate DM bot ($49/mo) charging surprise overages when a Reel goes viral</span></div>
+                <div style="display:flex;gap:10px;align-items:center;">${icon("x", 16)}<span>Static bio link page ($19/mo) losing 94% of cold Reel viewers</span></div>
+                <div style="display:flex;gap:10px;align-items:center;">${icon("x", 16)}<span>Slide templates ($25/mo) + manual spreadsheet sponsorship notes</span></div>
+              </div>
+            </div>
+
+            <div class="card card-pad" style="padding:30px;border-color:var(--ink-primary);box-shadow:var(--shadow-md);display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="badge badge-success">Unified Velora Studio</span>
+                <span class="mono" style="font-weight:700;">$0 to start &middot; $12 Growth</span>
+              </div>
+              <h3 style="font-size:20px;">Every step wired directly together</h3>
+              <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--ink-secondary);">
+                <div style="display:flex;gap:10px;align-items:center;">${icon("check", 16)}<span>Upload video or design a 16-preset Carousel &amp; attach its DM keyword rule in one screen</span></div>
+                <div style="display:flex;gap:10px;align-items:center;">${icon("check", 16)}<span>Drag tiles directly on the 4:5 / 3:4 Profile Grid or Calendar to reschedule</span></div>
+                <div style="display:flex;gap:10px;align-items:center;">${icon("check", 16)}<span>Official Meta OAuth DMs sync straight into your 3-pane Inbox + Contact CRM</span></div>
+                <div style="display:flex;gap:10px;align-items:center;">${icon("check", 16)}<span>Query analytics &amp; batch-schedule directly from Claude or Cursor over MCP</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4-Step Horizontal Studio Flow -->
+          <div class="mkt-metrics-grid">
+            ${[
+              ["STEP 01", "Connect Official OAuth", "Link up to 5 Instagram Creator or Business accounts in 30 seconds — zero password sharing."],
+              ["STEP 02", "Compose & Check Crop", "Drop local MP4s or build crisp 1080x1350 slide decks while checking your 125-char caption fold."],
+              ["STEP 03", "Attach Keyword DM Rule", "Pair any post or Story with instant CTA button DMs, reply rotation, and follower gates."],
+              ["STEP 04", "Close Leads & Scale", "Reply inside the 24h Messenger window, log sponsor notes in CRM, and graduate winning Trial Reels."]
+            ].map(([step, t, d]) => `
+              <div class="card card-pad" style="padding:24px;background:var(--bg-surface);">
+                <span class="mono" style="color:var(--brand);font-weight:700;">${step}</span>
+                <h3 style="font-size:16.5px;margin:8px 0 6px;">${t}</h3>
+                <p style="font-size:13.5px;color:var(--ink-secondary);line-height:1.55;">${d}</p>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+
       <!-- SECTION 3: DEEP-DIVE PILLAR 01 — COMPOSER, SAFE ZONES & VISUAL GRID -->
       <section class="mkt-section mkt-section-alt">
         <div class="mkt-container">
@@ -638,42 +701,62 @@ export function renderLandingPage() {
         </div>
       </section>
 
-      <!-- SECTION 4: DEEP-DIVE PILLAR 02 — OFFICIAL META DM WORKFLOW ENGINE -->
+      <!-- SECTION 4: DEEP-DIVE PILLAR 02 — LIVE INTERACTIVE PHONE CHAT SIMULATOR RIGHT ON HOME PAGE -->
       <section class="mkt-section">
         <div class="mkt-container">
           <div class="mkt-deep-row is-reversed">
-            <div class="card card-pad" style="padding:28px;display:flex;flex-direction:column;gap:14px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <span style="font-weight:700;font-size:15px;">4-Stage Official Messenger Pipeline</span>
-                <span class="mono" style="color:var(--success);">OAuth Graph v21.0</span>
-              </div>
-              ${[
-                ["01", "Keyword Trigger Match", "Matches exact or partial keywords on Reel comments, Carousel comments, Story replies, or Ice Breakers."],
-                ["02", "Natural Public Reply Rotation", "Posts a randomized human reply under the comment so your engagement section stays active and varied."],
-                ["03", "Follower Verification Gate", "Optionally checks follow status first — converting viral non-follower viewers into permanent followers before unlocking links."],
-                ["04", "Button Card + Smart Follow-Up", "Delivers up to 3 clean HTTPS buttons, plus an automatic 2h/24h follow-up that cancels the moment they reply."]
-              ].map(([num, title, desc]) => `
-                <div style="display:flex;gap:14px;padding:14px;border-radius:11px;background:var(--bg-page);border:1px solid var(--border);">
-                  <span class="mono" style="font-weight:700;color:var(--brand);padding-top:2px;">${num}</span>
-                  <div>
-                    <div style="font-weight:650;font-size:14px;margin-bottom:3px;">${title}</div>
-                    <p style="font-size:13px;color:var(--ink-secondary);line-height:1.5;">${desc}</p>
+            <div style="display:flex;justify-content:center;">
+              <div class="phone-frame" style="max-width:390px;">
+                <div class="phone-screen" style="background:#0F0F12;">
+                  <div class="phone-notch"></div>
+                  <div style="padding:8px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <span class="ws-avatar" style="width:28px;height:28px;background:#E11D48;font-size:12px;">M</span>
+                      <div>
+                        <div style="font-weight:700;font-size:13px;color:#fff;">@maya.studio</div>
+                        <div style="font-size:10.5px;color:#34D399;">Official Messenger Live Demo</div>
+                      </div>
+                    </div>
+                    <span class="badge" style="background:#1F1F26;color:#E4E4E7;border-color:#2E2E38;">Try Me Live</span>
+                  </div>
+
+                  <div id="landing-phone-chat-list" style="height:285px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+                    ${(store.ui.landingChatMsgs || []).map((msg) => `
+                      <div style="align-self:${msg.role === "me" ? "flex-end" : "flex-start"};max-width:85%;padding:10px 13px;border-radius:13px;font-size:12.5px;line-height:1.45;background:${msg.role === "me" ? "#FFFFFF" : "#1C1C22"};color:${msg.role === "me" ? "#09090B" : "#F4F4F5"};">
+                        <div style="font-size:10px;opacity:0.65;margin-bottom:3px;font-weight:600;">${escHtml(msg.badge)}</div>
+                        <div>${escHtml(msg.text)}</div>
+                        ${msg.cta ? `<div style="margin-top:8px;padding:7px 10px;border-radius:7px;background:#E11D48;color:#FFFFFF;text-align:center;font-weight:700;font-size:12px;">${escHtml(msg.cta)}</div>` : ""}
+                      </div>
+                    `).join("")}
+                  </div>
+
+                  <div style="padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,0.08);background:#141418;">
+                    <div style="display:flex;gap:5px;margin-bottom:8px;overflow-x:auto;">
+                      ${["REPO", "KIT", "RATES", "GUIDE"].map((kw) => `
+                        <button type="button" data-landing-quick-kw="${kw}" style="padding:3px 9px;border-radius:999px;border:1px solid #3F3F46;background:#1F1F26;color:#FAFAFA;font-size:11px;font-weight:600;">Send "${kw}"</button>
+                      `).join("")}
+                    </div>
+                    <form id="form-landing-phone-chat" style="display:flex;gap:6px;">
+                      <input id="landing-phone-input" value="KIT" placeholder="Type REPO, KIT, or RATES..." style="flex:1;height:34px;padding:0 11px;border-radius:8px;border:1px solid #3F3F46;background:#09090B;color:#FFFFFF;font-size:12.5px;" />
+                      <button type="submit" class="btn btn-brand btn-sm" style="height:34px;padding:0 13px;">Send</button>
+                    </form>
                   </div>
                 </div>
-              `).join("")}
+              </div>
             </div>
 
             <div>
-              <span class="badge badge-brand" style="margin-bottom:14px;">02 &middot; High-Intent Conversion</span>
+              <span class="badge badge-brand" style="margin-bottom:14px;">02 &middot; Try Live Right Here</span>
               <h2 class="mkt-h2">"Link in bio" loses 9 out of 10 interested viewers. Meet them in DMs.</h2>
               <p style="font-size:15.5px;color:var(--ink-secondary);line-height:1.65;">
-                Asking viewers to leave your Reel, visit your profile, open a link tree, and hunt for a resource kills momentum. A single keyword comment triggers both an engagement boost on your post and a direct clickable button in their inbox.
+                Type <code class="mono">REPO</code>, <code class="mono">KIT</code>, or <code class="mono">RATES</code> directly inside the phone on the left — every automated reply card, public comment rotation, follower gate, and 2-hour follow-up runs on Official Meta Messenger OAuth.
               </p>
               <div class="mkt-check-list">
                 <div class="mkt-check-item">${icon("check", 17)}<span><strong>Past-Comment Sweep:</strong> Post went viral before you attached a workflow? Retroactively deliver DMs to up to 250 missed comments in one click.</span></div>
-                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Interactive Phone Chat Simulator:</strong> Test every keyword, non-follower branch, and button card live before activating.</span></div>
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Follower Verification Gate:</strong> Turn viral non-follower comments into verified followers automatically before unlocking primary links.</span></div>
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Direct Unified Inbox Sync:</strong> Every automated thread appears neatly inside your 3-pane Inbox &amp; Contact CRM.</span></div>
               </div>
-              <a href="/app/automations" data-link class="btn btn-primary">Test Live Workflow Simulator ${icon("arrowRight", 15)}</a>
+              <a href="/app/automations" data-link class="btn btn-primary">Open Full Workflow Builder ${icon("arrowRight", 15)}</a>
             </div>
           </div>
         </div>

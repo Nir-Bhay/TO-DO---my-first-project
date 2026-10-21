@@ -51,6 +51,10 @@ export const store = {
     landingSimScenario: "repo",
     landingThemeId: "swiss_white",
     landingGridCrop: "4:5",
+    landingChatMsgs: [
+      { role: "them", badge: "Comment on Reel", text: "Cleanest design system breakdown all week — commenting REPO!" },
+      { role: "me", badge: "Auto-Sent in 0.6s", text: "Hey! Here is the complete Figma token starter file + Notion checklist from my Reel:", cta: "Open Token Starter Kit ->" }
+    ],
     calcPostsPerWeek: 6,
     calcCommentsPerPost: 85,
     openFaqIdx: 0

@@ -142,6 +142,7 @@ function renderAppShell(activeRouteId, stageHtml) {
           </div>
 
           <div style="display:flex;align-items:center;gap:8px;">
+            <a href="/" data-link class="btn btn-sm">Landing Page</a>
             <button class="icon-btn" id="btn-theme-toggle" title="Switch light/dark theme" aria-label="Switch theme">
               ${icon(isDark ? "sun" : "moon", 16)}
             </button>
@@ -650,6 +651,51 @@ function bindMarketingInteractions() {
     postsSlider.addEventListener("input", syncCalc);
     commentsSlider.addEventListener("input", syncCalc);
   }
+
+  const sendLandingDemoMsg = (rawText) => {
+    const clean = String(rawText || "KIT").trim();
+    if (!clean) return;
+    const up = clean.toUpperCase();
+    let reply = {
+      role: "me",
+      badge: "Official Messenger API · 0.5s",
+      text: "Here is the complete creator resource pack + Notion checklist mentioned in my post:",
+      cta: "Open Full Resource Pack ->"
+    };
+    if (up.includes("RATE")) {
+      reply = {
+        role: "me",
+        badge: "Auto Sponsorship Concierge",
+        text: "Thanks for reaching out! Here is our live Q4 Sponsorship Rate Card & available creator slots:",
+        cta: "View Media Kit & Rates ->"
+      };
+    } else if (up.includes("REPO") || up.includes("KIT")) {
+      reply = {
+        role: "me",
+        badge: "Auto-Sent + Public Reply Rotated",
+        text: `Got your "${clean}" trigger! Here is the direct Figma + GitHub starter kit link:`,
+        cta: "Download Starter Kit ->"
+      };
+    }
+    store.ui.landingChatMsgs = [
+      ...(store.ui.landingChatMsgs || []),
+      { role: "them", badge: "You commented / DMed", text: clean },
+      reply
+    ];
+    renderRoute();
+    const box = document.getElementById("landing-phone-chat-list");
+    if (box) box.scrollTop = box.scrollHeight;
+  };
+
+  document.querySelectorAll("[data-landing-quick-kw]").forEach((btn) => {
+    btn.addEventListener("click", () => sendLandingDemoMsg(btn.dataset.landingQuickKw));
+  });
+
+  document.getElementById("form-landing-phone-chat")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const inp = document.getElementById("landing-phone-input");
+    sendLandingDemoMsg(inp?.value || "KIT");
+  });
 
   document.getElementById("btn-copy-mcp-snippet")?.addEventListener("click", async () => {
     const snippet = JSON.stringify({
