@@ -47,7 +47,13 @@ export const store = {
     mcpSelectedTool: "list_workspaces",
     mcpLastResponse: null,
     chatSimMessages: [],
-    chatSimTyping: false
+    chatSimTyping: false,
+    landingSimScenario: "repo",
+    landingThemeId: "swiss_white",
+    landingGridCrop: "4:5",
+    calcPostsPerWeek: 6,
+    calcCommentsPerPost: 85,
+    openFaqIdx: 0
   }
 };
 

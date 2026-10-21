@@ -55,7 +55,7 @@ export function navigate(path) {
     window.history.pushState({}, "", path);
   }
   store.mobileSidebarOpen = false;
-  renderRoute();
+  renderRoute({ resetScroll: true });
 }
 
 function toggleTheme() {
@@ -175,8 +175,9 @@ function renderAppShell(activeRouteId, stageHtml) {
   `;
 }
 
-export function renderRoute() {
+export function renderRoute(opts = {}) {
   if (!store.bundle) return;
+  const resetScroll = Boolean(opts && opts.resetScroll);
   const root = document.getElementById("velora-root");
   const path = currentPath();
 
@@ -236,7 +237,7 @@ export function renderRoute() {
     root.innerHTML = renderLandingPage();
   }
 
-  window.scrollTo({ top: 0 });
+  if (resetScroll) window.scrollTo({ top: 0 });
   bindMarketingInteractions();
 }
 
@@ -593,6 +594,69 @@ function bindMarketingInteractions() {
       store.ui.heroTab = btn.dataset.heroTab;
       renderRoute();
     });
+  });
+
+  document.querySelectorAll("[data-landing-sim]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      store.ui.landingSimScenario = btn.dataset.landingSim;
+      renderRoute();
+    });
+  });
+
+  document.querySelectorAll("[data-landing-crop]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      store.ui.landingGridCrop = btn.dataset.landingCrop;
+      renderRoute();
+    });
+  });
+
+  document.querySelectorAll("[data-landing-theme]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      store.ui.landingThemeId = btn.dataset.landingTheme;
+      renderRoute();
+    });
+  });
+
+  document.querySelectorAll("[data-faq-idx]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.faqIdx);
+      store.ui.openFaqIdx = store.ui.openFaqIdx === idx ? -1 : idx;
+      renderRoute();
+    });
+  });
+
+  const postsSlider = document.getElementById("calc-posts-slider");
+  const commentsSlider = document.getElementById("calc-comments-slider");
+  if (postsSlider && commentsSlider) {
+    const syncCalc = () => {
+      const p = Number(postsSlider.value || 6);
+      const c = Number(commentsSlider.value || 85);
+      store.ui.calcPostsPerWeek = p;
+      store.ui.calcCommentsPerPost = c;
+      const dms = p * 4 * c;
+      const clicks = Math.round(dms * 0.74);
+      const hrs = Math.max(4, Math.round((dms * 0.45) / 60 + p * 1.2));
+      const pv = document.getElementById("calc-posts-val");
+      const cv = document.getElementById("calc-comments-val");
+      const oc = document.getElementById("calc-out-clicks");
+      const od = document.getElementById("calc-out-dms");
+      const oh = document.getElementById("calc-out-hours");
+      if (pv) pv.textContent = `${p} posts / wk`;
+      if (cv) cv.textContent = `${c} comments`;
+      if (oc) oc.textContent = `${clicks.toLocaleString()} clicks / mo`;
+      if (od) od.textContent = dms.toLocaleString();
+      if (oh) oh.textContent = `${hrs} hrs / mo`;
+    };
+    postsSlider.addEventListener("input", syncCalc);
+    commentsSlider.addEventListener("input", syncCalc);
+  }
+
+  document.getElementById("btn-copy-mcp-snippet")?.addEventListener("click", async () => {
+    const snippet = JSON.stringify({
+      mcpServers: { velora: { url: `${window.location.origin}/mcp`, transport: "streamable-http" } }
+    }, null, 2);
+    try { await navigator.clipboard?.writeText(snippet); } catch {}
+    showToast("Copied Claude / Cursor MCP config JSON");
   });
 
   document.querySelectorAll("[data-billing]").forEach((btn) => {
