@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "buildCommand": "",
+  "outputDirectory": "web",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/mcp", "destination": "/api?__route=/mcp" },
+    { "source": "/api/:path*", "destination": "/api?__route=/api/:path*" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
+}

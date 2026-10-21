@@ -1,0 +1,43 @@
+{
+  "ready": true,
+  "reaVersion": "6.7.0",
+  "generatedAt": "2026-10-21T08:32:57.161Z",
+  "targetUrl": "https://www.reeldrop.io/",
+  "artifacts": [
+    {
+      "command": "inspect-web-network-capture",
+      "file": "01-network-capture-evidence.json",
+      "evidenceId": "ev_c44944671d4dff66dcd9f000bffa9c611fa4b668b8a3b7a38dabbfe87cdb2fa1",
+      "sha256": "1f206c596cc649b9fa3abf7a7b8e3d3a3d41766e97dff1565f34e841526ae4b1",
+      "summary": "Inspected 8 HTTP/2 routes across www.reeldrop.io & mcp.reeldrop.io (ev_c44944671d4dff66dcd9f000bffa9c611fa4b668b8a3b7a38dabbfe87cdb2fa1)."
+    },
+    {
+      "command": "inspect-sqlite-database --schema-scope database",
+      "file": "02-sqlite-schema-evidence.json",
+      "evidenceId": "ev_fb517b1bc3d61c95c0a677e61cabcc6fe36328c591936c05ba96c3ec52a51dc5",
+      "sha256": "237ae50c35f8b15ad4a59d611ea8ece2feca6186363ef02401c9b5341bdb5176",
+      "summary": "Verified complete SQLite schema across all 11 domain tables (ev_fb517b1bc3d61c95c0a677e61cabcc6fe36328c591936c05ba96c3ec52a51dc5)."
+    },
+    {
+      "command": "inspect-sqlite-database --table automations",
+      "file": "03-sqlite-automations-rows.json",
+      "evidenceId": "ev_0f3c51635f0cb71b723fe0971ea6d95ac6ad2f27af5ba32538ad18c8b73a644f",
+      "sha256": "164a75a8e74e1c4880de46d4564af86c8b8e1d7e247056a7c1cba21acba2cc75",
+      "summary": "Verified all 12 persisted multi-workspace Comment/Story/DM/AI automation records (ev_0f3c51635f0cb71b723fe0971ea6d95ac6ad2f27af5ba32538ad18c8b73a644f)."
+    },
+    {
+      "command": "analyze-javascript-application",
+      "file": "04-js-application-graph.json",
+      "evidenceId": "ev_dfdbfba1c1f5cc820f2321aa7910db7ee6eecf1e5533fde4e8c5d52ce4edccad",
+      "sha256": "8f6f51fa2c2b6183d095436ce3325365e6959fb45ac0db55af2d562bc692e275",
+      "summary": "Constructed authenticated JavaScript Application Graph across api/, server/, config/, public/shared/, and public/js/ (ev_dfdbfba1c1f5cc820f2321aa7910db7ee6eecf1e5533fde4e8c5d52ce4edccad)."
+    },
+    {
+      "command": "trace-application-feature",
+      "file": "05-feature-trace-mcp.json",
+      "evidenceId": "ev_fd42e98d2c2c484d97de7797ffeccca3e6ddf8d3a92be7025ee58a118d005d87",
+      "sha256": "602ce5f1f6b4adedd9d88c881e2d312dd969e15d8af27690af30dc60e9d10765",
+      "summary": "Traced Streamable HTTP /mcp (58 tools) & Serverless Router seeds (all nodes, all edges verified)."
+    }
+  ]
+}
