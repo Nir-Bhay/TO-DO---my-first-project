@@ -2,14 +2,30 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ReelDrop — The AI Instagram Growth Tool. Official API, No Bots.</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Velora — Social Publishing, Visual Grid &amp; DM Workflows</title>
+  <meta name="description" content="Plan your visual profile grid, publish Reels &amp; Carousels on schedule, design crisp slide decks, and automate comment-to-DM replies via the Official Instagram API." />
+  <link rel="preload" href="/fonts/plus-jakarta-sans-var.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/jetbrains-mono-var.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'><rect width='28' height='28' rx='7' fill='%2309090B'/><path d='M8.2 8.5L14 19.8L19.8 8.5' stroke='%23ffffff' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>" />
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("velora_theme");
+        if (saved === "dark" || saved === "light") {
+          document.documentElement.setAttribute("data-theme", saved);
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/styles.css?v=3.5" />
 </head>
 <body>
-  <div id="app"></div>
-  <div id="modal-root"></div>
-  <div id="toast-root" class="toast-stack"></div>
-  <script type="module" src="/js/main.js"></script>
+  <div id="velora-root"></div>
+  <div id="velora-drawer-root"></div>
+  <div id="velora-palette-root"></div>
+  <div id="velora-toast-root" aria-live="polite"></div>
+  <script type="module" src="/js/main.js?v=3.5"></script>
 </body>
 </html>

@@ -1,544 +1,1094 @@
-import { store, notify, toast, apiRequest, updateBundle, escapeHtml } from "./api.js";
+import { store, escHtml, fmtNum } from "./api.js";
+import { icon } from "./icons.js";
 
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const DOW = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const COVER_STYLES = ["noir", "slate", "cobalt", "terracotta", "forest", "stone", "cream", "plum"];
 
-let selectedSwapFirstId = null;
+function statusBadge(status) {
+  if (status === "PUBLISHED") return `<span class="badge badge-success"><span class="dot"></span>Published</span>`;
+  if (status === "SCHEDULED") return `<span class="badge badge-info"><span class="dot"></span>Scheduled</span>`;
+  if (status === "FAILED") return `<span class="badge badge-danger"><span class="dot"></span>Needs Attention</span>`;
+  return `<span class="badge">Draft</span>`;
+}
 
-let createDraft = {
-  mediaType: "REEL",
-  title: "How Official API Auto-DMs Triple Link Clicks",
-  caption: "",
-  firstComment: "Comment GUIDE below and I'll DM you the full resource bundle! ↓",
-  coverStyle: "terracotta",
-  collabHandle: "",
-  automationId: "auto_repo_pack",
-  isTrialReel: true,
-  scheduledLocal: "2026-10-24T14:00"
-};
+function formatShortDate(iso) {
+  if (!iso) return "Unscheduled";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " · " +
+    d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
 
-export function renderCreateStudioView() {
-  const ws = store.data.activeWorkspace;
-  if (store.composerPrefillCaption) {
-    createDraft.caption = store.composerPrefillCaption;
-    store.composerPrefillCaption = "";
-  }
-  if (!createDraft.caption) {
-    createDraft.caption = "Stop putting \"link in bio\" on high-retention Reels.\n\nComment GUIDE below and my official Instagram API workflow will send the resource bundle straight to your DMs in under 2 seconds! ↓";
-  }
+function getPostVisualUrl(post, idx = 0) {
+  if (post?.media_url) return post.media_url;
+  const fallbackNum = String(((idx % 11) + 1)).padStart(2, "0");
+  return `/media/post-${fallbackNum}.svg`;
+}
+
+export function renderUnconnectedBanner() {
+  const b = store.bundle;
+  if (b.isPlatformConnected) return "";
+  return `
+    <div class="card card-pad" style="margin-bottom:20px;background:var(--brand-soft);border-color:var(--brand-border);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;">
+      <div style="display:flex;align-items:flex-start;gap:12px;max-width:720px;">
+        <span style="width:34px;height:34px;border-radius:10px;background:var(--brand);color:#FFFFFF;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+          ${icon("link", 17)}
+        </span>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <strong style="font-size:14px;">Instagram Account Not Connected (Clean Empty Mode)</strong>
+            <span class="badge">Meta OAuth Required</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--ink-secondary);margin-top:3px;line-height:1.5;">
+            Connect an Instagram Creator or Business profile via Official Meta Graph OAuth to import published grid posts, publish scheduled containers, receive comment/DM webhooks, and unlock 24h inbox replies — or create local drafts right now.
+          </p>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button type="button" class="btn btn-primary btn-sm" data-open-meta-setup>
+          ${icon("shield", 14)} Connect Instagram OAuth
+        </button>
+        <button type="button" class="btn btn-sm" data-switch-mode="sample">
+          Load Sample Data
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================================
+   1. OVERVIEW (/app/overview)
+   ============================================================================ */
+export function renderOverview() {
+  const b = store.bundle;
+  const ws = b.activeWorkspace;
+  const scheduled = b.posts.filter((p) => p.status === "SCHEDULED");
+  const published = b.posts.filter((p) => p.status === "PUBLISHED");
+  const failed = b.posts.filter((p) => p.status === "FAILED");
+  const totalViews = published.reduce((acc, p) => acc + (p.views || 0), 0);
+  const totalDms = b.automations.reduce((acc, a) => acc + (a.dms_sent || 0), 0);
+  const unreadThreads = b.threads.filter((t) => t.unread_count > 0);
 
   return `
-    <div>
+    <div class="stage-animate">
       <div class="page-head">
         <div>
-          <span class="kicker">OFFICIAL GRAPH PUBLISHING CONTAINER · @${escapeHtml(ws.ig_handle)}</span>
-          <h1 class="editorial-title">Create Studio</h1>
+          <h1 class="page-title">Workspace Overview</h1>
+          <p class="page-desc">@${escHtml(ws.ig_handle)} &middot; ${escHtml(ws.planSpec.name)} Plan &middot; ${escHtml(ws.timezone)} ${!b.isPlatformConnected ? `&middot; <span style="color:var(--warning);font-weight:600;">Not Connected</span>` : ""}</p>
         </div>
-        <div style="font-size:12.5px;color:var(--text-muted)">
-          AI Captions: <strong>${ws.planSpec.limits.aiCaptionGenerationsPerMonth === null ? "Unlimited" : `${ws.ai_captions_used}/${ws.planSpec.limits.aiCaptionGenerationsPerMonth}`}</strong> ·
-          Trial Reels: <strong>${ws.planSpec.limits.trialReelsPerMonth === null ? "Unlimited" : `${ws.trial_reels_used}/${ws.planSpec.limits.trialReelsPerMonth}`}</strong>
+        <div class="head-actions">
+          <button class="btn" id="btn-run-queue-worker" title="Publish the next queued post right now">
+            ${icon("refresh", 15)} Run Queue Worker
+          </button>
+          <a href="/app/automations" data-link class="btn">
+            ${icon("bolt", 15)} Workflows
+          </a>
+          <a href="/app/create" data-link class="btn btn-primary">
+            ${icon("plus", 15)} Create Post
+          </a>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,0.9fr);gap:26px;align-items:start">
-        <form class="card" id="full-create-form">
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">
-            <div class="field">
-              <label>Media Format</label>
-              <select class="select" id="cr-type">
-                ${["REEL", "CAROUSEL", "POST", "STORY"].map((t) => `<option value="${t}" ${createDraft.mediaType === t ? "selected" : ""}>${t}</option>`).join("")}
-              </select>
+      ${renderUnconnectedBanner()}
+
+      ${b.posts.length === 0 && b.automations.length === 0 ? `
+        <div class="card card-pad" style="margin-bottom:20px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div class="card-title">4-Step Studio Setup Checklist</div>
+              <div class="card-sub">Follow these steps when launching a brand-new Velora workspace with zero preloaded data</div>
             </div>
-            <div class="field">
-              <label>Cover Visual Palette</label>
-              <select class="select" id="cr-cover">
-                ${[["terracotta", "Terracotta Editorial"], ["cream", "Warm Cream Paper"], ["noir", "Obsidian Noir"], ["indigo", "Indigo Studio"], ["butter", "Butter & Periwinkle"], ["forest", "Forest Cutting Mat"], ["sky", "Studio Sky"], ["espresso", "Morning Espresso"]].map(([v, l]) => `<option value="${v}" ${createDraft.coverStyle === v ? "selected" : ""}>${l}</option>`).join("")}
-              </select>
+            <span class="badge badge-info">${b.isPlatformConnected ? "1 / 4 Complete" : "0 / 4 Complete"}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+            <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+              <div>
+                <span class="mono" style="font-size:11px;font-weight:700;color:var(--brand);">STEP 01</span>
+                <div style="font-weight:600;font-size:14px;margin:4px 0;">Connect Meta Graph OAuth</div>
+                <p style="font-size:12px;color:var(--ink-muted);">Link your Instagram Business/Creator account &amp; Messenger webhook callback.</p>
+              </div>
+              <button type="button" class="btn btn-sm ${b.isPlatformConnected ? "" : "btn-primary"}" data-open-meta-setup>${b.isPlatformConnected ? "Connected ✓" : "Connect Account"}</button>
+            </div>
+            <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+              <div>
+                <span class="mono" style="font-size:11px;font-weight:700;color:var(--brand);">STEP 02</span>
+                <div style="font-weight:600;font-size:14px;margin:4px 0;">Compose Your First Post</div>
+                <p style="font-size:12px;color:var(--ink-muted);">Upload any image/MP4, crop to 4:5 or 9:16, or generate a full post pack with AI.</p>
+              </div>
+              <a href="/app/create" data-link class="btn btn-sm">Open Composer &rarr;</a>
+            </div>
+            <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+              <div>
+                <span class="mono" style="font-size:11px;font-weight:700;color:var(--brand);">STEP 03</span>
+                <div style="font-weight:600;font-size:14px;margin:4px 0;">Activate Keyword DM Rule</div>
+                <p style="font-size:12px;color:var(--ink-muted);">Auto-send links on comments &amp; Story replies with public reply rotation.</p>
+              </div>
+              <a href="/app/automations" data-link class="btn btn-sm">Create Rule &rarr;</a>
+            </div>
+            <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+              <div>
+                <span class="mono" style="font-size:11px;font-weight:700;color:var(--brand);">STEP 04</span>
+                <div style="font-weight:600;font-size:14px;margin:4px 0;">Connect Claude / Cursor MCP</div>
+                <p style="font-size:12px;color:var(--ink-muted);">Point any MCP client at <code class="mono">/mcp</code> to run all 58 studio tools.</p>
+              </div>
+              <a href="/app/settings" data-link class="btn btn-sm">MCP Settings &rarr;</a>
             </div>
           </div>
+        </div>
+      ` : ""}
 
-          <div class="field">
-            <label>Post Title / Cover Safe-Zone Headline *</label>
-            <input class="input" id="cr-title" required value="${escapeHtml(createDraft.title)}" />
-          </div>
-
-          <div class="field">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <label style="margin:0">Caption (${createDraft.caption.length}/2,200 chars)</label>
-              <button type="button" class="btn btn-sm btn-accent" id="cr-ai-btn">✦ Generate with AI</button>
-            </div>
-            <textarea class="textarea" id="cr-caption" rows="5">${escapeHtml(createDraft.caption)}</textarea>
-          </div>
-
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">
-            <div class="field">
-              <label>First Comment (Auto-Posted)</label>
-              <input class="input" id="cr-first" value="${escapeHtml(createDraft.firstComment)}" placeholder="Influencer & Creator plans" />
-            </div>
-            <div class="field">
-              <label>Collaborator Handle (@collab)</label>
-              <input class="input" id="cr-collab" value="${escapeHtml(createDraft.collabHandle)}" placeholder="e.g. sofia.shots" />
+      ${failed.length ? `
+        <div class="card card-pad" style="margin-bottom:18px;background:var(--danger-soft);border-color:rgba(220,38,38,0.24);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${icon("alert", 18)}
+            <div style="font-size:13px;">
+              <strong>1 scheduled container requires attention:</strong> "${escHtml(failed[0].title)}" — ${escHtml(failed[0].error_reason || "Aspect ratio check failed")}
             </div>
           </div>
+          <button class="btn btn-sm" data-retry-post="${escHtml(failed[0].id)}">Re-queue Container</button>
+        </div>
+      ` : ""}
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">
-            <div class="field">
-              <label>Publish Date &amp; Time (${escapeHtml(ws.timezone)})</label>
-              <input class="input" type="datetime-local" id="cr-sched" value="${createDraft.scheduledLocal}" required />
+      <div class="kpi-grid">
+        <div class="card kpi-card">
+          <div class="kpi-top"><span>Total Post Views</span>${icon("eye", 15)}</div>
+          <div class="kpi-val">${fmtNum(totalViews)}</div>
+          <div class="kpi-foot"><span class="badge badge-success">+18.4%</span> across ${published.length} live posts</div>
+        </div>
+        <div class="card kpi-card">
+          <div class="kpi-top"><span>Scheduled in Queue</span>${icon("calendar", 15)}</div>
+          <div class="kpi-val">${scheduled.length}</div>
+          <div class="kpi-foot">${scheduled[0] ? `Next: ${formatShortDate(scheduled[0].scheduled_at)}` : "Queue clear"}</div>
+        </div>
+        <div class="card kpi-card">
+          <div class="kpi-top"><span>Automated DMs Sent</span>${icon("bolt", 15)}</div>
+          <div class="kpi-val">${fmtNum(totalDms)}</div>
+          <div class="kpi-foot">${b.automations.filter((a) => a.status === "active").length} active rules running</div>
+        </div>
+        <div class="card kpi-card">
+          <div class="kpi-top"><span>Priority Unread DMs</span>${icon("inbox", 15)}</div>
+          <div class="kpi-val">${unreadThreads.length}</div>
+          <div class="kpi-foot">${b.threads.length} open conversations in Inbox</div>
+        </div>
+      </div>
+
+      <div class="split-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Upcoming Publishing Queue</div>
+              <div class="card-sub">Auto-published by background worker at scheduled slot</div>
             </div>
-            <div class="field">
-              <label>⚡ Attach Comment-to-DM Automation</label>
-              <select class="select" id="cr-auto">
-                <option value="">— No automation —</option>
-                ${store.data.automations.map((a) => `<option value="${a.id}" ${createDraft.automationId === a.id ? "selected" : ""}>${escapeHtml(a.name)} [${a.keywords.join(", ")}]</option>`).join("")}
-              </select>
-            </div>
+            <a href="/app/calendar" data-link class="btn btn-sm btn-ghost">Calendar ${icon("arrowRight", 14)}</a>
           </div>
-
-          <label style="display:flex;align-items:center;gap:8px;padding:12px;border-radius:12px;background:var(--bg-subtle);cursor:pointer;font-weight:600;margin-bottom:16px">
-            <input type="checkbox" id="cr-trial" ${createDraft.isTrialReel ? "checked" : ""} />
-            Publish as Trial Reel (test on cold non-followers before followers)
-          </label>
-
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button type="submit" class="btn btn-primary btn-lg">+ Schedule to Calendar &rarr;</button>
-            <button type="button" class="btn btn-lg" id="cr-save-draft">Save as Draft</button>
-          </div>
-        </form>
-
-        <div style="text-align:center">
-          <div class="kicker" style="margin-bottom:10px">◉ LIVE INSTAGRAM CONTAINER PREVIEW</div>
-          <div class="iphone-frame">
-            <div class="iphone-notch"></div>
-            <div class="iphone-screen">
-              <div class="cover-art cover-${createDraft.coverStyle}" style="flex:1;justify-content:space-between;text-align:left;padding:16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
-                  <span>@${escapeHtml(ws.ig_handle)}${createDraft.collabHandle ? ` & @${escapeHtml(createDraft.collabHandle)}` : ""}</span>
-                  <span class="mono" style="font-size:10px;background:rgba(0,0,0,0.5);padding:2px 7px;border-radius:99px">${createDraft.mediaType}</span>
-                </div>
-                <div style="text-align:center;margin:28px 0">
-                  <div style="font-family:'Fraunces',Georgia,serif;font-size:21px;line-height:1.15">${escapeHtml(createDraft.title.toUpperCase())}</div>
-                </div>
-                <div>
-                  <div style="font-size:11.5px;opacity:0.92;margin-bottom:10px">${escapeHtml(createDraft.caption.slice(0, 115))}${createDraft.caption.length > 115 ? "… more" : ""}</div>
-                  <div style="display:flex;justify-content:space-between;font-size:14px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.2)">
-                    <span>♡  ✉  ↗</span>
-                    <span>★</span>
+          <div>
+            ${b.posts.filter((p) => p.status !== "PUBLISHED").length === 0 ? `
+              <div style="padding:36px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;">
+                <span style="color:var(--ink-muted);">${icon("calendar", 24)}</span>
+                <div style="font-weight:600;font-size:14px;">Publishing Queue is Empty</div>
+                <p style="font-size:12.5px;color:var(--ink-muted);max-width:340px;">No Reels, Carousels, or Photos are queued yet. Schedule your first post or load demo data to test auto-publishing.</p>
+                <a href="/app/create" data-link class="btn btn-sm btn-primary">${icon("plus", 14)} Schedule First Post</a>
+              </div>
+            ` : b.posts.filter((p) => p.status !== "PUBLISHED").slice(0, 5).map((p, idx) => {
+              const vis = getPostVisualUrl(p, idx);
+              return `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border-subtle);">
+                  <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+                    <div style="width:44px;height:55px;border-radius:8px;flex-shrink:0;overflow:hidden;border:1px solid var(--border);background:var(--bg-subtle);">
+                      ${vis.startsWith("data:video")
+                        ? `<video src="${escHtml(vis)}" muted style="width:100%;height:100%;object-fit:cover;"></video>`
+                        : `<img src="${escHtml(vis)}" alt="" style="width:100%;height:100%;object-fit:cover;" />`}
+                    </div>
+                    <div style="min-width:0;">
+                      <div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.title)}</div>
+                      <div style="font-size:12px;color:var(--ink-muted);display:flex;align-items:center;gap:8px;margin-top:2px;" class="tabular">
+                        <span>${escHtml(p.media_type)}</span>
+                        <span>&middot;</span>
+                        <span>${formatShortDate(p.scheduled_at)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                    ${statusBadge(p.status)}
+                    <button class="btn btn-sm" data-inspect-post="${escHtml(p.id)}">Inspect</button>
                   </div>
                 </div>
-              </div>
-            </div>
+              `;
+            }).join("")}
           </div>
         </div>
-      </div>
-    </div>
-  `;
-}
 
-export function openPostComposerModal(prefillDateIso = "") {
-  const modalRoot = document.getElementById("modal-root");
-  const ws = store.data.activeWorkspace;
-  const defaultIso = prefillDateIso ? `${prefillDateIso}T14:00` : new Date(Date.now() + 86400000).toISOString().slice(0, 16);
-
-  modalRoot.innerHTML = `
-    <div class="modal-backdrop" id="composer-backdrop">
-      <div class="modal-card" style="max-width:780px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div>
-            <span class="kicker">QUICK COMPOSER · @${escapeHtml(ws.ig_handle)}</span>
-            <h2 class="editorial-title" style="font-size:28px">Schedule New Post</h2>
-          </div>
-          <button class="btn btn-sm" id="close-composer">✕ Close</button>
-        </div>
-
-        <form id="schedule-post-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px">
-          <div>
-            <div class="field">
-              <label>Media Format</label>
-              <select class="select" name="mediaType">
-                <option value="REEL">REEL (9:16 Vertical Video)</option>
-                <option value="CAROUSEL">CAROUSEL (Multi-Slide 4:5)</option>
-                <option value="POST">POST (Single Feed Photo)</option>
-                <option value="STORY">STORY (24h Ephemeral Frame)</option>
-              </select>
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Active DM Workflows</div>
+              <a href="/app/automations" data-link class="btn btn-sm btn-ghost">Manage ${icon("arrowRight", 14)}</a>
             </div>
-            <div class="field">
-              <label>Post Title / Cover Hook *</label>
-              <input class="input" name="title" required value="How Official API Auto-DMs Triple Link Clicks" />
-            </div>
-            <div class="field">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <label style="margin:0">Caption (${ws.planSpec.limits.aiCaptionGenerationsPerMonth === null ? "Unlimited AI" : `${ws.ai_captions_used}/${ws.planSpec.limits.aiCaptionGenerationsPerMonth} AI used`})</label>
-                <button type="button" class="btn btn-sm btn-accent" id="btn-composer-ai">✦ Generate with AI</button>
-              </div>
-              <textarea class="textarea" name="caption" id="comp-caption" style="margin-top:6px" rows="5">Stop putting "link in bio" on high-retention Reels.\n\nComment GUIDE below and my official Instagram API workflow will send the resource bundle straight to your DMs in under 2 seconds! ↓</textarea>
-            </div>
-            <div class="field">
-              <label>First Comment (Auto-Posted after publish)</label>
-              <input class="input" name="firstComment" placeholder="Optional first comment (Influencer & Creator plans)" />
-            </div>
-          </div>
-
-          <div>
-            <div class="field">
-              <label>Scheduled Date &amp; Time (${escapeHtml(ws.timezone)})</label>
-              <input class="input" type="datetime-local" name="scheduledLocal" value="${defaultIso}" required />
-            </div>
-            <div class="field">
-              <label>Cover Visual Palette</label>
-              <select class="select" name="coverStyle">
-                <option value="terracotta">Terracotta Editorial</option>
-                <option value="cream">Warm Cream Paper</option>
-                <option value="noir">Obsidian Noir</option>
-                <option value="indigo">Indigo Studio</option>
-                <option value="butter">Butter &amp; Periwinkle</option>
-                <option value="forest">Forest Cutting Mat</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Collaborator (@collab)</label>
-              <input class="input" name="collabHandle" placeholder="Optional co-author handle" />
-            </div>
-            <div class="field">
-              <label>⚡ Attach Comment-to-DM Automation</label>
-              <select class="select" name="automationId">
-                <option value="">— No automation attached —</option>
-                ${store.data.automations.map((a) => `<option value="${a.id}">${escapeHtml(a.name)} [${a.keywords.join(", ")}]</option>`).join("")}
-              </select>
-            </div>
-            <label style="display:flex;align-items:center;gap:8px;padding:12px;border-radius:12px;background:var(--bg-subtle);cursor:pointer;font-weight:600;margin-bottom:16px">
-              <input type="checkbox" name="isTrialReel" />
-              Publish as Trial Reel (test with cold non-followers first)
-            </label>
-            <button type="submit" class="btn btn-primary btn-lg" style="width:100%">+ Schedule Post to Calendar &rarr;</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-
-  modalRoot.querySelector("#close-composer").onclick = () => { modalRoot.innerHTML = ""; };
-  modalRoot.querySelector("#btn-composer-ai").onclick = async () => {
-    try {
-      const title = modalRoot.querySelector("[name='title']").value;
-      const res = await apiRequest("/api/ai/captions", { method: "POST", body: JSON.stringify({ workspaceId: ws.id, topic: title, enforceQuota: true }) });
-      if (res.bundle) updateBundle(res.bundle);
-      const inp = document.getElementById("comp-caption");
-      if (inp) inp.value = res.captions[0].body;
-      toast("AI generated hook-checked caption!");
-    } catch (err) { toast(err.message, "error"); }
-  };
-  modalRoot.querySelector("#schedule-post-form").onsubmit = async (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    try {
-      const bundle = await apiRequest("/api/posts", {
-        method: "POST",
-        body: JSON.stringify({
-          workspaceId: ws.id,
-          mediaType: fd.get("mediaType"),
-          title: fd.get("title"),
-          caption: fd.get("caption"),
-          firstComment: fd.get("firstComment"),
-          collabHandle: fd.get("collabHandle"),
-          coverStyle: fd.get("coverStyle"),
-          automationId: fd.get("automationId") || null,
-          isTrialReel: fd.get("isTrialReel") === "on",
-          scheduledAt: new Date(fd.get("scheduledLocal")).toISOString()
-        })
-      });
-      modalRoot.innerHTML = "";
-      updateBundle(bundle);
-      toast("Scheduled post added to Calendar & Grid Planner!");
-    } catch (err) { toast(err.message, "error"); }
-  };
-}
-
-export function openPostDetailsModal(postId) {
-  const post = store.data.posts.find((p) => p.id === postId);
-  if (!post) return;
-  const ws = store.data.activeWorkspace;
-  const modalRoot = document.getElementById("modal-root");
-  const attached = store.data.automations.find((a) => a.id === post.automation_id);
-
-  modalRoot.innerHTML = `
-    <div class="modal-backdrop">
-      <div class="modal-card" style="max-width:880px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span class="pill-badge">${post.media_type}</span>
-            <h3 style="margin:0;font-size:20px">${post.media_type} Details</h3>
-            <span class="mono" style="font-size:11px;padding:4px 9px;border-radius:99px;background:var(--bg-subtle)">${post.status}</span>
-          </div>
-          <button class="btn btn-sm" id="close-detail-modal">✕</button>
-        </div>
-
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px;align-items:start">
-          <div class="iphone-frame">
-            <div class="iphone-notch"></div>
-            <div class="iphone-screen">
-              <div class="cover-art cover-${post.cover_style}" style="flex:1;justify-content:space-between;padding:16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
-                  <span>@${escapeHtml(ws.ig_handle)}${post.collab_handle ? ` & @${escapeHtml(post.collab_handle)}` : ""}</span>
-                  <span class="mono" style="font-size:10px;background:rgba(0,0,0,0.45);padding:3px 7px;border-radius:99px">${post.media_type}</span>
+            <div>
+              ${b.automations.length === 0 ? `
+                <div style="padding:22px 18px;text-align:center;font-size:12.5px;color:var(--ink-muted);">
+                  No keyword workflows active yet. <a href="/app/automations" data-link style="color:var(--brand);font-weight:600;">Create first rule &rarr;</a>
                 </div>
-                <div style="text-align:center;margin:28px 0">
-                  <div style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,0.22);display:inline-grid;place-items:center;font-size:18px;margin-bottom:10px">▶</div>
-                  <div style="font-size:18px;font-family:'Fraunces',Georgia,serif;line-height:1.15">${escapeHtml(post.cover_label || post.title)}</div>
-                </div>
-                <div>
-                  <div style="font-size:11.5px;opacity:0.9;margin-bottom:10px">${escapeHtml(post.caption.slice(0, 95))}…</div>
-                  <div style="display:flex;justify-content:space-between;font-size:15px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.2)">
-                    <span>♡  ✉  ↗</span>
-                    <span>★</span>
+              ` : b.automations.slice(0, 3).map((a) => {
+                const ctr = a.dms_sent ? ((a.link_taps / a.dms_sent) * 100).toFixed(1) : "0.0";
+                return `
+                  <div style="padding:12px 18px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                    <div style="min-width:0;">
+                      <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(a.name)}</div>
+                      <div style="font-size:12px;color:var(--ink-muted);margin-top:2px;">
+                        Keywords: ${a.keywords.map((k) => `<code class="mono">${escHtml(k)}</code>`).join(", ") || "AI Context"}
+                      </div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;" class="tabular">
+                      <div style="font-weight:700;font-size:13px;">${fmtNum(a.dms_sent)} DMs</div>
+                      <div style="font-size:11px;color:var(--success);">${ctr}% CTR</div>
+                    </div>
                   </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Recent Priority Messages</div>
+              <a href="/app/inbox" data-link class="btn btn-sm btn-ghost">Open Inbox ${icon("arrowRight", 14)}</a>
+            </div>
+            <div>
+              ${b.threads.length === 0 ? `
+                <div style="padding:22px 18px;text-align:center;font-size:12.5px;color:var(--ink-muted);">
+                  No incoming Instagram DMs yet. Connect Messenger Webhook to receive live conversations.
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            ${post.status === "FAILED" ? `
-              <div style="background:rgba(220,38,38,0.12);border:1px solid #DC2626;padding:12px;border-radius:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:8px">
-                <span style="font-size:12.5px;color:#DC2626;font-weight:600">! ${escapeHtml(post.error_reason)}</span>
-                <button class="btn btn-sm btn-accent" id="btn-retry-post">Retry Container</button>
-              </div>
-            ` : ""}
-
-            <div class="field">
-              <label>Scheduled Timestamp</label>
-              <input class="input" type="datetime-local" id="det-sched" value="${new Date(post.scheduled_at).toISOString().slice(0, 16)}" />
-            </div>
-            <div class="field">
-              <label>Caption</label>
-              <textarea class="textarea" id="det-cap" rows="4">${escapeHtml(post.caption)}</textarea>
-            </div>
-            <div class="field">
-              <label>Collaborator Handle (@collab)</label>
-              <input class="input" id="det-collab" value="${escapeHtml(post.collab_handle || "")}" placeholder="e.g. sofia.shots" />
-            </div>
-            <div class="field">
-              <label>⚡ Automation Attached (${attached ? escapeHtml(attached.name) : "None"})</label>
-              <select class="select" id="det-auto">
-                <option value="">— None —</option>
-                ${store.data.automations.map((a) => `<option value="${a.id}" ${a.id === post.automation_id ? "selected" : ""}>⚡ ${escapeHtml(a.name)} (${a.dms_sent} DMs sent)</option>`).join("")}
-              </select>
-            </div>
-
-            ${post.status === "PUBLISHED" ? `
-              <div style="background:var(--bg-subtle);padding:12px;border-radius:12px;margin-bottom:14px;display:flex;justify-content:space-between;font-size:12.5px;font-weight:700">
-                <span>Views: ${post.views.toLocaleString()}</span>
-                <span>Reach: ${post.reach.toLocaleString()}</span>
-                <span>Saves: ${post.saves.toLocaleString()}</span>
-              </div>
-            ` : ""}
-
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-primary" id="btn-save-detail">Save Changes</button>
-              ${post.status !== "PUBLISHED" ? `<button class="btn btn-accent" id="btn-pub-now">Publish Now (Simulate API)</button>` : ""}
-              ${post.is_trial_reel && !post.trial_graduated ? `<button class="btn" id="btn-grad-trial">↗ Graduate Trial Reel</button>` : ""}
-              <button class="btn btn-danger" id="btn-del-post">Delete</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  modalRoot.querySelector("#close-detail-modal").onclick = () => { modalRoot.innerHTML = ""; };
-  const retryBtn = modalRoot.querySelector("#btn-retry-post");
-  if (retryBtn) retryBtn.onclick = async () => { const b = await apiRequest("/api/posts/update", { method: "POST", body: JSON.stringify({ postId: post.id, action: "retry" }) }); modalRoot.innerHTML = ""; updateBundle(b); toast("Re-queued container!"); };
-  const gradBtn = modalRoot.querySelector("#btn-grad-trial");
-  if (gradBtn) gradBtn.onclick = async () => { const b = await apiRequest("/api/posts/update", { method: "POST", body: JSON.stringify({ postId: post.id, action: "graduate_trial" }) }); modalRoot.innerHTML = ""; updateBundle(b); toast("Graduated Trial Reel!"); };
-  modalRoot.querySelector("#btn-save-detail").onclick = async () => {
-    const b = await apiRequest("/api/posts/update", {
-      method: "POST",
-      body: JSON.stringify({ postId: post.id, caption: modalRoot.querySelector("#det-cap").value, collabHandle: modalRoot.querySelector("#det-collab").value, scheduledAt: new Date(modalRoot.querySelector("#det-sched").value).toISOString(), automationId: modalRoot.querySelector("#det-auto").value || null })
-    });
-    modalRoot.innerHTML = "";
-    updateBundle(b);
-    toast("Updated post details!");
-  };
-  const pubBtn = modalRoot.querySelector("#btn-pub-now");
-  if (pubBtn) pubBtn.onclick = async () => { const b = await apiRequest("/api/posts/update", { method: "POST", body: JSON.stringify({ postId: post.id, action: "publish_now" }) }); modalRoot.innerHTML = ""; updateBundle(b); toast("Published live!"); };
-  modalRoot.querySelector("#btn-del-post").onclick = async () => { const b = await apiRequest("/api/posts/update", { method: "POST", body: JSON.stringify({ postId: post.id, action: "delete" }) }); modalRoot.innerHTML = ""; updateBundle(b); toast("Deleted post."); };
-}
-
-export function renderSchedulerView() {
-  const year = store.calYear;
-  const month = store.calMonth;
-  const filteredPosts = store.data.posts.filter((p) => {
-    if (store.calStatusFilter === "ALL") return true;
-    if (store.calStatusFilter === "TRIAL") return Boolean(p.is_trial_reel);
-    return p.status === store.calStatusFilter;
-  });
-
-  let displayCells = [];
-  let rangeHeading = `${MONTHS[month]} ${year}`;
-
-  if (store.calView === "week") {
-    const baseSun = new Date(Date.UTC(2026, 9, 18 + store.calWeekOffset * 7));
-    for (let i = 0; i < 7; i++) {
-      const dt = new Date(baseSun.getTime() + i * 86400000);
-      const y = dt.getUTCFullYear();
-      const m = dt.getUTCMonth();
-      const d = dt.getUTCDate();
-      const datePrefix = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      displayCells.push({ day: d, monthShort: MONTHS[m].slice(0, 3), datePrefix, posts: filteredPosts.filter((p) => p.scheduled_at.startsWith(datePrefix)), isToday: y === 2026 && m === 9 && d === 21 });
-    }
-    rangeHeading = `Week of ${displayCells[0].monthShort} ${displayCells[0].day} – ${displayCells[6].monthShort} ${displayCells[6].day}, ${baseSun.getUTCFullYear()}`;
-  } else {
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    for (let i = 0; i < firstDay; i++) displayCells.push({ day: null });
-    for (let d = 1; d <= daysInMonth; d++) {
-      const datePrefix = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      displayCells.push({ day: d, datePrefix, posts: filteredPosts.filter((p) => p.scheduled_at.startsWith(datePrefix)), isToday: year === 2026 && month === 9 && d === 21 });
-    }
-    while (displayCells.length % 7 !== 0) displayCells.push({ day: null });
-  }
-
-  return `
-    <div>
-      <div class="page-head">
-        <div>
-          <span class="kicker">PLAN · SCHEDULE · SHIP</span>
-          <h1 class="editorial-title">Scheduler</h1>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" data-app-nav="create">Open Full Create Studio</button>
-          <button class="btn btn-primary btn-lg" id="btn-open-composer">+ Schedule post</button>
-        </div>
-      </div>
-
-      <div class="cal-toolbar">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-sm" id="cal-prev">&lt;</button>
-          <button class="btn btn-sm" id="cal-today">TODAY</button>
-          <button class="btn btn-sm" id="cal-next">&gt;</button>
-          <strong style="font-size:16px;margin-left:6px">${rangeHeading}</strong>
-        </div>
-
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div style="display:flex;gap:4px;flex-wrap:wrap">
-            ${["ALL", "SCHEDULED", "PUBLISHED", "DRAFT", "FAILED", "TRIAL"].map((st) => `<button class="btn btn-sm ${store.calStatusFilter === st ? "btn-accent" : ""}" style="padding:4px 9px;font-size:11px" data-cal-status="${st}">${st}</button>`).join("")}
-          </div>
-          <div class="mode-switch">
-            <button data-cal-view="week" class="${store.calView === "week" ? "active" : ""}">week</button>
-            <button data-cal-view="month" class="${store.calView === "month" ? "active" : ""}">month</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="cal-grid">
-        ${DOW.map((d) => `<div class="cal-dow">${d}</div>`).join("")}
-        ${displayCells.map((c) => c.day === null
-          ? `<div class="cal-cell is-muted"></div>`
-          : `
-            <div class="cal-cell ${c.isToday ? "is-today" : ""}" style="min-height:${store.calView === "week" ? "260px" : "126px"}">
-              <div class="cal-day-top">
-                <span class="${c.isToday ? "today-num" : ""}">${c.day}</span>
-                <button class="cal-add-btn" title="Schedule on ${c.datePrefix}" data-quick-add="${c.datePrefix}">+</button>
-              </div>
-              ${c.posts.map((p) => `
-                <div class="post-chip type-${p.media_type} status-${p.status}" data-open-post="${p.id}">
-                  <div class="chip-row">
-                    <span class="mono" style="font-size:9.5px">${p.media_type}${p.status === "DRAFT" ? "·DFT" : ""}</span>
-                    <span class="mono" style="font-size:9.5px">${new Date(p.scheduled_at).toISOString().slice(11, 16)}</span>
+              ` : b.threads.slice(0, 3).map((t) => `
+                <a href="/app/inbox" data-link style="padding:11px 18px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                    <span class="ws-avatar" style="background:${escHtml(t.avatar_color || "#0F172A")};">${escHtml(t.participant_handle[0].toUpperCase())}</span>
+                    <div style="min-width:0;">
+                      <div style="font-weight:600;font-size:13px;">@${escHtml(t.participant_handle)}</div>
+                      <div style="font-size:12px;color:var(--ink-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(t.last_message_preview)}</div>
+                    </div>
                   </div>
-                  <div class="chip-title">${p.status === "FAILED" ? "! " : p.automation_id ? "⚡ " : ""}${escapeHtml(p.title)}</div>
-                </div>
+                  ${t.unread_count ? `<span class="nav-count is-alert">${t.unread_count}</span>` : `<span class="badge">Open</span>`}
+                </a>
               `).join("")}
             </div>
-          `).join("")}
+          </div>
+        </div>
       </div>
     </div>
   `;
 }
 
-export function renderGridPlannerView() {
-  const ws = store.data.activeWorkspace;
-  const crop = ws.grid_crop || "4:5";
-  const aspectCss = crop === "1:1" ? "1/1" : crop === "4:5" ? "4/5" : "3/4";
-  const scheduled = store.data.posts.filter((p) => p.status !== "PUBLISHED");
-  const allPublished = store.data.posts.filter((p) => p.status === "PUBLISHED");
-  const published = store.gridShowAll ? allPublished : allPublished.slice(0, 6);
+/* ============================================================================
+   2. CREATE POST COMPOSER (/app/create) — Upload Progress, Resize/Crop & AI Studio
+   ============================================================================ */
+export function renderCropStudioModal() {
+  const cs = store.ui.cropStudio;
+  if (!cs || !cs.open || !cs.srcUrl) return "";
+  return `
+    <div class="crop-modal-backdrop" id="crop-modal-backdrop">
+      <div class="crop-modal-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <div>
+            <h3 style="font-size:17px;">Resize, Aspect-Ratio &amp; Crop Studio</h3>
+            <p style="font-size:12.5px;color:var(--ink-muted);">Source resolution: ${cs.origW}&times;${cs.origH}px &middot; Exports crisp 1080px PNG straight to SQLite</p>
+          </div>
+          <button type="button" class="icon-btn" id="btn-close-crop-modal">${icon("x", 17)}</button>
+        </div>
+
+        <div class="split-2" style="align-items:center;">
+          <div class="crop-stage-wrap">
+            <img id="crop-live-preview-img" src="${escHtml(cs.previewUrl || cs.srcUrl)}" alt="Live crop preview" style="max-height:360px;max-width:100%;border-radius:10px;box-shadow:var(--shadow-md);" />
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="field">
+              <label class="field-label">Target Instagram Ratio</label>
+              <div class="segmented" style="width:100%;display:grid;grid-template-columns:repeat(4,1fr);">
+                ${[
+                  ["4:5", "4:5 Feed"],
+                  ["9:16", "9:16 Reel"],
+                  ["1:1", "1:1 Square"],
+                  ["1.91:1", "16:9 Wide"]
+                ].map(([val, label]) => `
+                  <button type="button" class="seg-btn ${cs.aspect === val ? "is-active" : ""}" data-crop-aspect="${val}">${label}</button>
+                `).join("")}
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Framing Mode</label>
+              <div class="segmented" style="width:100%;display:grid;grid-template-columns:1fr 1fr;">
+                <button type="button" class="seg-btn ${cs.fitMode === "contain" ? "is-active" : ""}" data-crop-fit="contain">Smart Fit (No Cut-Off)</button>
+                <button type="button" class="seg-btn ${cs.fitMode === "cover" ? "is-active" : ""}" data-crop-fit="cover">Fill &amp; Crop</button>
+              </div>
+            </div>
+
+            ${cs.fitMode === "contain" ? `
+              <div class="field">
+                <label class="field-label">Studio Matte Backdrop</label>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  ${[
+                    ["blur", "Blurred Glass"],
+                    ["white", "Pearl White"],
+                    ["stone", "Warm Stone"],
+                    ["slate", "Deep Slate"]
+                  ].map(([id, name]) => `
+                    <button type="button" class="btn btn-sm ${cs.bgStyle === id ? "btn-primary" : ""}" data-crop-bg="${id}">${name}</button>
+                  `).join("")}
+                </div>
+              </div>
+            ` : ""}
+
+            <div class="field">
+              <div class="field-label">
+                <span>Zoom Scale</span>
+                <span class="mono" id="crop-zoom-val">${cs.zoom}%</span>
+              </div>
+              <input type="range" class="v-range" id="crop-zoom-slider" min="70" max="220" value="${cs.zoom}" />
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="field">
+                <div class="field-label"><span>Horizontal Pan (X)</span><span class="mono" id="crop-panx-val">${cs.panX}%</span></div>
+                <input type="range" class="v-range" id="crop-panx-slider" min="-60" max="60" value="${cs.panX}" />
+              </div>
+              <div class="field">
+                <div class="field-label"><span>Vertical Pan (Y)</span><span class="mono" id="crop-pany-val">${cs.panY}%</span></div>
+                <input type="range" class="v-range" id="crop-pany-slider" min="-60" max="60" value="${cs.panY}" />
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid var(--border);">
+              <button type="button" class="btn btn-sm" id="btn-reset-crop">Reset Framing</button>
+              <button type="button" class="btn btn-primary" id="btn-apply-crop">${icon("check", 15)} Apply High-Res Crop</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function renderCreatePost() {
+  const b = store.bundle;
+  const ws = b.activeWorkspace;
+  const ui = store.ui;
+  const isEmpty = b.dataMode === "empty";
+  const defaultSched = ui.composerScheduledDate || new Date(Date.now() + 3600000 * 5).toISOString().slice(0, 16);
+  const captionVal = isEmpty
+    ? (ui.composerCaption || "")
+    : (ui.composerCaption || "Most teams overcomplicate design tokens before shipping their very first component library.\n\nComment \"REPO\" below and I will send the complete Figma token starter file straight to your DMs.");
+  const tagsVal = isEmpty
+    ? (ui.composerHashtags || "")
+    : (ui.composerHashtags || "#designsystems #uidesign #figmatips #productdesign");
+  const fullText = `${captionVal}${tagsVal ? `\n\n${tagsVal}` : ""}`;
+  const activeMediaUrl = isEmpty ? (ui.composerMediaUrl || "") : (ui.composerMediaUrl || "/media/post-01.svg");
+  const isVideo = activeMediaUrl.startsWith("data:video");
+  const isContain = ui.composerMediaFit === "contain";
+  const aspectClass = ui.composerAspect === "9:16" || ui.composerMediaType === "REEL" && ui.composerPreviewTab === "reel"
+    ? "is-reel"
+    : ui.composerAspect === "1:1"
+      ? "is-square"
+      : ui.composerAspect === "1.91:1"
+        ? "is-landscape"
+        : "";
 
   return `
-    <div>
+    <div class="stage-animate">
       <div class="page-head">
         <div>
-          <span class="kicker">VISUAL FEED · DRAG OR CLICK TO SWAP SCHEDULE TIMES</span>
-          <h1 class="editorial-title">Grid Planner</h1>
+          <h1 class="page-title">Create Post</h1>
+          <p class="page-desc">Upload media with smart aspect-ratio fitting, co-write hooks &amp; captions with AI, and inspect your live Instagram preview.</p>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <div class="mode-switch">
-            ${["1:1", "4:5", "3:4"].map((r) => `<button data-grid-crop="${r}" class="${crop === r ? "active" : ""}">${r}</button>`).join("")}
+        <div class="head-actions">
+          <div class="segmented">
+            ${["POST", "REEL", "CAROUSEL", "STORY"].map((t) => `
+              <button type="button" class="seg-btn ${ui.composerMediaType === t ? "is-active" : ""}" data-composer-type="${t}">${t}</button>
+            `).join("")}
           </div>
-          <button class="btn btn-primary" id="btn-grid-new-post">+ Schedule Post</button>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:24px;align-items:start">
-        <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:12px">
-              <div style="width:52px;height:52px;border-radius:50%;background:${ws.avatar_color};color:#FFF;display:grid;place-items:center;font-weight:800;font-size:18px">${ws.ig_handle.slice(0, 2).toUpperCase()}</div>
-              <div>
-                <div style="font-weight:800;font-size:16px">@${escapeHtml(ws.ig_handle)}</div>
-                <div style="font-size:12.5px;color:var(--text-muted)">${ws.followers_count.toLocaleString()} followers · Drag tiles OR click <code>⇄ Swap</code> on any two planned posts!</div>
+      ${renderUnconnectedBanner()}
+
+      <div class="composer-layout">
+        <div style="display:flex;flex-direction:column;gap:18px;min-width:0;">
+          <!-- PANEL A: AI POST CO-PILOT & VISUAL COVER GENERATOR -->
+          <div class="card card-pad" style="background:var(--bg-surface);border-color:var(--brand-border);display:flex;flex-direction:column;gap:13px;">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="width:28px;height:28px;border-radius:8px;background:var(--brand-soft);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;">${icon("wand", 15)}</span>
+                <div>
+                  <div style="font-weight:700;font-size:14px;">AI Post Co-Pilot &amp; Visual Card Studio</div>
+                  <div style="font-size:12px;color:var(--ink-muted);">Generate scored hooks, full structured captions, safe hashtags, first comment &amp; custom 1080&times;1350 cover art</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm" id="btn-generate-ai-visual">
+                ${icon("image", 14)} Generate AI Cover Image
+              </button>
+            </div>
+
+            <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 150px 165px auto;gap:8px;align-items:end;">
+              <div class="field">
+                <label class="field-label">Post Topic or Raw Idea</label>
+                <input class="input" id="ai-topic-input" value="${escHtml(ui.aiTopic || ui.composerTitle || "Design Tokens Starter Breakdown")}" placeholder="e.g., How we cut SaaS onboarding drop-off by 42%..." />
+              </div>
+              <div class="field">
+                <label class="field-label">Voice &amp; Tone</label>
+                <select class="select" id="ai-tone-select">
+                  ${["Editorial", "Contrarian", "Founder Story", "Tactical Guide"].map((t) => `
+                    <option value="${t}" ${ui.aiTone === t ? "selected" : ""}>${t}</option>
+                  `).join("")}
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Primary Goal</label>
+                <select class="select" id="ai-goal-select">
+                  <option value="dm_keyword" ${ui.aiGoal === "dm_keyword" ? "selected" : ""}>Drive DM Keyword</option>
+                  <option value="saves" ${ui.aiGoal === "saves" ? "selected" : ""}>Maximize Saves</option>
+                  <option value="reach" ${ui.aiGoal === "reach" ? "selected" : ""}>Non-Follower Reach</option>
+                  <option value="launch" ${ui.aiGoal === "launch" ? "selected" : ""}>Product Launch</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-generate-ai-pack">
+                ${icon("wand", 14)} Generate Full Post
+              </button>
+            </div>
+
+            ${ui.aiPack ? `
+              <div class="pane-crossfade" style="padding:12px 14px;border-radius:10px;background:var(--bg-page);border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+                  <strong>AI Hook Alternatives (Click any hook to replace your opening line)</strong>
+                  <span class="badge badge-success">Optimal Slot: ${escHtml(ui.aiPack.bestSlot)}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;">
+                  ${(ui.aiPack.hooks || []).map((h) => `
+                    <button type="button" class="card card-pad" data-apply-ai-hook="${escHtml(h.text)}" style="padding:10px 12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:5px;">
+                      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--brand);font-weight:700;">
+                        <span>${escHtml(h.label)}</span>
+                        <span>Score ${h.score}/99</span>
+                      </div>
+                      <div style="font-size:12.5px;color:var(--ink-primary);line-height:1.4;">"${escHtml(h.text)}"</div>
+                    </button>
+                  `).join("")}
+                </div>
+              </div>
+            ` : ""}
+          </div>
+
+          <!-- PANEL B: MEDIA UPLOAD + PROGRESS + RESIZE/CROP STUDIO + FORM -->
+          <form id="form-create-post" class="card card-pad" style="display:flex;flex-direction:column;gap:16px;">
+            <div>
+              <div class="field-label" style="margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span>Media Asset &amp; Aspect Framing</span>
+                  ${ui.composerMediaDims ? `<span class="badge badge-info">${escHtml(ui.composerMediaDims)}</span>` : ""}
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  ${!isVideo ? `
+                    <button type="button" class="btn btn-sm btn-primary" id="btn-open-crop-studio">
+                      ${icon("sliders", 13)} Resize &amp; Crop Studio
+                    </button>
+                  ` : ""}
+                  ${ui.composerMediaUrl ? `<button type="button" class="btn btn-sm btn-ghost" id="btn-clear-media">Reset Media</button>` : ""}
+                </div>
+              </div>
+
+              <!-- Live Animated Upload Progress Bar Container -->
+              <div id="composer-upload-progress-slot">
+                ${ui.uploadProgress?.active ? `
+                  <div class="upload-progress-card" style="margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--brand);">
+                      <span>${escHtml(ui.uploadProgress.label || "Uploading media...")}</span>
+                      <span class="mono">${ui.uploadProgress.pct}%</span>
+                    </div>
+                    <div class="upload-progress-track">
+                      <div class="upload-progress-fill" style="width:${ui.uploadProgress.pct}%;"></div>
+                    </div>
+                  </div>
+                ` : ""}
+              </div>
+
+              <label class="dropzone" id="composer-dropzone" for="composer-file-input" style="display:block;">
+                <input type="file" id="composer-file-input" accept="image/*,video/*" multiple style="display:none;" />
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                  ${icon("upload", 22)}
+                  <div style="font-weight:600;font-size:13.5px;">Drop screenshots, photos, or MP4 videos here — or click to browse</div>
+                  <div style="font-size:12px;color:var(--ink-muted);">Wide screenshots automatically enable <strong>Smart Fit</strong> so zero text gets cut off &middot; Full interactive crop tool included</div>
+                </div>
+              </label>
+
+              <!-- Quick Inline Aspect Ratio & Fit Mode Bar -->
+              <div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--bg-subtle);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span style="font-size:12px;font-weight:600;color:var(--ink-secondary);">Frame Ratio:</span>
+                  <div class="segmented">
+                    ${[
+                      ["4:5", "4:5 Feed"],
+                      ["9:16", "9:16 Reel"],
+                      ["1:1", "1:1 Square"],
+                      ["1.91:1", "Landscape"]
+                    ].map(([val, lbl]) => `
+                      <button type="button" class="seg-btn ${ui.composerAspect === val ? "is-active" : ""}" data-quick-aspect="${val}">${lbl}</button>
+                    `).join("")}
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:12px;font-weight:600;color:var(--ink-secondary);">Image Fit:</span>
+                  <div class="segmented">
+                    <button type="button" class="seg-btn ${isContain ? "is-active" : ""}" data-quick-fit="contain" title="Shows entire screenshot cleanly with blurred studio backdrop">Smart Fit</button>
+                    <button type="button" class="seg-btn ${!isContain ? "is-active" : ""}" data-quick-fit="cover" title="Fills entire frame edge-to-edge">Fill Frame</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Studio Visual Presets + Uploaded Assets Strip -->
+              <div style="margin-top:10px;display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:4px;">
+                <span style="font-size:11.5px;color:var(--ink-muted);white-space:nowrap;">Studio gallery:</span>
+                ${[1, 2, 3, 4, 5, 6].map((n) => {
+                  const u = `/media/post-0${n}.svg`;
+                  return `
+                    <button type="button" data-pick-preset-media="${u}" style="padding:2px;border-radius:7px;border:2px solid ${activeMediaUrl === u ? "var(--brand)" : "transparent"};background:transparent;flex-shrink:0;">
+                      <img src="${u}" alt="Preset ${n}" style="width:36px;height:45px;border-radius:5px;object-fit:cover;display:block;" />
+                    </button>
+                  `;
+                }).join("")}
+                ${b.mediaAssets.slice(0, 5).map((m) => `
+                  <button type="button" class="btn btn-sm" data-pick-asset="${escHtml(m.id)}">
+                    ${icon(m.mime_type.startsWith("video") ? "video" : "image", 13)} ${escHtml(m.filename.slice(0, 16))}
+                  </button>
+                `).join("")}
               </div>
             </div>
-            ${selectedSwapFirstId ? `<span class="pill-badge">Select 2nd tile to swap schedule time…</span>` : ""}
-          </div>
 
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
-            ${store.data.gridPlaceholders.map((ph) => `
-              <div style="aspect-ratio:${aspectCss};background:${ph.color};color:#18181B;padding:12px;border-radius:6px;display:flex;flex-direction:column;justify-content:space-between;font-size:12px">
-                <span class="mono" style="font-size:9.5px;font-weight:700">IDEA PLACEHOLDER</span>
-                <div style="font-weight:700">${escapeHtml(ph.note)}</div>
-                <div style="display:flex;gap:4px">
-                  <button class="btn btn-sm btn-primary" style="padding:3px 8px;font-size:10px" data-ph-convert="${ph.id}">&rarr; Draft</button>
-                  <button class="btn btn-sm" style="padding:3px 7px;font-size:10px" data-ph-del="${ph.id}">✕</button>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;">
+              <div class="field">
+                <label class="field-label">Internal Post Title</label>
+                <input class="input" name="title" id="comp-title" required value="${escHtml(ui.composerTitle || "Design Tokens Starter Breakdown")}" />
+              </div>
+              <div class="field">
+                <label class="field-label">Location Tag (Optional)</label>
+                <input class="input" name="location" id="comp-location" maxlength="40" value="${escHtml(ui.composerLocation || "Bengaluru · Studio")}" />
+              </div>
+            </div>
+
+            <!-- Caption + AI Rewrite Bar + Saved Templates -->
+            <div class="field">
+              <div class="field-label" style="flex-wrap:wrap;gap:6px;">
+                <span>Caption <span id="comp-char-counter" class="tabular" style="font-weight:400;color:var(--ink-muted);">(${fullText.length} / 2,200)</span></span>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                  <select class="select" id="comp-template-select" style="height:28px;padding:0 8px;font-size:12px;width:auto;">
+                    <option value="">Insert Saved Template...</option>
+                    ${b.templates.map((t) => `<option value="${escHtml(t.id)}">${escHtml(t.title)}</option>`).join("")}
+                  </select>
+                  <button type="button" class="btn btn-sm" id="btn-save-caption-template">Save Template</button>
                 </div>
               </div>
-            `).join("")}
+              <textarea class="textarea" name="caption" id="comp-caption" rows="5">${escHtml(captionVal)}</textarea>
 
-            ${scheduled.map((p) => `
-              <div class="cover-art cover-${p.cover_style}" draggable="true" data-drag-post="${p.id}" data-open-post="${p.id}"
-                   style="aspect-ratio:${aspectCss};border-radius:6px;cursor:grab;outline:${selectedSwapFirstId === p.id ? "3px solid #FACC15" : "2px dashed rgba(255,255,255,0.45)"}">
-                <div style="position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;font-size:9.5px;gap:4px" class="mono">
-                  <button type="button" data-click-swap="${p.id}" style="border:none;cursor:pointer;background:rgba(0,0,0,0.72);padding:2px 6px;border-radius:4px;color:#FFF;font-family:inherit;font-size:9.5px">⇄ Swap</button>
-                  <span style="background:var(--accent);padding:2px 6px;border-radius:4px;color:#FFF">${new Date(p.scheduled_at).toLocaleDateString()}</span>
+              <!-- 1-Click Inline AI Caption Rewriter Toolbar -->
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:11.5px;font-weight:600;color:var(--ink-muted);">AI Rewrite:</span>
+                ${[
+                  ["punchier", "Make Punchier"],
+                  ["hook", "Sharper Opening Hook"],
+                  ["shorten", "Trim <125 Chars"],
+                  ["cta", "+ Add DM Keyword CTA"],
+                  ["story", "Founder Story Arc"]
+                ].map(([mode, label]) => `
+                  <button type="button" class="btn btn-sm" style="height:26px;font-size:11.5px;padding:0 9px;" data-ai-rewrite="${mode}">${label}</button>
+                `).join("")}
+              </div>
+              <div id="comp-ai-suggestions"></div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="field">
+                <div class="field-label">
+                  <span>Hashtags</span>
+                  <button type="button" class="btn btn-sm btn-ghost" id="btn-check-tags" style="height:22px;padding:0 6px;">Check Safety</button>
                 </div>
-                <div>
-                  ${p.collab_handle ? `<div class="mono" style="font-size:9.5px;opacity:0.9;margin-bottom:3px">Collab @${escapeHtml(p.collab_handle)}</div>` : ""}
-                  <div style="font-size:13px;line-height:1.2">${escapeHtml(p.cover_label || p.title)}</div>
+                <input class="input" name="hashtags" id="comp-hashtags" value="${escHtml(tagsVal)}" />
+              </div>
+              <div class="field">
+                <label class="field-label">Auto First Comment (Optional)</label>
+                <input class="input" name="firstComment" id="comp-first-comment" placeholder="Comment REPO for the direct link" value="${escHtml(ui.composerFirstComment)}" />
+              </div>
+            </div>
+            <div id="comp-hashtag-report"></div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;">
+              <div class="field">
+                <label class="field-label">Schedule Date &amp; Time</label>
+                <input class="input" type="datetime-local" name="scheduledAt" id="comp-sched" value="${escHtml(defaultSched)}" />
+                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;">
+                  ${(ws.posting_slots || ["09:30", "14:00", "20:30"]).map((slot) => `
+                    <button type="button" class="badge" style="cursor:pointer;" data-quick-slot="${escHtml(slot)}">Today ${escHtml(slot)}</button>
+                  `).join("")}
                 </div>
               </div>
-            `).join("")}
-
-            ${published.map((p) => `
-              <div class="cover-art cover-${p.cover_style}" data-open-post="${p.id}" style="aspect-ratio:${aspectCss};border-radius:6px;cursor:pointer">
-                <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.55);color:#FFF;padding:2px 6px;border-radius:4px;font-size:9.5px" class="mono">LIVE · ${(p.views / 1000).toFixed(1)}K</div>
-                <div>
-                  ${p.collab_handle ? `<div class="mono" style="font-size:9.5px;opacity:0.9;margin-bottom:3px">Collab @${escapeHtml(p.collab_handle)}</div>` : ""}
-                  <div style="font-size:13px;line-height:1.2">${escapeHtml(p.cover_label || p.title)}</div>
-                </div>
+              <div class="field">
+                <label class="field-label">Attach DM Workflow</label>
+                <select class="select" name="automationId" id="comp-automation">
+                  <option value="">None attached</option>
+                  ${b.automations.map((a) => `<option value="${escHtml(a.id)}">${escHtml(a.name)}</option>`).join("")}
+                </select>
               </div>
-            `).join("")}
-          </div>
+              <div class="field">
+                <label class="field-label">Collaborator Handle</label>
+                <input class="input" name="collabHandle" id="comp-collab" placeholder="@figma.design" value="${escHtml(ui.composerCollab)}" />
+              </div>
+            </div>
 
-          ${allPublished.length > 6 ? `<div style="text-align:center;margin-top:14px"><button class="btn btn-sm" id="btn-grid-more">${store.gridShowAll ? "Show Compact Feed" : `Load All ${allPublished.length} Published Posts ↓`}</button></div>` : ""}
+            <label style="display:flex;align-items:center;gap:9px;font-size:13px;padding:10px 12px;border-radius:8px;background:var(--bg-subtle);cursor:pointer;">
+              <input type="checkbox" id="comp-trial-reel" ${ui.composerIsTrial ? "checked" : ""} />
+              <span><strong>Publish as Trial Reel</strong> — test non-follower reach first before graduating to your main profile grid (${ws.trial_reels_used} used this month)</span>
+            </label>
+
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-top:8px;border-top:1px solid var(--border);">
+              <button type="button" class="btn" data-submit-post="DRAFT">Save as Draft</button>
+              <div style="display:flex;gap:8px;">
+                <button type="button" class="btn" data-submit-post="PUBLISHED">Publish Now</button>
+                <button type="submit" class="btn btn-primary">${icon("calendar", 15)} Schedule Post</button>
+              </div>
+            </div>
+          </form>
         </div>
 
-        <div class="card">
-          <span class="kicker">IDEA TILE HOLDER (280 CHARS)</span>
-          <h3 style="margin:6px 0 10px">Drop unscheduled color notes onto your grid</h3>
-          <form id="grid-placeholder-form">
-            <div class="field"><label>Idea Note (Max 280 chars)</label><textarea class="textarea" name="note" maxlength="280" required placeholder="IDEA: 5-slide Reading Room breakdown of our Q4 setup…"></textarea></div>
-            <div class="field"><label>Tile Color Swatch</label><select class="select" name="color"><option value="#FDE68A">Warm Butter Yellow</option><option value="#FBCFE8">Soft Rose Pink</option><option value="#BAE6FD">Studio Sky Blue</option><option value="#BBF7D0">Mint Sage</option><option value="#FED7AA">Apricot Cream</option></select></div>
-            <button class="btn btn-primary" style="width:100%" type="submit">+ Add Idea Tile to Top of Grid</button>
+        <!-- RIGHT STICKY HIGH-DETAIL LIGHT INSTAGRAM POST PREVIEWER -->
+        <aside style="position:sticky;top:76px;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;font-weight:600;color:var(--ink-secondary);">Live Instagram Preview</span>
+            <div class="segmented">
+              <button type="button" class="seg-btn ${ui.composerPreviewTab !== "reel" ? "is-active" : ""}" data-preview-mode="feed">Feed View</button>
+              <button type="button" class="seg-btn ${ui.composerPreviewTab === "reel" ? "is-active" : ""}" data-preview-mode="reel">9:16 Reel</button>
+            </div>
+          </div>
+
+          <div class="phone-frame">
+            <div class="phone-screen">
+              <!-- Native iOS Light Status Bar -->
+              <div class="phone-status-bar">
+                <span>9:41</span>
+                <div class="phone-island"></div>
+                <span style="font-size:10.5px;">5G &middot; 100%</span>
+              </div>
+
+              <!-- Native Instagram Post Header -->
+              <div class="phone-ig-header">
+                <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+                  <div class="phone-story-ring">
+                    <div class="phone-story-ring-inner">${escHtml(ws.ig_handle[0].toUpperCase())}</div>
+                  </div>
+                  <div style="min-width:0;">
+                    <div style="display:flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:#09090B;">
+                      <span>${escHtml(ws.ig_handle)}</span>
+                      <span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#3B82F6;color:#FFFFFF;align-items:center;justify-content:center;font-size:8.5px;">&#10003;</span>
+                    </div>
+                    <div id="preview-location-text" style="font-size:10.5px;color:#64748B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                      ${escHtml(ui.composerLocation || "Bengaluru · Studio")}
+                    </div>
+                  </div>
+                </div>
+                <span style="font-size:15px;font-weight:700;color:#64748B;letter-spacing:1px;">&bull;&bull;&bull;</span>
+              </div>
+
+              <!-- Smart-Fitted OR Full-Bleed Crisp Visual Frame -->
+              <div class="phone-media-box ${aspectClass} ${isContain ? "is-fit-contain" : ""}">
+                ${activeMediaUrl ? `
+                  ${isContain && !isVideo ? `<img class="phone-media-backdrop" src="${escHtml(activeMediaUrl)}" alt="" />` : ""}
+                  ${isVideo
+                    ? `<video class="media-main" src="${escHtml(activeMediaUrl)}" autoplay muted loop playsinline controls></video>`
+                    : `<img class="media-main" src="${escHtml(activeMediaUrl)}" alt="Post preview" />`
+                  }
+                ` : `
+                  <div style="text-align:center;color:#64748B;display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px;">
+                    ${icon("image", 26)}
+                    <div style="font-weight:700;font-size:13px;color:#09090B;">No Media Selected Yet</div>
+                    <p style="font-size:11.5px;line-height:1.45;">Upload a photo/video on the left, pick a studio preset, or click <strong>Generate AI Cover Image</strong>.</p>
+                  </div>
+                `}
+                ${ui.composerSlidesMedia?.length > 1 ? `
+                  <span style="position:absolute;top:10px;right:10px;z-index:4;padding:3px 8px;border-radius:999px;background:rgba(15,23,42,0.72);color:#FFFFFF;font-size:10.5px;font-weight:600;">
+                    1 / ${ui.composerSlidesMedia.length}
+                  </span>
+                ` : ""}
+              </div>
+
+              <!-- Authentic Light Instagram Action Row + Likes + Fold Caption -->
+              <div class="phone-ig-actions">
+                <div style="display:flex;align-items:center;gap:13px;">
+                  ${icon("heart", 18)}${icon("message", 18)}${icon("send", 18)}
+                </div>
+                ${icon("bookmark", 18)}
+              </div>
+
+              <div class="phone-ig-caption">
+                <div style="font-weight:700;font-size:12px;margin-bottom:4px;color:#09090B;">1,842 likes</div>
+                <div id="preview-caption-fold">
+                  <strong style="color:#09090B;">${escHtml(ws.ig_handle)}</strong>
+                  <span>${escHtml(ui.composerCaptionExpanded ? fullText : fullText.slice(0, 125))}</span>
+                  ${fullText.length > 125 ? `
+                    <button type="button" id="btn-toggle-preview-fold" style="border:none;background:transparent;padding:0 2px;color:#64748B;font-size:12px;cursor:pointer;">
+                      ${ui.composerCaptionExpanded ? "less" : "...more"}
+                    </button>
+                  ` : ""}
+                </div>
+                ${ui.composerFirstComment ? `
+                  <div style="margin-top:6px;padding-top:6px;border-top:1px solid #F1F5F9;font-size:11.5px;color:#334155;">
+                    <strong>${escHtml(ws.ig_handle)}</strong> ${escHtml(ui.composerFirstComment)}
+                  </div>
+                ` : ""}
+                <div style="margin-top:5px;font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.03em;">Scheduled Preview &middot; ${escHtml(ui.composerAspect)}</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      ${renderCropStudioModal()}
+    </div>
+  `;
+}
+
+/* ============================================================================
+   3. CALENDAR & QUEUE (/app/calendar) — Real HTML5 Drag & Drop Across Dates
+   ============================================================================ */
+export function renderCalendar() {
+  const b = store.bundle;
+  const mode = store.ui.calendarMode || "month";
+  const statusFilter = store.ui.calendarStatus || "ALL";
+  const filteredPosts = b.posts.filter((p) => statusFilter === "ALL" || p.status === statusFilter);
+
+  const cells = [];
+  for (let i = 28; i <= 30; i++) cells.push({ dateStr: `2026-09-${i}`, day: i, muted: true });
+  for (let d = 1; d <= 31; d++) {
+    cells.push({ dateStr: `2026-10-${String(d).padStart(2, "0")}`, day: d, muted: false, isToday: d === 21 });
+  }
+  cells.push({ dateStr: "2026-11-01", day: 1, muted: true });
+
+  return `
+    <div class="stage-animate">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Publishing Calendar</h1>
+          <p class="page-desc">Drag any post onto a new date cell to reschedule immediately, or click a post to open its inspector.</p>
+        </div>
+        <div class="head-actions">
+          <div class="segmented">
+            <button class="seg-btn ${mode === "month" ? "is-active" : ""}" data-cal-mode="month">Month</button>
+            <button class="seg-btn ${mode === "queue" ? "is-active" : ""}" data-cal-mode="queue">Queue List (${filteredPosts.length})</button>
+          </div>
+          <select class="select" id="cal-status-filter" style="width:auto;">
+            ${["ALL", "SCHEDULED", "PUBLISHED", "DRAFT", "FAILED"].map((s) => `
+              <option value="${s}" ${statusFilter === s ? "selected" : ""}>Status: ${s}</option>
+            `).join("")}
+          </select>
+          <a href="/app/create" data-link class="btn btn-primary">${icon("plus", 15)} Schedule Post</a>
+        </div>
+      </div>
+
+      ${renderUnconnectedBanner()}
+
+      ${mode === "month" ? `
+        <div class="card" style="overflow:hidden;">
+          <div class="card-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <strong style="font-family:var(--font-display);font-size:15.5px;">October 2026</strong>
+              <span class="badge">Drag &amp; Drop Enabled</span>
+            </div>
+            <div style="display:flex;gap:12px;font-size:12px;color:var(--ink-muted);">
+              <span><span style="color:var(--info);">&#9679;</span> Scheduled</span>
+              <span><span style="color:var(--success);">&#9679;</span> Published</span>
+              <span><span style="color:var(--danger);">&#9679;</span> Needs Attention</span>
+            </div>
+          </div>
+          <div class="cal-scroll-wrap">
+            <div class="cal-grid">
+              ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => `<div class="cal-dow">${d}</div>`).join("")}
+              ${cells.map((c) => {
+                const dayPosts = filteredPosts.filter((p) => String(p.scheduled_at || "").slice(0, 10) === c.dateStr);
+                return `
+                  <div class="cal-cell ${c.muted ? "is-muted" : ""} ${c.isToday ? "is-today" : ""}" data-cal-date="${c.dateStr}">
+                    <div class="cal-day-top">
+                      <span>${c.day}${c.isToday ? ` <span class="badge badge-brand" style="height:17px;font-size:10px;padding:0 5px;">Today</span>` : ""}</span>
+                      <button class="cal-add-btn" title="Schedule on ${c.dateStr}" data-compose-on-date="${c.dateStr}">+</button>
+                    </div>
+                    ${dayPosts.map((p) => `
+                      <div class="cal-pill status-${escHtml(p.status)}" draggable="true" data-drag-post="${escHtml(p.id)}" data-inspect-post="${escHtml(p.id)}" title="Drag to reschedule or click to inspect">
+                        <span class="tabular" style="color:var(--ink-muted);margin-right:4px;">${new Date(p.scheduled_at).toISOString().slice(11, 16)}</span>${escHtml(p.title)}
+                      </div>
+                    `).join("")}
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        </div>
+      ` : `
+        <div class="card table-wrap">
+          <table class="v-table">
+            <thead>
+              <tr>
+                <th>Post</th>
+                <th>Format</th>
+                <th>Status</th>
+                <th>Scheduled Slot</th>
+                <th>Views</th>
+                <th>Saves</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredPosts.length === 0 ? `
+                <tr>
+                  <td colspan="7" style="text-align:center;padding:38px 20px;color:var(--ink-muted);">
+                    No scheduled or published posts in this workspace yet. <a href="/app/create" data-link style="color:var(--brand);font-weight:600;">Create your first post &rarr;</a>
+                  </td>
+                </tr>
+              ` : filteredPosts.map((p, idx) => `
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <img src="${escHtml(getPostVisualUrl(p, idx))}" alt="" style="width:36px;height:45px;border-radius:6px;object-fit:cover;border:1px solid var(--border);" />
+                      <div>
+                        <div style="font-weight:600;">${escHtml(p.title)}</div>
+                        <div style="font-size:12px;color:var(--ink-muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.caption)}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge">${escHtml(p.media_type)}</span></td>
+                  <td>${statusBadge(p.status)}</td>
+                  <td class="tabular">${formatShortDate(p.scheduled_at)}</td>
+                  <td class="tabular">${fmtNum(p.views)}</td>
+                  <td class="tabular">${fmtNum(p.saves)}</td>
+                  <td>
+                    <div style="display:flex;gap:6px;">
+                      <button class="btn btn-sm" data-inspect-post="${escHtml(p.id)}">Inspect</button>
+                      ${p.status !== "PUBLISHED" ? `<button class="btn btn-sm btn-primary" data-publish-post="${escHtml(p.id)}">Publish Now</button>` : ""}
+                    </div>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+/* ============================================================================
+   4. VISUAL PROFILE GRID PLANNER (/app/grid) — Crisp Imagery + Live Post Statistics
+   ============================================================================ */
+export function renderGridPlanner() {
+  const b = store.bundle;
+  const ws = b.activeWorkspace;
+  const crop = ws.grid_crop || "4:5";
+  const cropCls = `crop-${crop.replace(":", "x")}`;
+  const showStats = store.ui.gridShowStats !== false;
+  const gridPosts = b.posts.filter((p) => !(p.is_trial_reel && !p.trial_graduated));
+  const selectedIdx = Math.max(0, gridPosts.findIndex((p) => p.id === store.ui.selectedGridPostId));
+  const selected = gridPosts[selectedIdx] || gridPosts[0];
+  const totalGridViews = gridPosts.reduce((s, p) => s + (p.views || 0), 0);
+  const totalGridSaves = gridPosts.reduce((s, p) => s + (p.saves || 0), 0);
+
+  return `
+    <div class="stage-animate">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Profile Grid Planner</h1>
+          <p class="page-desc">Inspect real cover artwork, live post engagement metrics, and drag tiles directly to reorder upcoming slots.</p>
+        </div>
+        <div class="head-actions">
+          <button type="button" class="btn ${showStats ? "btn-primary" : ""}" id="btn-toggle-grid-stats">
+            ${icon("chart", 15)} ${showStats ? "Live Stats: On" : "Live Stats: Off"}
+          </button>
+          <div class="segmented">
+            ${["4:5", "3:4", "1:1"].map((r) => `
+              <button type="button" class="seg-btn ${crop === r ? "is-active" : ""}" data-grid-crop="${r}">${r} Crop</button>
+            `).join("")}
+          </div>
+          <a href="/app/create" data-link class="btn btn-primary">${icon("plus", 15)} Add Post</a>
+        </div>
+      </div>
+
+      ${renderUnconnectedBanner()}
+
+      <div class="split-2">
+        <!-- Authentic Light Instagram Profile Feed Card -->
+        <div class="ig-profile-shell">
+          <div style="padding:20px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:14px;min-width:0;">
+              <div class="phone-story-ring" style="width:58px;height:58px;padding:2.5px;">
+                <div class="phone-story-ring-inner" style="font-size:20px;background:${escHtml(ws.avatar_color)};color:#FFFFFF;">
+                  ${ws.avatar_url ? `<img src="${escHtml(ws.avatar_url)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />` : escHtml(ws.ig_handle[0].toUpperCase())}
+                </div>
+              </div>
+              <div style="min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <strong style="font-size:16px;">@${escHtml(ws.ig_handle)}</strong>
+                  <span class="badge tabular">${fmtNum(ws.followers_count || 48200)} followers</span>
+                </div>
+                <p style="font-size:12.5px;color:var(--ink-secondary);margin-top:4px;line-height:1.45;max-width:420px;">${escHtml(ws.bio || "")}</p>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:18px;text-align:center;" class="tabular">
+              <div><div style="font-weight:700;font-size:15px;">${gridPosts.length}</div><div style="font-size:11px;color:var(--ink-muted);">Grid Tiles</div></div>
+              <div><div style="font-weight:700;font-size:15px;">${fmtNum(totalGridViews)}</div><div style="font-size:11px;color:var(--ink-muted);">Total Views</div></div>
+              <div><div style="font-weight:700;font-size:15px;">${fmtNum(totalGridSaves)}</div><div style="font-size:11px;color:var(--ink-muted);">Total Saves</div></div>
+            </div>
+          </div>
+
+          <div class="ig-tiles">
+            ${b.gridPlaceholders.length === 0 && gridPosts.length === 0 ? `
+              ${[1, 2, 3, 4, 5, 6].map((slotNum) => `
+                <div class="ig-tile ${cropCls}" style="background:var(--bg-subtle);border:1.5px dashed var(--border-strong);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px;text-align:center;color:var(--ink-muted);">
+                  <span class="mono" style="font-size:10.5px;font-weight:700;">SLOT 0${slotNum}</span>
+                  <span style="font-size:12px;">Empty Feed Tile</span>
+                </div>
+              `).join("")}
+            ` : ""}
+            ${b.gridPlaceholders.map((ph) => `
+              <div class="ig-tile ${cropCls}" style="background:${escHtml(ph.color)};color:#18181B;padding:14px;display:flex;flex-direction:column;justify-content:space-between;">
+                <span style="font-size:10px;font-weight:700;opacity:0.65;">PLANNING NOTE</span>
+                <p style="font-size:12.5px;font-weight:600;line-height:1.35;">${escHtml(ph.note)}</p>
+                <div style="display:flex;gap:4px;">
+                  <button class="btn btn-sm" style="height:24px;font-size:11px;padding:0 7px;" data-convert-ph="${escHtml(ph.id)}">Convert</button>
+                  <button class="btn btn-sm btn-ghost" style="height:24px;padding:0 6px;" data-delete-ph="${escHtml(ph.id)}">${icon("x", 12)}</button>
+                </div>
+              </div>
+            `).join("")}
+
+            ${gridPosts.map((p, idx) => {
+              const visUrl = getPostVisualUrl(p, idx);
+              const saveRate = p.views > 0 ? (((p.saves || 0) / p.views) * 100).toFixed(1) : "0.0";
+              return `
+                <div class="ig-tile ${cropCls} ${selected?.id === p.id ? "is-selected" : ""}"
+                     draggable="true"
+                     data-grid-tile="${escHtml(p.id)}">
+                  ${visUrl.startsWith("data:video")
+                    ? `<video class="ig-tile-media" src="${escHtml(visUrl)}" muted loop playsinline></video>`
+                    : `<img class="ig-tile-media" src="${escHtml(visUrl)}" alt="${escHtml(p.title)}" />`}
+
+                  <!-- Top Format + Status Pill -->
+                  <div style="position:absolute;top:8px;left:8px;right:8px;z-index:4;display:flex;justify-content:space-between;align-items:center;gap:4px;pointer-events:none;">
+                    <span style="padding:2px 6px;border-radius:5px;background:rgba(255,255,255,0.92);color:#09090B;font-size:9.5px;font-weight:700;">
+                      ${escHtml(p.media_type)}
+                    </span>
+                    ${p.status !== "PUBLISHED" ? `
+                      <span style="padding:2px 6px;border-radius:5px;background:#4F46E5;color:#FFFFFF;font-size:9.5px;font-weight:700;">
+                        ${escHtml(p.status)}
+                      </span>
+                    ` : ""}
+                  </div>
+
+                  <!-- Inline Live Stats Footer Bar -->
+                  ${showStats ? `
+                    <div class="ig-tile-stats-bar">
+                      <span>${p.status === "PUBLISHED" ? `${fmtNum(p.views)} views` : formatShortDate(p.scheduled_at)}</span>
+                      <span>${p.status === "PUBLISHED" ? `${fmtNum(p.saves)} saves` : "Drag to swap"}</span>
+                    </div>
+                  ` : ""}
+
+                  <!-- Rich Hover Post Statistics Breakdown -->
+                  <div class="ig-tile-hover-detail" class="tabular">
+                    <div style="font-size:12px;font-weight:700;line-height:1.25;">${escHtml(p.title.slice(0, 44))}</div>
+                    ${p.status === "PUBLISHED" ? `
+                      <div style="display:flex;gap:10px;font-size:11.5px;font-weight:600;">
+                        <span>&#9829; ${fmtNum(p.likes)}</span>
+                        <span>&middot; ${fmtNum(p.comments_count)} replies</span>
+                        <span>&middot; ${saveRate}% saves</span>
+                      </div>
+                    ` : `<span style="font-size:11px;opacity:0.85;">Scheduled &middot; Click to inspect</span>`}
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+
+        <!-- RIGHT SIDEBAR: SELECTED POST STATISTICS + COVER UPLOADER + NOTE TILE -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          ${selected ? `
+            <div class="card card-pad" style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span class="card-title">Tile Performance &amp; Visual Inspector</span>
+                ${statusBadge(selected.status)}
+              </div>
+
+              <div style="display:flex;gap:14px;align-items:center;">
+                <img src="${escHtml(getPostVisualUrl(selected, selectedIdx))}" alt="" style="width:74px;height:92px;border-radius:10px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;" />
+                <div style="min-width:0;">
+                  <div style="font-weight:700;font-size:15px;line-height:1.3;">${escHtml(selected.title)}</div>
+                  <div style="font-size:12px;color:var(--ink-muted);margin-top:4px;" class="tabular">
+                    ${selected.status === "PUBLISHED" ? "Published on Grid" : `Scheduled: ${formatShortDate(selected.scheduled_at)}`}
+                  </div>
+                  <p style="font-size:12px;color:var(--ink-secondary);margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                    ${escHtml(selected.caption)}
+                  </p>
+                </div>
+              </div>
+
+              <!-- 4-Card Post Statistics Grid -->
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" class="tabular">
+                <div style="padding:10px;border-radius:8px;background:var(--bg-subtle);text-align:center;">
+                  <div style="font-size:11px;color:var(--ink-muted);">Views</div>
+                  <strong style="font-size:14.5px;">${fmtNum(selected.views)}</strong>
+                </div>
+                <div style="padding:10px;border-radius:8px;background:var(--bg-subtle);text-align:center;">
+                  <div style="font-size:11px;color:var(--ink-muted);">Likes</div>
+                  <strong style="font-size:14.5px;">${fmtNum(selected.likes)}</strong>
+                </div>
+                <div style="padding:10px;border-radius:8px;background:var(--bg-subtle);text-align:center;">
+                  <div style="font-size:11px;color:var(--ink-muted);">Saves</div>
+                  <strong style="font-size:14.5px;">${fmtNum(selected.saves)}</strong>
+                </div>
+                <div style="padding:10px;border-radius:8px;background:var(--bg-subtle);text-align:center;">
+                  <div style="font-size:11px;color:var(--ink-muted);">Comments</div>
+                  <strong style="font-size:14.5px;">${fmtNum(selected.comments_count)}</strong>
+                </div>
+              </div>
+
+              <label class="btn" style="justify-content:center;cursor:pointer;">
+                ${icon("upload", 15)} Upload Custom Tile Cover Image
+                <input type="file" id="grid-tile-cover-upload" data-post-id="${escHtml(selected.id)}" accept="image/*,video/*" style="display:none;" />
+              </label>
+
+              <div class="field">
+                <label class="field-label">Collaborator Handle (@username)</label>
+                <div style="display:flex;gap:8px;">
+                  <input class="input" id="grid-collab-input" value="${escHtml(selected.collab_handle || "")}" placeholder="figma.design" />
+                  <button class="btn" data-save-grid-collab="${escHtml(selected.id)}">Save</button>
+                </div>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid var(--border);">
+                <button class="btn" data-inspect-post="${escHtml(selected.id)}">Open Full Post Inspector</button>
+                <button class="btn btn-danger btn-sm" data-delete-post="${escHtml(selected.id)}">${icon("trash", 14)} Remove</button>
+              </div>
+            </div>
+          ` : `
+            <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px;text-align:center;padding:28px 22px;">
+              <div style="margin:0 auto;color:var(--ink-muted);">${icon("grid", 26)}</div>
+              <div class="card-title">No Grid Posts Synced Yet</div>
+              <p style="font-size:13px;color:var(--ink-muted);line-height:1.5;">
+                Connect your Instagram Creator/Business profile via Meta Graph OAuth to import your last 18 published tiles automatically, or schedule your first post from the composer.
+              </p>
+              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                <a href="/app/create" data-link class="btn btn-primary btn-sm">${icon("plus", 14)} Create First Post</a>
+                <button type="button" class="btn btn-sm" data-open-meta-setup>Connect Meta OAuth</button>
+              </div>
+            </div>
+          `}
+
+          <form id="form-add-placeholder" class="card card-pad" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card-title">Pin Visual Planning Note to Grid</div>
+            <textarea class="textarea" name="note" rows="2" maxlength="280" required placeholder="e.g., Client case study carousel (shoot warm studio cover photo)"></textarea>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <input type="color" name="color" value="#EEF2FF" style="width:42px;height:34px;border:1px solid var(--border);border-radius:6px;padding:2px;background:transparent;" />
+              <button class="btn btn-primary" type="submit">${icon("plus", 14)} Pin Note Tile</button>
+            </div>
           </form>
         </div>
       </div>
@@ -546,303 +1096,178 @@ export function renderGridPlannerView() {
   `;
 }
 
-export function renderCarouselsStudioView() {
-  if (store.pendingThemeId && store.data.carousels.length) {
-    store.selectedThemeOverride = store.pendingThemeId;
-    store.pendingThemeId = null;
-  }
-  const active = store.data.carousels.find((c) => c.id === store.selectedCarouselId) || store.data.carousels[0];
-  const activeThemeId = store.selectedThemeOverride || active?.theme_id || "bold_highlight";
-  const theme = store.data.themes.find((t) => t.id === activeThemeId) || store.data.themes[0];
-  const slides = active ? active.slides : [];
-  const idx = Math.min(Math.max(0, slides.length - 1), Math.max(0, store.selectedSlideIndex));
-  const slide = slides[idx] || { tag: "HOOK", headline: "Create your first carousel above", body: "", badge: "SLIDE" };
+/* ============================================================================
+   5. CAROUSEL STUDIO (/app/carousels) — 16 Clean Presets + AI Deck Generator + PNG
+   ============================================================================ */
+export function renderCarouselsStudio() {
+  const b = store.bundle;
+  const deck = b.carousels.find((c) => c.id === store.ui.selectedCarouselId) || b.carousels[0];
+  const slideIdx = Math.min((deck?.slides?.length || 1) - 1, Math.max(0, store.ui.selectedSlideIndex || 0));
+  const slide = deck?.slides?.[slideIdx] || { tag: "01", headline: "Start designing", body: "Add your takeaway below.", badge: "Slide 01", align: "left" };
+  const theme = b.themes.find((t) => t.id === deck?.theme_id) || b.themes[0];
+
+  const bg = deck?.custom_bg || theme.bg;
+  const fg = deck?.custom_fg || theme.fg;
+  const accent = deck?.custom_accent || theme.accent;
 
   return `
-    <div>
+    <div class="stage-animate">
       <div class="page-head">
         <div>
-          <span class="kicker">35 THEMES · LIVE SLIDE EDITOR · PNG EXPORT</span>
-          <h1 class="editorial-title">Carousels</h1>
+          <h1 class="page-title">Carousel Studio</h1>
+          <p class="page-desc">Generate multi-slide educational decks with AI, restyle with 16 Swiss &amp; editorial presets, and export 1080&times;1350 PNG slides.</p>
         </div>
-        <button class="btn" data-site-nav="themes">Browse All 35 Theme Previews &rarr;</button>
+        <div class="head-actions">
+          <button class="btn" id="btn-export-slide-png">${icon("download", 15)} Export Slide PNG</button>
+          ${deck ? `<button class="btn btn-primary" data-schedule-carousel="${escHtml(deck.id)}">${icon("calendar", 15)} Schedule Deck to Feed</button>` : ""}
+        </div>
       </div>
 
-      <form class="card" id="carousel-gen-form" style="margin-bottom:24px;display:grid;grid-template-columns:minmax(220px,2fr) minmax(170px,1fr) 110px auto;gap:12px;align-items:end">
-        <div class="field" style="margin:0"><label>Prompt / Topic &rarr; AI Multi-Slide Deck</label><input class="input" name="prompt" required placeholder="e.g. 6 habits that doubled our Instagram saves this quarter" /></div>
-        <div class="field" style="margin:0"><label>Theme (All 35 Available)</label><select class="select" name="themeId" id="car-theme-select">${store.data.themes.map((t) => `<option value="${t.id}" ${t.id === theme.id ? "selected" : ""}>${escapeHtml(t.name)} (${t.category})</option>`).join("")}</select></div>
-        <div class="field" style="margin:0"><label>Slides</label><input class="input" type="number" name="slideCount" min="3" max="10" value="5" /></div>
-        <button class="btn btn-primary btn-lg" type="submit">✦ Generate Deck</button>
+      ${renderUnconnectedBanner()}
+
+      <!-- AI Multi-Slide Deck Generator Bar -->
+      <form id="form-generate-carousel" class="card card-pad" style="margin-bottom:18px;border-color:var(--brand-border);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+        <div class="field" style="flex:1;min-width:240px;">
+          <label class="field-label">${icon("wand", 13)} AI Carousel Deck Topic</label>
+          <input class="input" name="prompt" required placeholder="e.g., 7 spacing & hierarchy rules that make interfaces feel calm" />
+        </div>
+        <div class="field" style="width:190px;">
+          <label class="field-label">Design Preset</label>
+          <select class="select" name="themeId">
+            ${b.themes.map((t) => `<option value="${escHtml(t.id)}" ${t.id === theme.id ? "selected" : ""}>${escHtml(t.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field" style="width:115px;">
+          <label class="field-label">Slide Count</label>
+          <select class="select" name="slideCount">
+            ${[4, 5, 6, 7, 8].map((n) => `<option value="${n}" ${n === 5 ? "selected" : ""}>${n} slides</option>`).join("")}
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit">${icon("wand", 15)} Generate AI Deck</button>
       </form>
 
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
-        ${store.data.carousels.map((c) => `<button class="btn btn-sm ${c.id === active?.id ? "btn-accent" : ""}" data-pick-carousel="${c.id}">${escapeHtml(c.title)} (${c.slides.length} slides)</button>`).join("")}
-      </div>
-
-      <div style="display:grid;grid-template-columns:minmax(290px,400px) minmax(0,1fr);gap:24px;align-items:start">
-        <div>
-          <div style="aspect-ratio:4/5;border-radius:20px;padding:28px;background:${theme.bg};color:${theme.fg};border:1px solid var(--border);box-shadow:var(--shadow-md);display:flex;flex-direction:column;justify-content:space-between;position:relative">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span class="mono" style="font-size:11px;padding:4px 10px;border-radius:999px;background:${theme.pillBg};color:${theme.fg}">${escapeHtml(slide.badge || theme.name)}</span>
-              <span class="mono" style="font-size:11px;background:rgba(0,0,0,0.18);padding:3px 9px;border-radius:999px">${idx + 1}/${slides.length}</span>
-            </div>
-            <div>
-              <div class="mono" style="font-size:12px;font-weight:800;color:${theme.accent};margin-bottom:8px">${escapeHtml(slide.tag)}</div>
-              <h2 style="font-family:${theme.fontStyle === "serif" || theme.fontStyle === "editorial" ? "'Fraunces', Georgia, serif" : "'Inter', sans-serif"};font-size:27px;line-height:1.14;margin:0 0 14px">${escapeHtml(slide.headline)}</h2>
-              <p style="font-size:14px;opacity:0.86;line-height:1.55;margin:0">${escapeHtml(slide.body)}</p>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid rgba(128,128,128,0.22);font-size:12px;font-weight:700">
-              <span>@${escapeHtml(store.data.activeWorkspace.ig_handle)}</span>
-              <span style="color:${theme.accent}">${idx < slides.length - 1 ? "Swipe >" : "SAVE THIS POST ★"}</span>
-            </div>
-          </div>
-
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px;flex-wrap:wrap">
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-sm" id="car-prev-slide">&larr; Prev</button>
-              <button class="btn btn-sm" id="car-next-slide">Next &rarr;</button>
-              <button class="btn btn-sm" id="car-add-slide">+ Slide</button>
-            </div>
-            <button class="btn btn-sm" id="car-download-png">&darr; Export 4:5 PNG</button>
-          </div>
-          <div class="card" style="margin-top:12px;padding:14px">
-            <div style="font-weight:700;font-size:13px">${escapeHtml(theme.name)}</div>
-            <div style="font-size:12px;color:var(--text-muted)">${escapeHtml(theme.desc)}</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-            <span class="kicker">SLIDE TEXT EDITOR · LIVE UPDATES</span>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-sm btn-primary" id="btn-save-carousel">Save Edits</button>
-              <button class="btn btn-sm btn-accent" id="btn-schedule-carousel">+ Send Deck to Scheduler &rarr;</button>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:14px">
-            ${slides.map((s, sIdx) => `
-              <div style="padding:14px;border-radius:14px;background:${sIdx === idx ? "var(--accent-soft)" : "var(--bg-subtle)"};border:1px solid ${sIdx === idx ? "var(--accent)" : "var(--border)"}" data-focus-slide="${sIdx}">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                  <span class="mono" style="font-size:11px;font-weight:800;color:var(--accent)">${escapeHtml(s.tag)}</span>
-                  ${slides.length > 2 ? `<button class="btn btn-sm" style="padding:1px 7px;font-size:10px" data-rm-slide="${sIdx}">Remove</button>` : ""}
-                </div>
-                <input class="input" data-slide-head="${sIdx}" value="${escapeHtml(s.headline)}" style="font-weight:700;margin-bottom:8px" />
-                <textarea class="textarea" data-slide-body="${sIdx}" rows="2" style="min-height:58px">${escapeHtml(s.body)}</textarea>
+      ${deck ? `
+        <div class="studio-grid">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="card card-pad">
+              <div class="field-label" style="margin-bottom:8px;">Saved Decks (${b.carousels.length})</div>
+              <div style="display:flex;flex-direction:column;gap:5px;">
+                ${b.carousels.map((c) => `
+                  <button class="btn btn-sm ${c.id === deck.id ? "btn-primary" : ""}" style="justify-content:space-between;width:100%;" data-select-carousel="${escHtml(c.id)}">
+                    <span style="overflow:hidden;text-overflow:ellipsis;">${escHtml(c.title)}</span>
+                    <span class="tabular">${c.slides.length}</span>
+                  </button>
+                `).join("")}
               </div>
-            `).join("")}
+            </div>
+
+            <div class="card card-pad">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <span class="field-label">Slides (${deck.slides.length})</span>
+                <button class="btn btn-sm" id="btn-add-slide">${icon("plus", 13)} Slide</button>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                ${deck.slides.map((s, idx) => `
+                  <button class="btn btn-sm ${idx === slideIdx ? "btn-primary" : ""}" style="justify-content:flex-start;text-align:left;height:auto;padding:7px 10px;" data-select-slide="${idx}">
+                    <span class="mono" style="opacity:0.7;">${String(idx + 1).padStart(2, "0")}</span>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(s.headline)}</span>
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-canvas-stage">
+            <div id="carousel-live-card" class="slide-card-preview"
+                 data-bg="${escHtml(bg)}" data-fg="${escHtml(fg)}" data-accent="${escHtml(accent)}"
+                 style="background:${escHtml(bg)};color:${escHtml(fg)};text-align:${slide.align === "center" ? "center" : "left"};">
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:600;">
+                <span style="padding:3px 9px;border-radius:999px;border:1px solid currentColor;opacity:0.75;">${escHtml(slide.badge || "SLIDE")}</span>
+                <span class="mono">${slideIdx + 1} / ${deck.slides.length}</span>
+              </div>
+
+              ${slide.imageUrl ? `
+                <div style="width:100%;height:150px;border-radius:10px;overflow:hidden;margin:12px 0;">
+                  <img src="${escHtml(slide.imageUrl)}" alt="" style="width:100%;height:100%;object-fit:cover;" />
+                </div>
+              ` : ""}
+
+              <div>
+                <div style="width:32px;height:3px;background:${escHtml(accent)};border-radius:2px;margin:${slide.align === "center" ? "0 auto 14px" : "0 0 14px"};"></div>
+                <div style="font-family:var(--font-display);font-weight:700;font-size:25px;line-height:1.15;letter-spacing:-0.03em;margin-bottom:12px;">
+                  ${escHtml(slide.headline)}
+                </div>
+                <p style="font-size:13.5px;line-height:1.58;opacity:0.84;">
+                  ${escHtml(slide.body)}
+                </p>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:11.5px;opacity:0.68;padding-top:12px;border-top:1px solid rgba(128,128,128,0.22);">
+                <span>@${escHtml(b.activeWorkspace.ig_handle)}</span>
+                <span>Swipe &rarr;</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-sm" data-select-slide="${Math.max(0, slideIdx - 1)}" ${slideIdx === 0 ? "disabled" : ""}>${icon("arrowLeft", 14)} Previous</button>
+              <button class="btn btn-sm" data-select-slide="${Math.min(deck.slides.length - 1, slideIdx + 1)}" ${slideIdx >= deck.slides.length - 1 ? "disabled" : ""}>Next ${icon("arrowRight", 14)}</button>
+            </div>
+          </div>
+
+          <div class="card card-pad" style="display:flex;flex-direction:column;gap:13px;">
+            <div class="card-title">Slide ${slideIdx + 1} Inspector</div>
+
+            <div class="field">
+              <label class="field-label">Design System Preset (16)</label>
+              <select class="select" id="car-theme-picker">
+                ${b.themes.map((t) => `<option value="${escHtml(t.id)}" ${t.id === deck.theme_id ? "selected" : ""}>${escHtml(t.name)} (${escHtml(t.category)})</option>`).join("")}
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Brand Palette Override</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <label style="font-size:11.5px;display:flex;align-items:center;gap:5px;">Bg <input type="color" id="car-color-bg" value="${escHtml(bg)}" /></label>
+                <label style="font-size:11.5px;display:flex;align-items:center;gap:5px;">Text <input type="color" id="car-color-fg" value="${escHtml(fg)}" /></label>
+                <label style="font-size:11.5px;display:flex;align-items:center;gap:5px;">Accent <input type="color" id="car-color-accent" value="${escHtml(accent)}" /></label>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Badge Kicker</label>
+              <input class="input" id="car-slide-badge" value="${escHtml(slide.badge || "")}" />
+            </div>
+
+            <div class="field">
+              <label class="field-label">Slide Headline</label>
+              <input class="input" id="car-slide-headline" value="${escHtml(slide.headline || "")}" />
+            </div>
+
+            <div class="field">
+              <label class="field-label">Supporting Copy</label>
+              <textarea class="textarea" id="car-slide-body" rows="3">${escHtml(slide.body || "")}</textarea>
+            </div>
+
+            <label class="btn btn-sm" style="justify-content:center;cursor:pointer;">
+              ${icon("image", 14)} Upload Photo onto Slide ${slideIdx + 1}
+              <input type="file" id="car-slide-photo" accept="image/*" style="display:none;" />
+            </label>
+
+            <div style="display:flex;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid var(--border);">
+              <button class="btn btn-sm btn-danger" id="btn-delete-slide">${icon("trash", 13)} Delete Slide</button>
+              <button class="btn btn-primary" id="btn-save-carousel">Save Deck</button>
+            </div>
           </div>
         </div>
-      </div>
+      ` : `
+        <div class="card card-pad" style="padding:44px 28px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;">
+          <span style="color:var(--ink-muted);">${icon("layers", 28)}</span>
+          <div style="font-weight:700;font-size:16px;">No Saved Carousel Decks Yet</div>
+          <p style="font-size:13.5px;color:var(--ink-muted);max-width:460px;line-height:1.55;">
+            Enter any topic in the <strong>AI Carousel Deck Topic</strong> bar right above and click <strong>Generate AI Deck</strong> to create your first multi-slide 1080&times;1350 deck.
+          </p>
+        </div>
+      `}
     </div>
   `;
-}
-
-export function bindAppStudioEvents(root) {
-  const createForm = root.querySelector("#full-create-form");
-  if (createForm) {
-    const syncDraft = () => {
-      createDraft.mediaType = root.querySelector("#cr-type").value;
-      createDraft.coverStyle = root.querySelector("#cr-cover").value;
-      createDraft.title = root.querySelector("#cr-title").value;
-      createDraft.caption = root.querySelector("#cr-caption").value;
-      createDraft.firstComment = root.querySelector("#cr-first").value;
-      createDraft.collabHandle = root.querySelector("#cr-collab").value;
-      createDraft.scheduledLocal = root.querySelector("#cr-sched").value;
-      createDraft.automationId = root.querySelector("#cr-auto").value;
-      createDraft.isTrialReel = root.querySelector("#cr-trial").checked;
-    };
-    ["#cr-type", "#cr-cover", "#cr-auto", "#cr-trial"].forEach((sel) => { root.querySelector(sel).onchange = () => { syncDraft(); notify(); }; });
-    ["#cr-title", "#cr-caption", "#cr-collab", "#cr-first", "#cr-sched"].forEach((sel) => { root.querySelector(sel).oninput = () => { syncDraft(); }; });
-    root.querySelector("#cr-ai-btn").onclick = async () => {
-      syncDraft();
-      try {
-        const res = await apiRequest("/api/ai/captions", { method: "POST", body: JSON.stringify({ workspaceId: store.data.activeWorkspace.id, topic: createDraft.title, enforceQuota: true }) });
-        createDraft.caption = res.captions[0].body;
-        if (res.bundle) updateBundle(res.bundle); else notify();
-        toast("Generated AI caption!");
-      } catch (err) { toast(err.message, "error"); }
-    };
-    const submitPost = async (status) => {
-      syncDraft();
-      try {
-        const b = await apiRequest("/api/posts", {
-          method: "POST",
-          body: JSON.stringify({ workspaceId: store.data.activeWorkspace.id, status, mediaType: createDraft.mediaType, title: createDraft.title, caption: createDraft.caption, firstComment: createDraft.firstComment, collabHandle: createDraft.collabHandle, coverStyle: createDraft.coverStyle, automationId: createDraft.automationId || null, isTrialReel: createDraft.isTrialReel, scheduledAt: new Date(createDraft.scheduledLocal).toISOString() })
-        });
-        updateBundle(b);
-        store.appPage = "scheduler";
-        notify();
-        toast(status === "DRAFT" ? "Saved post draft to Calendar!" : "Scheduled post to Calendar & Grid!");
-      } catch (err) { toast(err.message, "error"); }
-    };
-    createForm.onsubmit = (e) => { e.preventDefault(); submitPost("SCHEDULED"); };
-    root.querySelector("#cr-save-draft").onclick = () => submitPost("DRAFT");
-  }
-
-  const openComp = root.querySelector("#btn-open-composer") || root.querySelector("#btn-grid-new-post");
-  if (openComp) openComp.onclick = () => openPostComposerModal();
-  root.querySelectorAll("[data-quick-add]").forEach((btn) => { btn.onclick = (e) => { e.stopPropagation(); openPostComposerModal(btn.dataset.quickAdd); }; });
-  root.querySelectorAll("[data-open-post]").forEach((chip) => { chip.onclick = () => openPostDetailsModal(chip.dataset.openPost); });
-
-  const prev = root.querySelector("#cal-prev");
-  const next = root.querySelector("#cal-next");
-  const today = root.querySelector("#cal-today");
-  if (prev) prev.onclick = () => { if (store.calView === "week") store.calWeekOffset--; else if (store.calMonth === 0) { store.calMonth = 11; store.calYear--; } else store.calMonth--; notify(); };
-  if (next) next.onclick = () => { if (store.calView === "week") store.calWeekOffset++; else if (store.calMonth === 11) { store.calMonth = 0; store.calYear++; } else store.calMonth++; notify(); };
-  if (today) today.onclick = () => { store.calYear = 2026; store.calMonth = 9; store.calWeekOffset = 0; notify(); };
-  root.querySelectorAll("[data-cal-view]").forEach((b) => { b.onclick = () => { store.calView = b.dataset.calView; notify(); }; });
-  root.querySelectorAll("[data-cal-status]").forEach((b) => { b.onclick = () => { store.calStatusFilter = b.dataset.calStatus; notify(); }; });
-
-  root.querySelectorAll("[data-grid-crop]").forEach((b) => {
-    b.onclick = async () => { const bundle = await apiRequest("/api/workspaces/settings", { method: "POST", body: JSON.stringify({ workspaceId: store.data.activeWorkspace.id, gridCrop: b.dataset.gridCrop }) }); updateBundle(bundle); };
-  });
-  const moreBtn = root.querySelector("#btn-grid-more");
-  if (moreBtn) moreBtn.onclick = () => { store.gridShowAll = !store.gridShowAll; notify(); };
-
-  root.querySelectorAll("[data-click-swap]").forEach((btn) => {
-    btn.onclick = async (e) => {
-      e.stopPropagation();
-      const id = btn.dataset.clickSwap;
-      if (!selectedSwapFirstId) { selectedSwapFirstId = id; notify(); }
-      else if (selectedSwapFirstId === id) { selectedSwapFirstId = null; notify(); }
-      else {
-        const first = selectedSwapFirstId;
-        selectedSwapFirstId = null;
-        const bundle = await apiRequest("/api/posts/swap", { method: "POST", body: JSON.stringify({ postAId: first, postBId: id }) });
-        updateBundle(bundle);
-        toast("Swapped scheduled publish timestamps across both grid posts!");
-      }
-    };
-  });
-
-  let draggedId = null;
-  root.querySelectorAll("[data-drag-post]").forEach((tile) => {
-    tile.ondragstart = () => { draggedId = tile.dataset.dragPost; };
-    tile.ondragover = (e) => e.preventDefault();
-    tile.ondrop = async (e) => {
-      e.preventDefault();
-      const targetId = tile.dataset.dragPost;
-      if (draggedId && targetId && draggedId !== targetId) {
-        const bundle = await apiRequest("/api/posts/swap", { method: "POST", body: JSON.stringify({ postAId: draggedId, postBId: targetId }) });
-        updateBundle(bundle);
-        toast("Swapped scheduled publish timestamps across both grid posts!");
-      }
-    };
-  });
-
-  const phForm = root.querySelector("#grid-placeholder-form");
-  if (phForm) {
-    phForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const fd = new FormData(phForm);
-      const bundle = await apiRequest("/api/grid/placeholders", { method: "POST", body: JSON.stringify({ workspaceId: store.data.activeWorkspace.id, note: fd.get("note"), color: fd.get("color") }) });
-      updateBundle(bundle);
-      toast("Added idea placeholder tile to top of grid!");
-    };
-  }
-  root.querySelectorAll("[data-ph-del]").forEach((b) => { b.onclick = async () => { const bundle = await apiRequest("/api/grid/placeholders", { method: "POST", body: JSON.stringify({ workspaceId: store.data.activeWorkspace.id, action: "delete", placeholderId: b.dataset.phDel }) }); updateBundle(bundle); }; });
-  root.querySelectorAll("[data-ph-convert]").forEach((b) => { b.onclick = async () => { const bundle = await apiRequest("/api/grid/placeholders", { method: "POST", body: JSON.stringify({ workspaceId: store.data.activeWorkspace.id, action: "convert", placeholderId: b.dataset.phConvert }) }); updateBundle(bundle); toast("Converted idea tile into a Scheduled Post!"); }; });
-
-  const carForm = root.querySelector("#carousel-gen-form");
-  if (carForm) {
-    carForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const fd = new FormData(carForm);
-      const res = await apiRequest("/api/carousels/generate", { method: "POST", body: JSON.stringify({ workspaceId: store.data.activeWorkspace.id, prompt: fd.get("prompt"), themeId: fd.get("themeId"), slideCount: Number(fd.get("slideCount")) }) });
-      store.selectedCarouselId = res.createdId;
-      store.selectedSlideIndex = 0;
-      store.selectedThemeOverride = null;
-      updateBundle(res);
-      toast("Generated multi-slide themed carousel!");
-    };
-  }
-  const themeSel = root.querySelector("#car-theme-select");
-  if (themeSel) themeSel.onchange = () => { store.selectedThemeOverride = themeSel.value; notify(); };
-  root.querySelectorAll("[data-pick-carousel]").forEach((b) => { b.onclick = () => { store.selectedCarouselId = b.dataset.pickCarousel; store.selectedSlideIndex = 0; store.selectedThemeOverride = null; notify(); }; });
-
-  const activeCar = store.data.carousels.find((c) => c.id === store.selectedCarouselId) || store.data.carousels[0];
-  const prevS = root.querySelector("#car-prev-slide");
-  const nextS = root.querySelector("#car-next-slide");
-  const addS = root.querySelector("#car-add-slide");
-  if (prevS) prevS.onclick = () => { store.selectedSlideIndex = Math.max(0, store.selectedSlideIndex - 1); notify(); };
-  if (nextS && activeCar) nextS.onclick = () => { store.selectedSlideIndex = Math.min(activeCar.slides.length - 1, store.selectedSlideIndex + 1); notify(); };
-  if (addS && activeCar) {
-    addS.onclick = async () => {
-      activeCar.slides.push({ tag: String(activeCar.slides.length).padStart(2, "0"), headline: "Bonus takeaway slide", body: "Edit this slide copy on the right and click Save Edits.", badge: "BONUS" });
-      store.selectedSlideIndex = activeCar.slides.length - 1;
-      const b = await apiRequest("/api/carousels/update", { method: "POST", body: JSON.stringify({ carouselId: activeCar.id, slides: activeCar.slides }) });
-      updateBundle(b);
-      toast("Added new slide card!");
-    };
-  }
-  root.querySelectorAll("[data-rm-slide]").forEach((btn) => {
-    btn.onclick = async (e) => {
-      e.stopPropagation();
-      activeCar.slides.splice(Number(btn.dataset.rmSlide), 1);
-      store.selectedSlideIndex = 0;
-      const b = await apiRequest("/api/carousels/update", { method: "POST", body: JSON.stringify({ carouselId: activeCar.id, slides: activeCar.slides }) });
-      updateBundle(b);
-    };
-  });
-  root.querySelectorAll("[data-focus-slide]").forEach((box) => { box.onclick = () => { const n = Number(box.dataset.focusSlide); if (store.selectedSlideIndex !== n) { store.selectedSlideIndex = n; notify(); } }; });
-  root.querySelectorAll("[data-slide-head]").forEach((inp) => { inp.oninput = () => { activeCar.slides[Number(inp.dataset.slideHead)].headline = inp.value; }; });
-  root.querySelectorAll("[data-slide-body]").forEach((inp) => { inp.oninput = () => { activeCar.slides[Number(inp.dataset.slideBody)].body = inp.value; }; });
-
-  const saveCar = root.querySelector("#btn-save-carousel");
-  if (saveCar && activeCar) {
-    saveCar.onclick = async () => {
-      const themeId = root.querySelector("#car-theme-select").value;
-      const bundle = await apiRequest("/api/carousels/update", { method: "POST", body: JSON.stringify({ carouselId: activeCar.id, themeId, slides: activeCar.slides }) });
-      store.selectedThemeOverride = null;
-      updateBundle(bundle);
-      toast("Saved slide edits & active theme!");
-    };
-  }
-  const schedCar = root.querySelector("#btn-schedule-carousel");
-  if (schedCar && activeCar) {
-    schedCar.onclick = async () => {
-      const bundle = await apiRequest("/api/posts", { method: "POST", body: JSON.stringify({ workspaceId: store.data.activeWorkspace.id, mediaType: "CAROUSEL", title: activeCar.title, caption: activeCar.caption, coverStyle: "cream", scheduledAt: new Date(Date.now() + 86400000 * 2).toISOString() }) });
-      updateBundle(bundle);
-      store.appPage = "scheduler";
-      notify();
-      toast("Scheduled Carousel onto Calendar & Grid!");
-    };
-  }
-  const dlPng = root.querySelector("#car-download-png");
-  if (dlPng && activeCar) {
-    dlPng.onclick = () => {
-      const s = activeCar.slides[store.selectedSlideIndex] || activeCar.slides[0];
-      const th = store.data.themes.find((t) => t.id === (store.selectedThemeOverride || activeCar.theme_id)) || store.data.themes[0];
-      const canvas = document.createElement("canvas");
-      canvas.width = 1080;
-      canvas.height = 1350;
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = th.bg;
-      ctx.fillRect(0, 0, 1080, 1350);
-      ctx.fillStyle = th.accent;
-      ctx.font = "bold 36px monospace";
-      ctx.fillText(s.tag, 90, 180);
-      ctx.fillStyle = th.fg;
-      const wrapDraw = (text, maxChars, startY, lineH, font) => {
-        ctx.font = font;
-        let line = "", y = startY;
-        for (const w of String(text || "").split(" ")) {
-          if ((line + w).length > maxChars) { ctx.fillText(line.trim(), 90, y); line = w + " "; y += lineH; }
-          else line += w + " ";
-        }
-        if (line.trim()) { ctx.fillText(line.trim(), 90, y); y += lineH; }
-        return y;
-      };
-      const nextY = wrapDraw(s.headline, 23, 300, 82, "bold 64px Georgia, serif");
-      wrapDraw(s.body, 40, nextY + 54, 52, "36px sans-serif");
-      ctx.fillStyle = th.accent;
-      ctx.font = "bold 32px sans-serif";
-      ctx.fillText(`@${store.data.activeWorkspace.ig_handle} · Swipe >`, 90, 1250);
-      const a = document.createElement("a");
-      a.href = canvas.toDataURL("image/png");
-      a.download = `${activeCar.id}-slide-${store.selectedSlideIndex + 1}.png`;
-      a.click();
-      toast("Exported 1080×1350 (4:5) slide PNG!");
-    };
-  }
 }

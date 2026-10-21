@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     normalizeVercelUrl(req);
     await handleApiOrMcpRequest(req, res);
   } catch (err) {
-    console.error("[ReelDrop Vercel Function Error]", err);
-    sendJson(res, 500, { error: err.message || "Vercel Function Error" });
+    console.error("[Velora Serverless Error]", err);
+    sendJson(res, 500, { error: err.message || "Internal serverless error" });
   }
 }
