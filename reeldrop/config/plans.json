@@ -1,0 +1,146 @@
+{
+  "plans": {
+    "starter": {
+      "id": "starter",
+      "name": "Starter",
+      "tagline": "No credit card needed",
+      "description": "Enough to post consistently and try AI captions without paying yet.",
+      "price": {
+        "usd": { "monthly": 0, "yearly": 0, "regularYearly": 0 },
+        "inr": { "monthly": 0, "yearly": 0, "regularYearly": 0 }
+      },
+      "limits": {
+        "workspaces": 1,
+        "igAccounts": 1,
+        "monthlyPosts": null,
+        "aiCaptionGenerationsPerMonth": 3,
+        "aiCarouselImagesPerMonth": 0,
+        "aiReelThumbnails": false,
+        "trialReelsPerMonth": 3,
+        "activeDmAutomations": 5,
+        "dmOnPostsAndCarousels": false,
+        "publicReplyVariantsMax": 10,
+        "storyReplyTriggers": false,
+        "dmKeywordTriggers": false,
+        "followGate": false,
+        "timedFollowUps": false,
+        "retriggerPastComments": false,
+        "aiDmRepliesPerMonth": 0,
+        "removeBrandingFooter": false,
+        "firstCommentScheduling": false,
+        "inboxReply": false,
+        "mcpAccess": false
+      }
+    },
+    "influencer": {
+      "id": "influencer",
+      "name": "Influencer",
+      "badge": "Solo creators",
+      "description": "For creators going all-in on DM automation: unlimited automations and every trigger type.",
+      "price": {
+        "usd": { "monthly": 9.99, "yearly": 79, "regularYearly": 120, "effectiveMonthly": 6.58 },
+        "inr": { "monthly": 449, "yearly": 4999, "regularYearly": 5388, "effectiveMonthly": 416 }
+      },
+      "limits": {
+        "workspaces": 1,
+        "igAccounts": 1,
+        "monthlyPosts": null,
+        "aiCaptionGenerationsPerMonth": 3,
+        "aiCarouselImagesPerMonth": 0,
+        "aiReelThumbnails": false,
+        "trialReelsPerMonth": null,
+        "activeDmAutomations": null,
+        "dmOnPostsAndCarousels": true,
+        "publicReplyVariantsMax": null,
+        "storyReplyTriggers": true,
+        "dmKeywordTriggers": true,
+        "followGate": true,
+        "timedFollowUps": true,
+        "retriggerPastComments": true,
+        "aiDmRepliesPerMonth": 0,
+        "removeBrandingFooter": true,
+        "firstCommentScheduling": true,
+        "inboxReply": true,
+        "mcpAccess": true
+      }
+    },
+    "creator": {
+      "id": "creator",
+      "name": "Creator",
+      "badge": "Founding price",
+      "description": "For creators who schedule weekly, ship carousels, and run up to 5 Instagram accounts.",
+      "price": {
+        "usd": { "monthly": 29, "yearly": 149, "regularYearly": 348, "effectiveMonthly": 12.42 },
+        "inr": { "monthly": 2699, "yearly": 13499, "regularYearly": 32388, "effectiveMonthly": 1125 }
+      },
+      "limits": {
+        "workspaces": 5,
+        "igAccounts": 5,
+        "monthlyPosts": null,
+        "aiCaptionGenerationsPerMonth": null,
+        "aiCarouselImagesPerMonth": 100,
+        "aiReelThumbnails": true,
+        "trialReelsPerMonth": null,
+        "activeDmAutomations": null,
+        "dmOnPostsAndCarousels": true,
+        "publicReplyVariantsMax": null,
+        "storyReplyTriggers": true,
+        "dmKeywordTriggers": true,
+        "followGate": true,
+        "timedFollowUps": true,
+        "retriggerPastComments": true,
+        "aiDmRepliesPerMonth": 2000,
+        "removeBrandingFooter": true,
+        "firstCommentScheduling": true,
+        "inboxReply": true,
+        "mcpAccess": true
+      }
+    },
+    "lifetime": {
+      "id": "lifetime",
+      "name": "Founding Lifetime",
+      "badge": "Lifetime deal",
+      "description": "Pay once and keep every Creator feature for as long as ReelDrop exists.",
+      "price": {
+        "usd": { "oneTime": 249, "regularYearly": 348 },
+        "inr": { "oneTime": 21999, "regularYearly": 32388 }
+      },
+      "limits": {
+        "workspaces": 5,
+        "igAccounts": 5,
+        "monthlyPosts": null,
+        "aiCaptionGenerationsPerMonth": null,
+        "aiCarouselImagesPerMonth": 100,
+        "aiReelThumbnails": true,
+        "trialReelsPerMonth": null,
+        "activeDmAutomations": null,
+        "dmOnPostsAndCarousels": true,
+        "publicReplyVariantsMax": null,
+        "storyReplyTriggers": true,
+        "dmKeywordTriggers": true,
+        "followGate": true,
+        "timedFollowUps": true,
+        "retriggerPastComments": true,
+        "aiDmRepliesPerMonth": 2000,
+        "removeBrandingFooter": true,
+        "firstCommentScheduling": true,
+        "inboxReply": true,
+        "mcpAccess": true
+      }
+    }
+  },
+  "globalRules": {
+    "maxButtonsPerDm": 3,
+    "maxButtonLabelLength": 20,
+    "requireHttpsButtonUrl": true,
+    "maxRetriggerCommentsPerPost": 50,
+    "maxRetriggerPosts": 5,
+    "maxFollowUpsPerSweep": 200,
+    "instagramDailyPublishCap": 50,
+    "inboxReplyCharLimit": 1000,
+    "inboxWindowHours": 24,
+    "maxTagsPerConversation": 8,
+    "gridIdeaNoteMaxLength": 280,
+    "bulkScheduleMaxReels": 15
+  }
+}

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.turbo/
+.vercel/
+rea/
+image-search/
+workbench/uploads/
+*.tgz
+reeldrop/data/*.db*
+reeldrop/screenshots/
+reeldrop/rea-evidence/04-*.json
+reeldrop/rea-evidence/05-*.json
+reeldrop/rea-evidence/*.sqlite
+reeldrop/rea-evidence/*.har

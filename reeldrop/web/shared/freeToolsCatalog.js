@@ -1,0 +1,22 @@
+export const FREE_TOOLS_CATALOG = [
+  { slug: "instagram-caption-generator", name: "Instagram Caption Generator", category: "Caption & Copy", popular: true, desc: "Enter your topic and tone, get 4 ready-to-post caption options instantly." },
+  { slug: "instagram-grid-planner", name: "Instagram Grid Planner", category: "Profile", popular: true, desc: "Upload your next photos and drag them into a 3-column feed preview to plan a cohesive grid." },
+  { slug: "caption-length-checker", name: "Instagram Caption Checker", category: "Caption & Copy", popular: false, desc: "Character count, word count and reading time against the 2,200 character limit." },
+  { slug: "hook-generator", name: "Hook Generator", category: "Caption & Copy", popular: false, desc: "Generate 5 scroll-stopping opening lines for any topic and tone." },
+  { slug: "cta-builder", name: "CTA Builder", category: "Caption & Copy", popular: false, desc: "Build the perfect call-to-action based on your content goal." },
+  { slug: "instagram-hashtag-generator", name: "Instagram Hashtag Generator", category: "Hashtags", popular: false, desc: "Paste a caption or topic and get a curated mix of small, mid, and large hashtags." },
+  { slug: "hashtag-density-checker", name: "Hashtag Density Checker", category: "Hashtags", popular: false, desc: "Analyze your caption for tag count, density, and potentially banned tags." },
+  { slug: "niche-hashtag-finder", name: "Niche Hashtag Finder", category: "Hashtags", popular: false, desc: "Get a curated mix of small, mid, and large hashtags for your niche." },
+  { slug: "best-post-time", name: "Best Post Time Calculator", category: "Analytics", popular: false, desc: "See peak engagement windows for your timezone and audience location." },
+  { slug: "engagement-rate-calculator", name: "Engagement Rate Calculator", category: "Analytics", popular: true, desc: "Calculate your ER% and benchmark it against Instagram averages." },
+  { slug: "instagram-shadowban-checker", name: "Instagram Shadowban Symptom Checker", category: "Analytics", popular: false, desc: "Score 8 symptoms of a reach limit and scan your hashtags against tags reported as restricted." },
+  { slug: "content-frequency-planner", name: "Content Frequency Planner", category: "Analytics", popular: false, desc: "Answer 3 questions and get a tailored weekly posting schedule." },
+  { slug: "aspect-ratio-checker", name: "Reel Aspect Ratio Checker", category: "Video", popular: false, desc: "Check if your video dimensions work across Instagram, TikTok, and Shorts." },
+  { slug: "hook-timing-analyzer", name: "Hook Timing Analyzer", category: "Video", popular: false, desc: "Find out if your reel script hooks viewers before they scroll." },
+  { slug: "instagram-collab-rate-calculator", name: "Instagram Collab Rate Calculator", category: "Analytics", popular: true, desc: "See what to charge for a sponsored Reel, post, or UGC video, based on your views, engagement, and country." },
+  { slug: "instagram-media-kit-generator", name: "Instagram Media Kit Generator", category: "Profile", popular: false, desc: "Build a brand-ready one-page media kit and download it as a PDF. Your rate stays private." },
+  { slug: "bio-writer", name: "Instagram Bio Generator", category: "Profile", popular: false, desc: "Get 4 template-based bios from a simple 3-field form." },
+  { slug: "mov-to-mp4-converter", name: "MOV to MP4 Converter", category: "Video", popular: false, desc: "Convert .mov video files to universally compatible MP4, right in your browser." },
+  { slug: "linkedin-carousel-to-instagram-carousel", name: "LinkedIn Carousel to Instagram Carousel", category: "Repurpose", popular: false, desc: "Turn your LinkedIn PDF carousel into ready-to-post Instagram carousel slides." },
+  { slug: "instagram-carousel-to-linkedin-carousel", name: "Instagram Carousel to LinkedIn Carousel", category: "Repurpose", popular: false, desc: "Turn your Instagram carousel images into a ready-to-post LinkedIn PDF document." }
+];

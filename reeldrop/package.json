@@ -1,0 +1,16 @@
+{
+  "name": "reeldrop-platform-reconstructed",
+  "version": "2.0.0",
+  "description": "Complete full-stack & Vercel-ready reverse-engineered reconstruction of ReelDrop (reeldrop.io) built and verified with morluto/rea v6.7.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('ReelDrop Vercel static + serverless bundle ready')\"",
+    "start": "node server/index.mjs",
+    "dev": "node --watch server/index.mjs",
+    "rea:verify": "node scripts/build-rea-evidence.mjs",
+    "test": "node scripts/verify-e2e.mjs"
+  }
+}
