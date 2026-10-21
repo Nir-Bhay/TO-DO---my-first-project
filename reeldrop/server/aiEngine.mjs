@@ -9,29 +9,29 @@ export function generateCaptions({ topic = "building consistent creator systems"
   const cleanTopic = topic.trim() || "shipping high-retention Instagram content";
   const slugTag = cleanTopic.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 18) || "creatorworkflow";
   const tags = includeHashtags
-    ? `\n\n#${slugTag} #instagramgrowth #creatorworkflow #contentstrategy #reelsgrowth #solocreator`
+    ? `\n\n#${slugTag} #contentstrategy #instagramcreator #designsystems #audiencegrowth #solofounder`
     : "";
 
   const variants = [
     {
-      label: `${tone} · Story + Payoff`,
-      hook: `Most creators overcomplicate ${cleanTopic} before they ever ship post #10.`,
-      body: `Most creators overcomplicate ${cleanTopic} before they ever ship post #10.\n\nHere is the 3-part loop that turned sporadic views into compounding saves:\n1. Open with the exact friction your audience felt today\n2. Show one concrete fix on screen in under 18 seconds\n3. Pair the post with an instant Comment -> DM resource\n\nComment "${keyword}" below and I'll send the full checklist straight to your DMs.${tags}`
+      label: `${tone} — Hook + Three Takeaways`,
+      hook: `Most teams overcomplicate ${cleanTopic} before they ever ship post #10.`,
+      body: `Most teams overcomplicate ${cleanTopic} before they ever ship post #10.\n\nHere is the 3-part loop that turned sporadic reach into consistent saves:\n1. Open with the exact friction your reader ran into today\n2. Show one concrete fix on screen in under 18 seconds\n3. Pair the post with an instant keyword DM resource\n\nComment "${keyword}" below and I will send the full checklist straight to your DMs.${tags}`
     },
     {
-      label: `${tone} · Contrarian Hook`,
-      hook: `Unpopular take: ${cleanTopic} isn't an algorithm problem — it's a packaging problem.`,
-      body: `Unpopular take: ${cleanTopic} isn't an algorithm problem — it's a packaging problem.\n\nWhen your first 125 characters name the exact outcome clearly, cold viewers stay through the payoff frame AND bookmark it for later.\n\nSave this for your next Sunday batch session — or reply "${keyword}" and I'll DM you the template.${tags}`
+      label: `${tone} — Contrarian Opener`,
+      hook: `Unpopular take: ${cleanTopic} is rarely an algorithm problem — it is a packaging problem.`,
+      body: `Unpopular take: ${cleanTopic} is rarely an algorithm problem — it is a packaging problem.\n\nWhen your opening 125 characters name the exact outcome clearly, cold viewers stay through the payoff frame and bookmark the post for later.\n\nSave this for your next batch session, or comment "${keyword}" for the template.${tags}`
     },
     {
-      label: `${tone} · Step-by-Step Mini Essay`,
-      hook: `Steal this 15-minute checklist for ${cleanTopic}:`,
-      body: `Steal this 15-minute checklist for ${cleanTopic}:\n\n• Write Slide 1 + Slide 2 together so second-impression feed views convert\n• Cut dead air before word #1 in your Reel hook\n• Check 3:4 profile grid crop before scheduling\n\nDrop "${keyword}" in the comments and my official API automation will send the resource pack right away.${tags}`
+      label: `${tone} — Practical Checklist`,
+      hook: `Use this 15-minute checklist before publishing on ${cleanTopic}:`,
+      body: `Use this 15-minute checklist before publishing on ${cleanTopic}:\n\n- Write Slide 1 and Slide 2 together so second-chance feed impressions convert\n- Cut dead air before the first spoken word in your video hook\n- Preview your 3:4 profile grid crop before scheduling\n\nDrop "${keyword}" in the comments and my automated DM workflow will send the resource pack right away.${tags}`
     },
     {
-      label: `${tone} · Punchy Minimal`,
+      label: `${tone} — Concise Editorial`,
       hook: `How we simplified ${cleanTopic} down to one repeatable weekly ritual.`,
-      body: `How we simplified ${cleanTopic} down to one repeatable weekly ritual.\n\nLess tab-hopping. Sharper hooks. Every link delivered automatically in DMs.\n\nComment "${keyword}" if you want the exact setup.${tags}`
+      body: `How we simplified ${cleanTopic} down to one repeatable weekly ritual.\n\nFewer scattered docs. Stronger hooks. Every link delivered automatically inside DMs.\n\nComment "${keyword}" if you want the exact setup.${tags}`
     }
   ];
 
@@ -42,65 +42,67 @@ export function generateCaptions({ topic = "building consistent creator systems"
   }));
 }
 
-export function generateCarouselSlides({ prompt = "5 ways to grow with Instagram carousels", slideCount = 5, themeId = "bold_highlight" }) {
+export function generateCarouselSlides({ prompt = "5 principles of clean carousel design", slideCount = 5, themeId = "swiss_white" }) {
   const theme = CAROUSEL_THEMES.find((t) => t.id === themeId) || CAROUSEL_THEMES[0];
   const count = Math.min(10, Math.max(3, Number(slideCount) || 5));
   const clean = prompt.trim() || "5 ways to turn profile visits into loyal followers";
 
   const stepTemplates = [
-    ["Lead with the sharpest tension right above the eye-line", "Your Slide 1 headline only needs 7–11 words. Leave generous breathing room so viewers stop scrolling immediately."],
-    ["Make Slide 2 your second hook for repeat feed impressions", "Instagram re-serves carousels on Slide 2 automatically. Give non-swipers a crisp concrete reason to stay."],
-    ["Stick to one takeaway + one proof point per card", "Cut every filler sentence in half. Visual rhythm across slides triples completion to the final card."],
-    ["Frame key typography inside the 3:4 profile grid box", "Export at 1080×1350 (4:5) for feed height while keeping your title clean on your profile grid."],
-    ["Anchor numbers with real benchmarks instead of vague claims", "Specific numbers ('45-minute Sunday sprint' vs 'save time') lift saves by over 2.1×."],
-    ["Pair visual contrast between odd and even slides", "Subtle badge pills and numbered markers keep readers oriented through longer educational decks."],
-    ["Turn passive readers into active DM conversations", "Close with one clear keyword trigger so every high-intent reader gets your full toolkit automatically."],
-    ["Audit save-to-reach rate every 7 days", "Double down on topics crossing a 3.5% save-to-reach ratio — those compound longest in Explore."]
+    ["Lead with one clear tension right above the eye-line", "Your cover headline only needs 7 to 11 words. Generous whitespace makes readers pause immediately."],
+    ["Treat Slide 2 as your second hook for repeat feed impressions", "Instagram re-serves carousels starting on Slide 2 when someone scrolls past the cover once."],
+    ["Keep one takeaway and one concrete example per card", "Trimming every sentence by half lifts swipe-through completion to the final slide."],
+    ["Frame key typography inside the 3:4 profile grid safe zone", "Design at 1080x1350 (4:5) for feed height while keeping titles centered cleanly on your profile grid."],
+    ["Replace vague claims with specific numbers and timeframes", "Concrete specifics ('45-minute Sunday sprint' vs 'save time') consistently double save rates."],
+    ["Maintain consistent margins and type hierarchy across cards", "Predictable alignment lets readers absorb ideas effortlessly without visual fatigue."],
+    ["Pair your final slide with a single keyword DM action", "Give high-intent readers an instant resource link instead of sending them hunting for a bio URL."],
+    ["Review save-to-reach ratio every week", "Double down on formats crossing a 3.5% save-to-reach benchmark — those compound longest in Explore."]
   ];
 
   const slides = [
     {
-      tag: "HOOK",
+      tag: "01",
       headline: clean.length > 68 ? `${clean.slice(0, 65)}...` : clean,
-      body: `Styled in ${theme.name} — swipe through every actionable step & bookmark this post for your next batch session.`,
-      badge: `${theme.category.toUpperCase()} · ${count} SLIDES`
+      body: `Swipe through all ${count} cards and bookmark this breakdown for your next publishing session.`,
+      badge: `${theme.category} · ${count} Slides`,
+      align: "left"
     }
   ];
 
   for (let i = 1; i < count - 1; i++) {
     const [head, body] = stepTemplates[(i - 1) % stepTemplates.length];
     slides.push({
-      tag: String(i).padStart(2, "0"),
+      tag: String(i + 1).padStart(2, "0"),
       headline: head,
-      body: `${body} Applied directly to "${clean.slice(0, 48)}".`,
-      badge: `STEP ${String(i).padStart(2, "0")}`
+      body,
+      badge: `Principle ${String(i).padStart(2, "0")}`,
+      align: "left"
     });
   }
 
   slides.push({
-    tag: String(count - 1).padStart(2, "0"),
-    headline: "Save this deck + comment 'GUIDE' for the full template pack",
-    body: "Tap bookmark in the bottom-right corner and drop GUIDE below — I'll send the editable checklist straight to your DMs.",
-    badge: "SAVE & COMMENT"
+    tag: String(count).padStart(2, "0"),
+    headline: "Save this deck + comment GUIDE for the full resource kit",
+    body: "Bookmark this post in the bottom-right corner and reply GUIDE below — the editable checklist will land right in your DMs.",
+    badge: "Next Step",
+    align: "left"
   });
 
   return {
     theme,
     slides,
-    suggestedCaption: `${clean} — broken down slide by slide.\n\nSwipe through all ${count} cards, hit Save so you have it for your next session, and comment GUIDE for the full resource link! ↓`
+    suggestedCaption: `${clean} — broken down step by step.\n\nSwipe through all ${count} slides, save this post for later, and comment GUIDE for the direct resource link.`
   };
 }
 
 export function generateAiDmReply({ userMessage = "", personaPrompt = "", handle = "creator" }) {
   const lower = userMessage.toLowerCase();
-  const toneNote = personaPrompt ? ` (${personaPrompt.slice(0, 50)})` : "";
-  if (lower.includes("rate") || lower.includes("slot") || lower.includes("sponsor") || lower.includes("collab")) {
-    return `Hey @${handle}! Thanks so much for reaching out ✓ Yes — I still have one sponsored Reel + Story slot open! Drop your brief + timeline here and I'll send over my updated Q4 rate card right away.${toneNote ? "" : ""}`;
+  if (lower.includes("rate") || lower.includes("slot") || lower.includes("sponsor") || lower.includes("collab") || lower.includes("brief")) {
+    return `Hi @${handle} — thanks for reaching out! Yes, we have one sponsored Reel + Story slot open next month. Share your campaign brief and target dates here and I will send over our media kit right away.`;
   }
-  if (lower.includes("theme") || lower.includes("carousel") || lower.includes("font")) {
-    return `Hey @${handle}! That deck uses the Bold Highlight & Editorial serif pairing at 1080×1350 (4:5). Want me to send the exact prompt sheet link? ✦`;
+  if (lower.includes("theme") || lower.includes("carousel") || lower.includes("font") || lower.includes("kit")) {
+    return `Hi @${handle} — glad that post resonated! Here is the direct link to the template kit from that breakdown: https://velora.so/tools. Let me know if you have any questions about setting it up.`;
   }
-  return `Hey @${handle}! Appreciate your message ✓ Just saw your note — here is the direct link to everything mentioned in my latest Reel: https://reeldrop.io/free-tools. Let me know if you want the bonus checklist too!`;
+  return `Hi @${handle} — appreciate the message! Here is the direct resource link mentioned in the post: https://velora.so/tools. Feel free to reply here anytime if you want the bonus checklist too.`;
 }
 
 export function analyzeHashtagDensity(text = "") {
