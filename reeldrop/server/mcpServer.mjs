@@ -48,7 +48,7 @@ export const MCP_TOOLS_CATALOG = [
   tool("cancel_scheduled_post", "Content & Scheduling", "Delete or cancel a scheduled post.", { post_id: { type: "string" } }, ["post_id"]),
   tool("publish_post_now", "Content & Scheduling", "Immediately publish a scheduled/failed post container via official Graph simulation.", { post_id: { type: "string" } }, ["post_id"]),
 
-  // 23–30: Visual Grid Planner (8 — exact ReelDrop MCP Grid suite!)
+  // 23–30: Visual Grid Planner (8 — exact Velora MCP Grid suite!)
   tool("get_grid_preview", "Grid Planner", "Return ordered profile grid tiles (idea placeholders + scheduled + published posts).", { workspace_id: { type: "string" }, limit: { type: "number" } }),
   tool("create_grid_placeholder", "Grid Planner", "Add a colored 280-character idea note tile to the top of the visual profile grid.", { workspace_id: { type: "string" }, note: { type: "string" }, color: { type: "string" } }, ["note"]),
   tool("update_grid_placeholder", "Grid Planner", "Edit note copy or swatch color on an existing Grid idea tile.", { placeholder_id: { type: "string" }, note: { type: "string" }, color: { type: "string" } }, ["placeholder_id"]),
@@ -59,7 +59,7 @@ export const MCP_TOOLS_CATALOG = [
   tool("remove_grid_collab", "Grid Planner", "Remove collaborator tag from a planned Grid post.", { post_id: { type: "string" } }, ["post_id"]),
 
   // 31–38: AI Carousels Studio — 35 Themes (8)
-  tool("list_carousel_themes", "Carousels Studio", "List all 35 curated ReelDrop carousel themes with category and photo requirements.", { category: { type: "string" } }),
+  tool("list_carousel_themes", "Carousels Studio", "List all 16 curated Velora carousel design presets with category and photo requirements.", { category: { type: "string" } }),
   tool("generate_carousel", "Carousels Studio", "Generate a multi-slide styled carousel deck (3–10 slides) from a topic prompt.", { workspace_id: { type: "string" }, prompt: { type: "string" }, theme_id: { type: "string" }, slide_count: { type: "number" } }, ["prompt"]),
   tool("list_carousels", "Carousels Studio", "List saved AI carousel decks in a workspace.", { workspace_id: { type: "string" } }),
   tool("get_carousel", "Carousels Studio", "Fetch full slide copy, theme metadata, and caption for a carousel.", { carousel_id: { type: "string" } }, ["carousel_id"]),
@@ -233,7 +233,7 @@ export function callMcpTool(name, args = {}) {
         views: 0, reach: 0, likes: 0, comments_count: 0, saves: 0, avg_watch_sec: 0, created_at: now
       };
       state.posts.unshift(post);
-      incrementPlatformMetric("reels_scheduled", 1);
+      incrementPlatformMetric("posts_scheduled", 1);
       saveState();
       return { scheduled: true, post };
     }
@@ -254,7 +254,7 @@ export function callMcpTool(name, args = {}) {
         state.posts.unshift(p);
         return p;
       });
-      incrementPlatformMetric("reels_scheduled", created.length);
+      incrementPlatformMetric("posts_scheduled", created.length);
       saveState();
       return { scheduled_count: created.length, posts: created };
     }
@@ -383,11 +383,11 @@ export function callMcpTool(name, args = {}) {
       };
 
     case "generate_carousel": {
-      const gen = generateCarouselSlides({ prompt: args.prompt, slideCount: args.slide_count || 5, themeId: args.theme_id || "bold_highlight" });
+      const gen = generateCarouselSlides({ prompt: args.prompt, slideCount: args.slide_count || 5, themeId: args.theme_id || "swiss_white" });
       const deck = {
         id: "car_" + crypto.randomUUID().slice(0, 8),
         workspace_id: ws.id, title: String(args.prompt).slice(0, 56), prompt: args.prompt,
-        theme_id: args.theme_id || "bold_highlight", aspect_ratio: "4:5",
+        theme_id: args.theme_id || "swiss_white", aspect_ratio: "4:5",
         caption: gen.suggestedCaption, slides_json: JSON.stringify(gen.slides), created_at: now
       };
       state.carousels.unshift(deck);
@@ -445,7 +445,7 @@ export function callMcpTool(name, args = {}) {
       return { automations: state.automations.filter((a) => a.workspace_id === ws.id) };
 
     case "create_automation": {
-      const buttons = args.buttons || [{ label: "Open Link", url: "https://reeldrop.io" }];
+      const buttons = args.buttons || [{ label: "Open Link", url: "https://velora.so" }];
       const check = validateAutomationAgainstPlan(ws, { status: "active", trigger_type: args.trigger_type || "comment", post_target: "all_posts", buttons });
       if (!check.ok) return { isError: true, message: check.error };
       const item = {
@@ -603,7 +603,7 @@ export function handleMcpJsonRpc(rpcBody) {
       id,
       result: {
         protocolVersion: "2025-06-18",
-        serverInfo: { name: "reeldrop-mcp-server", version: "2.0.0" },
+        serverInfo: { name: "velora-mcp", version: "2.0.0" },
         capabilities: { tools: { listChanged: false } }
       }
     };

@@ -1,13 +1,13 @@
 {
-  "name": "reeldrop-vercel-monorepo",
-  "version": "2.0.0",
+  "name": "velora-studio",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=18.18.0"
   },
   "scripts": {
-    "build": "mkdir -p public && cp -r reeldrop/public/* public/",
+    "build": "echo 'Velora static assets & serverless functions ready'",
     "start": "node reeldrop/server/index.mjs",
     "test": "node reeldrop/scripts/verify-e2e.mjs"
   }

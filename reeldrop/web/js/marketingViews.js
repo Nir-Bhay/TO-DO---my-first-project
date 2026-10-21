@@ -1,583 +1,1221 @@
-import { store, notify, toast, apiRequest, escapeHtml } from "./api.js";
+import { store, escHtml, fmtNum } from "./api.js";
+import { icon, brandLogo } from "./icons.js";
 
-let heroTab = "scheduler";
-let openFaqIdx = 0;
-let themeCategory = "All";
-let themeNoPhotoOnly = false;
-let themeSearch = "";
-let advisorQ = { automations: true, multiAccount: false, aiCarousels: true };
+export function renderMarketingNavbar(activePath = "/") {
+  const isDark = store.theme === "dark";
+  const user = store.currentUser;
+  const isEmptyMode = store.bundle?.dataMode === "empty";
+  return `
+    <div style="background:var(--bg-inverse);color:var(--ink-inverse);font-size:12.5px;padding:8px 16px;text-align:center;border-bottom:1px solid var(--border);">
+      <span style="font-weight:600;">Velora Studio 3.0</span> &mdash; AI Post Co-Pilot, Smart Image Crop Studio, Live Stats Profile Grid &amp; 58-Tool MCP API &middot;
+      <a href="/app/overview" data-link style="color:#A5B4FC;font-weight:700;margin-left:6px;text-decoration:underline;">Open Live Studio &rarr;</a>
+    </div>
+    <header class="mkt-nav">
+      <div class="mkt-nav-inner">
+        <div style="display:flex;align-items:center;gap:24px;">
+          <a href="/" data-link>${brandLogo(true)}</a>
+          <nav class="mkt-links" aria-label="Main Navigation">
+            <a href="/" data-link class="mkt-link ${activePath === "/" ? "is-active" : ""}">Product</a>
+            <a href="/pricing" data-link class="mkt-link ${activePath === "/pricing" ? "is-active" : ""}">Pricing</a>
+            <a href="/tools" data-link class="mkt-link ${activePath.startsWith("/tools") ? "is-active" : ""}">Creator Tools</a>
+            <a href="/partners" data-link class="mkt-link ${activePath === "/partners" ? "is-active" : ""}">Partners</a>
+            <a href="/docs" data-link class="mkt-link ${activePath.startsWith("/docs") ? "is-active" : ""}">Docs &amp; API</a>
+          </nav>
+        </div>
 
-const NICHES = [
-  "Creator Workflow", "Design & Typography", "Tech & AI", "Fitness & Wellness",
-  "Food & Culinary", "Fashion & Styling", "Photography", "Travel & Visual Diaries",
-  "Indie SaaS & Founders", "Education & Study", "Real Estate", "E-Commerce Brands", "Agencies"
-];
+        <div class="mkt-actions">
+          <div class="segmented mkt-hide-mobile" title="Switch entire platform between preloaded demo data and clean unconnected empty state">
+            <button type="button" class="seg-btn ${!isEmptyMode ? "is-active" : ""}" data-switch-mode="sample">With Data</button>
+            <button type="button" class="seg-btn ${isEmptyMode ? "is-active" : ""}" data-switch-mode="empty">Without Data</button>
+          </div>
+          <button class="icon-btn" id="btn-theme-toggle" title="Toggle color theme" aria-label="Toggle color theme">
+            ${icon(isDark ? "sun" : "moon", 16)}
+          </button>
+          ${user ? `
+            <a href="/app/overview" data-link class="btn btn-primary">
+              Open Studio ${icon("arrowRight", 15)}
+            </a>
+          ` : `
+            <a href="/sign-in" data-link class="btn btn-ghost mkt-hide-mobile">Sign in</a>
+            <a href="/app/overview" data-link class="btn mkt-hide-mobile">Live Studio</a>
+            <a href="/sign-up" data-link class="btn btn-primary">Start free</a>
+          `}
+          <button class="icon-btn mkt-burger" id="btn-mkt-mobile-menu" aria-label="Menu">
+            ${icon("menu", 18)}
+          </button>
+        </div>
+      </div>
+    </header>
+  `;
+}
 
-const FAQS = [
-  ["Can Instagram ban or shadowban my account for using ReelDrop?", "Never. ReelDrop is built 100% on the Official Meta Instagram Graph API & Messenger Platform Webhooks via official OAuth — zero password sharing, zero headless browser bots, and strict enforcement of Meta's 24-hour messaging window."],
-  ["How does 'Ask for follow' work inside Auto-DMs?", "When a non-follower comments your keyword, ReelDrop sends a friendly prompt with an 'I followed ✓' postback button. When tapped, ReelDrop verifies follower status live via the Official Graph API before delivering your primary link buttons."],
-  ["What comes free forever on the Starter ($0) plan?", "Unlimited Reel, Carousel, Post & Story scheduling, Visual Calendar, Visual Grid Planner, 3 Trial Reels/month, 3 AI Caption generations/month, up to 5 active Comment-to-DM automations, Read-Only DM Inbox, and Analytics — no card needed."],
-  ["How do Trial Reels help me grow faster?", "Trial Reels show your new Reel to cold non-followers first so you can test hooks without fatiguing followers. Once watch time surges, graduate it to your main profile feed in one click."],
-  ["How does the Claude & Cursor MCP Server work?", "Add ReelDrop's Streamable HTTP MCP endpoint (`/mcp`) with one command. Claude Code, Claude Desktop, and Cursor immediately gain all 58 tools to batch-schedule posts, generate carousels, dry-run DM automations, reply to comments, and inspect analytics."],
-  ["Do all 35 Carousel Themes export crisp 4:5 cards?", "Yes — every theme exports high-resolution 1080×1350 (4:5 portrait) cards with centered 3:4 profile grid safe zones so your profile feed stays visually cohesive."],
-  ["Can I switch between USD and INR pricing or Founding Lifetime?", "Yes! Switch seamlessly between USD ($0 / $9.99 / $29) and INR (₹0 / ₹449 / ₹2,699), or lock in the one-time $249 Founding Lifetime deal."],
-  ["How does the Creator Referral program work?", "Every workspace receives a unique referral link (e.g. `/r/MAYA-FREE`). Every friend who upgrades gets month 1 free and credits you 1 free month — stackable up to 12 free months per year."]
-];
+export function renderMarketingFooter() {
+  return `
+    <footer class="mkt-footer">
+      <div class="mkt-container">
+        <div class="mkt-footer-grid">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            ${brandLogo(true)}
+            <p style="font-size:13.5px;color:var(--ink-muted);max-width:310px;line-height:1.6;">
+              Visual grid planning, smart resize &amp; crop publishing, carousel layout systems, and official Instagram DM workflows built for independent creators and lean brand teams.
+            </p>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+              <span class="badge badge-success"><span class="dot"></span>All Systems Operational</span>
+              <span class="badge">v3.0 Studio</span>
+            </div>
+            <p style="font-size:12px;color:var(--ink-faint);margin-top:6px;">
+              &copy; 2026 Velora Labs Inc. Built on Official Meta Graph &amp; Messenger APIs.
+            </p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:13.5px;">
+            <strong style="font-size:12px;color:var(--ink-primary);letter-spacing:0.02em;margin-bottom:2px;">Publishing Studio</strong>
+            <a href="/app/overview" data-link style="color:var(--ink-secondary);">Workspace Overview</a>
+            <a href="/app/create" data-link style="color:var(--ink-secondary);">AI Post &amp; Crop Composer</a>
+            <a href="/app/calendar" data-link style="color:var(--ink-secondary);">Drag &amp; Drop Calendar</a>
+            <a href="/app/grid" data-link style="color:var(--ink-secondary);">Visual Profile Grid</a>
+            <a href="/app/carousels" data-link style="color:var(--ink-secondary);">Carousel Layout Studio</a>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:13.5px;">
+            <strong style="font-size:12px;color:var(--ink-primary);letter-spacing:0.02em;margin-bottom:2px;">Workflows &amp; CRM</strong>
+            <a href="/app/automations" data-link style="color:var(--ink-secondary);">Comment-to-DM Rules</a>
+            <a href="/app/inbox" data-link style="color:var(--ink-secondary);">Unified Inbox &amp; Notes</a>
+            <a href="/app/analytics" data-link style="color:var(--ink-secondary);">Performance Analytics</a>
+            <a href="/app/settings" data-link style="color:var(--ink-secondary);">Claude &amp; Cursor MCP</a>
+            <a href="/sign-up" data-link style="color:var(--ink-secondary);">Create Free Account</a>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;font-size:13.5px;">
+            <strong style="font-size:12px;color:var(--ink-primary);letter-spacing:0.02em;margin-bottom:2px;">Resources &amp; Tools</strong>
+            <a href="/pricing" data-link style="color:var(--ink-secondary);">Plans &amp; Comparison</a>
+            <a href="/tools" data-link style="color:var(--ink-secondary);">12 Free Creator Utilities</a>
+            <a href="/tools/instagram-collab-rate-calculator" data-link style="color:var(--ink-secondary);">Sponsorship Rate Card</a>
+            <a href="/partners" data-link style="color:var(--ink-secondary);">Creator Partner Program</a>
+            <a href="/docs" data-link style="color:var(--ink-secondary);">API &amp; Safety Documentation</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  `;
+}
 
-function renderPricingBlock() {
-  const cur = store.currency;
-  const yearly = store.billingCycle === "yearly";
-  const recPlan = advisorQ.multiAccount || advisorQ.aiCarousels ? "creator" : advisorQ.automations ? "influencer" : "starter";
+export function renderHeroShowcaseMain() {
+  const tab = store.ui.heroTab || "workflow";
+  const sim = store.ui.landingSimScenario || "repo";
+  const crop = store.ui.landingGridCrop || "4:5";
 
-  const cards = [
-    {
-      id: "starter",
-      name: "Starter",
-      price: cur === "usd" ? "$0" : "₹0",
-      sub: "Free forever · No credit card",
-      perks: [
-        "1 Instagram account · 1 Workspace",
-        "Unlimited Reel, Carousel & Story scheduling",
-        "Visual Calendar & 3:4 Grid Planner",
-        "Up to 5 active Comment-to-DM automations",
-        "3 Trial Reels/mo · 3 AI Captions/mo",
-        "Read-only DM Inbox & Core Analytics"
-      ]
+  if (tab === "grid") {
+    return `
+      <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="ws-avatar" style="width:38px;height:38px;font-size:14px;background:#0F172A;">M</span>
+            <div>
+              <div style="font-weight:700;font-size:15px;">@maya.studio &middot; Live Visual Profile Grid</div>
+              <div style="font-size:12.5px;color:var(--ink-muted);">Inspect real post cover balance &amp; live engagement metrics side-by-side</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="segmented">
+              ${["4:5", "3:4", "1:1"].map((r) => `
+                <button type="button" class="seg-btn ${crop === r ? "is-active" : ""}" data-landing-crop="${r}">${r}</button>
+              `).join("")}
+            </div>
+            <a href="/app/grid" data-link class="btn btn-sm btn-primary">Open Full Grid ${icon("arrowRight", 13)}</a>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:stretch;flex:1;">
+          ${[
+            ["/media/post-01.svg", "112.4K", "4.8% saves", "Scheduled 20:30"],
+            ["/media/post-02.svg", "94.1K", "5.3% saves", "Carousel · 8p"],
+            ["/media/post-03.svg", "68.4K", "1,842 DMs", "Published"],
+            ["/media/post-04.svg", "81.9K", "4.4% saves", "Published"],
+            ["/media/post-05.svg", "129.0K", "6.1% saves", "Published"],
+            ["/media/post-06.svg", "54.2K", "3.9% saves", "Published"]
+          ].map(([imgUrl, views, metric, status]) => `
+            <div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--bg-subtle);display:flex;flex-direction:column;justify-content:space-between;">
+              <img src="${imgUrl}" alt="Grid post preview" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;" />
+              <div style="position:relative;z-index:2;padding:8px;display:flex;justify-content:flex-end;">
+                <span style="padding:2px 7px;border-radius:999px;background:rgba(255,255,255,0.92);color:#09090B;font-size:10px;font-weight:700;">${status}</span>
+              </div>
+              <div style="position:relative;z-index:2;padding:24px 9px 9px;background:linear-gradient(180deg,transparent,rgba(9,9,11,0.82));color:#FFFFFF;font-size:11px;font-weight:600;">
+                <div>${views} views</div>
+                <div style="font-size:10px;opacity:0.84;">${metric}</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);font-size:12.5px;color:var(--ink-muted);">
+          <span>Drag tiles inside Studio to swap scheduled publish timestamps effortlessly</span>
+          <span class="mono">Active ratio: ${crop}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === "calendar") {
+    return `
+      <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="font-weight:700;font-size:16px;">October Publishing Queue &amp; Background Worker</div>
+            <div style="font-size:13px;color:var(--ink-muted);">Drag posts across dates or publish immediately through the SQLite queue worker</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge badge-success"><span class="dot"></span>Queue Worker Healthy</span>
+            <a href="/app/calendar" data-link class="btn btn-sm btn-primary">Open Calendar ${icon("arrowRight", 13)}</a>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;flex:1;">
+          ${[
+            ["Wed, Oct 21 · 20:30", "REEL · 9:16", "The 60-30-10 Color Rule in Dark Mode UI", "Scheduled", "Keyword: PALETTE", "/media/post-01.svg"],
+            ["Thu, Oct 22 · 09:30", "CAROUSEL · 8 SLIDES", "8 Typography Rules I Wish I Knew Earlier", "Scheduled", "Swiss White", "/media/post-02.svg"],
+            ["Fri, Oct 23 · 14:00", "TRIAL REEL", "Behind the Scenes: 45-Minute Weekly Batch", "Trial Test", "Non-follower sample", "/media/post-03.svg"],
+            ["Sun, Oct 25 · 18:00", "CAROUSEL · 6 SLIDES", "Client Handoff Checklist for Small Teams", "Draft", "AI Caption Ready", "/media/post-04.svg"]
+          ].map(([slot, fmt, title, badgeTxt, foot, thumb]) => `
+            <div class="card card-pad" style="background:var(--bg-page);display:flex;gap:14px;align-items:center;justify-content:space-between;">
+              <img src="${thumb}" alt="" style="width:68px;height:86px;border-radius:9px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;" />
+              <div style="min-width:0;flex:1;display:flex;flex-direction:column;justify-content:space-between;height:100%;gap:8px;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
+                    <span class="badge">${fmt}</span>
+                    <span class="badge badge-info">${badgeTxt}</span>
+                  </div>
+                  <div style="font-weight:600;font-size:14px;line-height:1.35;">${title}</div>
+                </div>
+                <div style="font-size:12px;color:var(--ink-muted);display:flex;justify-content:space-between;" class="tabular">
+                  <span>${slot}</span>
+                  <span>${foot}</span>
+                </div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === "carousels") {
+    return `
+      <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="font-weight:700;font-size:16px;">1080&times;1350 Carousel Layout Studio</div>
+            <div style="font-size:13px;color:var(--ink-muted);">16 restrained Swiss &amp; editorial design systems + AI deck writer + high-res PNG export</div>
+          </div>
+          <a href="/app/carousels" data-link class="btn btn-sm btn-primary">Launch Carousel Studio ${icon("arrowRight", 13)}</a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;flex:1;">
+          ${[
+            ["#FFFFFF", "#09090B", "#4F46E5", "01 / HOOK", "Why most design systems fail before component #12", "Start with spacing & type scale tokens before naming 40 surface shades."],
+            ["#0F172A", "#F8FAFC", "#38BDF8", "02 / CONTRAST", "Reserve pure black and high chroma for one clear action", "When every badge shouts at equal weight, readers scan nothing at all."],
+            ["#F5F2EB", "#1C1917", "#B45309", "03 / PAYOFF", "Comment GUIDE below for the full Figma variable starter file", "Delivered automatically to your DMs in under 2 seconds via Velora."]
+          ].map(([bg, fg, acc, tag, h, body]) => `
+            <div style="background:${bg};color:${fg};border:1px solid var(--border);border-radius:14px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;">
+              <div style="font-size:11px;font-weight:700;opacity:0.68;">${tag}</div>
+              <div>
+                <div style="width:28px;height:3px;background:${acc};margin-bottom:12px;border-radius:2px;"></div>
+                <div style="font-family:var(--font-display);font-weight:700;font-size:17px;line-height:1.22;margin-bottom:8px;">${h}</div>
+                <p style="font-size:12.5px;opacity:0.82;line-height:1.5;">${body}</p>
+              </div>
+              <div style="font-size:11px;opacity:0.62;">@maya.studio &rarr;</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  if (tab === "inbox") {
+    return `
+      <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="font-weight:700;font-size:16px;">3-Pane Unified Inbox &amp; Sponsorship CRM</div>
+            <div style="font-size:13px;color:var(--ink-muted);">Track Meta's 24-hour reply window, draft multi-tone AI replies, and log sponsor deals beside every chat</div>
+          </div>
+          <a href="/app/inbox" data-link class="btn btn-sm btn-primary">Open Unified Inbox ${icon("arrowRight", 13)}</a>
+        </div>
+        <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:16px;flex:1;">
+          <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:12px;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong>@linear.brandpartnerships</strong>
+                <span class="badge badge-success">21.4h Window Left</span>
+              </div>
+              <div class="bubble is-them" style="max-width:92%;font-size:13px;">Hi Maya! Loved your Figma Variables breakdown. Do you have a November Reel + Story slot open for Q4?</div>
+              <div class="bubble is-me" style="max-width:92%;font-size:13px;">Hi! Yes — our November 14 slot is open. Sending over our Q4 media kit &amp; deliverables sheet right now.</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--ink-muted);padding-top:10px;border-top:1px solid var(--border);">
+              <span>AI Summary: Q4 Sponsor Inquiry ($3,200 est.)</span>
+              <span>Synced via Official Messenger API</span>
+            </div>
+          </div>
+          <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:12px;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="font-weight:600;font-size:14px;">Contact Deal &amp; Notes CRM</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <span class="badge badge-brand">Priority Lead</span>
+                <span class="badge">Q4 Sponsor</span>
+                <span class="badge">$3,200 Quote</span>
+              </div>
+              <div style="padding:12px 14px;border-radius:10px;background:var(--bg-surface);border:1px solid var(--border);font-size:12.5px;line-height:1.55;color:var(--ink-secondary);">
+                Confirmed 60s workflow walkthrough + 2 Story link frames. Contract draft scheduled for Friday 11:00 AM.
+              </div>
+            </div>
+            <a href="/app/inbox" data-link class="btn btn-sm" style="width:100%;">Open Full CRM Thread &rarr;</a>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const scenarios = {
+    repo: {
+      user: "@rohan.codes commented on your Reel",
+      comment: "Super clean token naming — commenting REPO for the starter kit!",
+      publicReply: "@rohan.codes Sent the GitHub + Figma starter straight to your DMs!",
+      dmBody: "Hey Rohan! Here is the open-source UI token starter file + Notion checklist from today's Reel:",
+      cta: "Open Token Starter Kit ->",
+      stats: "1,842 DMs delivered · 75.5% button click rate · 0.8s delivery"
     },
-    {
-      id: "influencer",
-      name: "Influencer",
-      price: cur === "usd" ? (yearly ? "$6.58/mo" : "$9.99/mo") : (yearly ? "₹416/mo" : "₹449/mo"),
-      sub: yearly ? (cur === "usd" ? "Billed $79/year" : "Billed ₹4,999/year") : "Billed monthly",
-      perks: [
-        "Unlimited active Auto-DMs (zero branding footer)",
-        "Ask-for-Follow verification gate ('I followed ✓')",
-        "Story Reply, Incoming DM & Ice Breaker triggers",
-        "Timed follow-up DMs (30m–24h) + Past-comment retrigger",
-        "Full interactive DM Inbox replies + First-comment auto-post",
-        "Unlimited Trial Reels + Full 58-Tool Claude MCP access"
-      ]
+    followgate: {
+      user: "@nina.product (Non-follower) commented TEMPLATE",
+      comment: "Need this onboarding checklist! TEMPLATE",
+      publicReply: "@nina.product Check your message requests — sent you a quick note!",
+      dmBody: "Hey Nina! Follow @maya.studio first so Instagram unlocks direct resource links, then tap Confirm below:",
+      cta: "I'm Following — Send My Link ->",
+      stats: "+318 new followers verified automatically this month"
     },
-    {
-      id: "creator",
-      name: "Creator",
-      price: cur === "usd" ? (yearly ? "$12.42/mo" : "$29/mo") : (yearly ? "₹1,250/mo" : "₹2,699/mo"),
-      sub: yearly ? (cur === "usd" ? "Founding Annual $149/yr" : "Founding Annual ₹14,999/yr") : "Most popular studio tier",
-      perks: [
-        "Up to 5 Instagram accounts & 5 Workspaces",
-        "Unlimited team members & client approvals",
-        "All 35 AI Carousel Themes + 100 AI slides/mo",
-        "Unlimited AI Captions, Hooks & Hashtag safety scans",
-        "DM Reply by AI (up to 2,000 contextual replies/mo)",
-        "Full 58-Tool Streamable HTTP Claude & Cursor MCP"
-      ]
+    story: {
+      user: "@arjun.fit replied to your Story",
+      comment: "RATES",
+      publicReply: "Auto-triggered directly inside Instagram Direct (no public comment needed)",
+      dmBody: "Appreciate you reaching out! Here is our live 2026 Sponsorship Rate Card & available creator slots:",
+      cta: "View Media Kit & Rates ->",
+      stats: "24/7 instant response on Story replies & Ice Breakers"
     }
+  };
+  const cur = scenarios[sim] || scenarios.repo;
+
+  return `
+    <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <div style="font-weight:700;font-size:16px;">Interactive Keyword &rarr; Instant Messenger DM</div>
+          <div style="font-size:13px;color:var(--ink-muted);">Click a scenario below to preview how Velora handles comments, follow gates, and Story replies</div>
+        </div>
+        <div class="segmented" style="flex-wrap:wrap;">
+          <button type="button" class="seg-btn ${sim === "repo" ? "is-active" : ""}" data-landing-sim="repo">Keyword: "REPO"</button>
+          <button type="button" class="seg-btn ${sim === "followgate" ? "is-active" : ""}" data-landing-sim="followgate">Follower Gate</button>
+          <button type="button" class="seg-btn ${sim === "story" ? "is-active" : ""}" data-landing-sim="story">Story Reply</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch;flex:1;">
+        <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <span class="badge">1. Incoming Instagram Event</span>
+              <span class="mono" style="color:var(--ink-muted);">Webhook &lt;250ms</span>
+            </div>
+            <div style="padding:12px 14px;border-radius:10px;background:var(--bg-surface);border:1px solid var(--border);">
+              <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:4px;">${escHtml(cur.user)}</div>
+              <div style="font-weight:600;font-size:14px;">"${escHtml(cur.comment)}"</div>
+            </div>
+            <div style="margin-top:10px;padding:10px 13px;border-radius:10px;border-left:3px solid var(--brand);background:var(--bg-surface);font-size:12.5px;color:var(--ink-secondary);">
+              <strong style="color:var(--ink-primary);display:block;margin-bottom:2px;">Public Reply Rotation:</strong>
+              ${escHtml(cur.publicReply)}
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--ink-muted);">Up to 10 natural reply variations keep comment threads authentic.</div>
+        </div>
+
+        <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:12px;">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <span class="badge badge-success"><span class="dot"></span>2. Official Messenger API Card</span>
+              <span class="mono" style="color:var(--ink-muted);">200 OK</span>
+            </div>
+            <div style="padding:16px;border-radius:14px;background:#FFFFFF;color:#09090B;border:1px solid #E2E8F0;box-shadow:var(--shadow-xs);font-size:13.5px;line-height:1.5;">
+              <div style="font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px;">Direct Message &middot; @maya.studio</div>
+              <div>${escHtml(cur.dmBody)}</div>
+              <div style="margin-top:12px;padding:9px 12px;border-radius:8px;background:#4F46E5;color:#FFFFFF;text-align:center;font-weight:600;font-size:13px;">
+                ${escHtml(cur.cta)}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-muted);" class="tabular">
+            <span>${escHtml(cur.stats)}</span>
+            <a href="/app/automations" data-link style="color:var(--brand);font-weight:600;white-space:nowrap;">Open Builder &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function renderLandingPhoneChatMessages() {
+  return `
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;background:#F8FAFC;border:1px solid #E2E8F0;margin-bottom:4px;">
+      <img src="/media/post-01.svg" alt="Reel preview" style="width:38px;height:48px;border-radius:7px;object-fit:cover;flex-shrink:0;" />
+      <div style="min-width:0;">
+        <div style="font-size:10.5px;font-weight:600;color:#64748B;">Replied to @maya.studio's Reel</div>
+        <div style="font-size:12px;font-weight:600;color:#09090B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Design Tokens &amp; Color Architecture</div>
+      </div>
+    </div>
+    ${(store.ui.landingChatMsgs || []).map((msg) => {
+      const isBotReply = msg.role === "me";
+      return `
+        <div style="align-self:${isBotReply ? "flex-start" : "flex-end"};max-width:86%;padding:11px 13px;border-radius:15px;font-size:12.5px;line-height:1.45;${
+          isBotReply
+            ? "background:#FFFFFF;color:#09090B;border:1px solid #E2E8F0;box-shadow:0 2px 8px rgba(15,23,42,0.05);"
+            : "background:#EEF2FF;color:#1E1B4B;border:1px solid #C7D2FE;"
+        }">
+          <div style="font-size:10px;color:${isBotReply ? "#64748B" : "#4338CA"};margin-bottom:3px;font-weight:600;">${escHtml(msg.badge)}</div>
+          <div>${escHtml(msg.text)}</div>
+          ${msg.cta ? `
+            <div style="margin-top:9px;padding:8px 11px;border-radius:9px;background:#4F46E5;color:#FFFFFF;text-align:center;font-weight:600;font-size:12px;">
+              ${escHtml(msg.cta)}
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }).join("")}
+  `;
+}
+
+export function renderPricingSection(standalone = false) {
+  const plans = Object.values(store.bundle.plansConfig.plans);
+  const inr = store.currency === "INR";
+  const yearly = store.billing === "yearly";
+
+  const matrixRows = [
+    ["Connected Instagram Workspaces", "1 workspace", "2 workspaces", "5 workspaces", "5 workspaces"],
+    ["Video, Photo & Carousel Scheduling", "Unlimited", "Unlimited", "Unlimited", "Unlimited"],
+    ["Visual 4:5 / 3:4 / 1:1 Grid Planner + Stats", "Included", "Included", "Included", "Included"],
+    ["Active Comment-to-DM Workflows", "Up to 5 rules", "Unlimited", "Unlimited", "Unlimited"],
+    ["Story Reply & Ice Breaker Triggers", "—", "Included", "Included", "Included"],
+    ["Follower Verification Gate & Timed Follow-Ups", "—", "Included", "Included", "Included"],
+    ["Remove 'Sent via velora.so' Watermark", "—", "Clean unbranded", "Clean unbranded", "Clean unbranded"],
+    ["Unified DM Inbox & Persistent Contact CRM", "Read-only", "Full Replies + CRM", "Full Replies + CRM", "Full Replies + CRM"],
+    ["Carousel Studio Presets & Custom Brand Hex", "15 exports / mo", "60 exports / mo", "Unlimited + Hex Kits", "Unlimited + Hex Kits"],
+    ["Claude Desktop & Cursor MCP Server (58 Tools)", "Read-only", "Full Execution", "Full + Team Seats", "Full + Lifetime Updates"]
   ];
 
   return `
-    <section id="pricing-sec">
-      <div style="text-align:center;margin-bottom:24px">
-        <span class="kicker">TRANSPARENT CREATOR PRICING</span>
-        <h2 class="editorial-title" style="font-size:44px">Start free. Scale when comments blow up.</h2>
-        <div style="display:flex;justify-content:center;gap:10px;margin-top:16px;flex-wrap:wrap">
-          <div class="mode-switch">
-            <button data-cycle="monthly" class="${!yearly ? "active" : ""}">Monthly</button>
-            <button data-cycle="yearly" class="${yearly ? "active" : ""}">Yearly (Save 48%)</button>
+    <section class="${standalone ? "mkt-container" : "mkt-section mkt-section-alt"}" style="${standalone ? "padding-top:56px;padding-bottom:84px;" : ""}">
+      <div class="${standalone ? "" : "mkt-container"}">
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:40px;">
+          <div>
+            <h2 class="mkt-h2">Start free. Upgrade only when your studio scales.</h2>
+            <p style="font-size:15.5px;color:var(--ink-secondary);max-width:580px;">
+              Every plan includes unlimited post scheduling, smart image cropping, visual grid planning, and official Meta OAuth security — zero per-message surprise fees.
+            </p>
           </div>
-          <div class="mode-switch">
-            <button data-cur="usd" class="${cur === "usd" ? "active" : ""}">USD ($)</button>
-            <button data-cur="inr" class="${cur === "inr" ? "active" : ""}">INR (₹)</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:22px;background:var(--bg-subtle);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
-        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;font-weight:600">
-          <label style="cursor:pointer"><input type="checkbox" data-adv="automations" ${advisorQ.automations ? "checked" : ""} /> Need Follow Gate &amp; Story DMs</label>
-          <label style="cursor:pointer"><input type="checkbox" data-adv="aiCarousels" ${advisorQ.aiCarousels ? "checked" : ""} /> Need 35 Carousel Themes &amp; AI DMs</label>
-          <label style="cursor:pointer"><input type="checkbox" data-adv="multiAccount" ${advisorQ.multiAccount ? "checked" : ""} /> Manage 2–5 IG Accounts</label>
-        </div>
-        <span class="pill-badge">Recommended for you: ${recPlan.toUpperCase()}</span>
-      </div>
-
-      <div class="grid-3">
-        ${cards.map((c) => `
-          <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;border:${c.id === recPlan ? "2px solid var(--accent)" : "1px solid var(--border)"}">
-            <div>
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <h3 style="margin:0;font-size:20px">${c.name}</h3>
-                ${store.data.activeWorkspace.plan === c.id ? `<span class="pill-badge">ACTIVE</span>` : ""}
-              </div>
-              <div class="stat-big" style="font-size:36px;color:${c.id === recPlan ? "var(--accent)" : "var(--text-main)"}">${c.price}</div>
-              <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">${c.sub}</div>
-              <ul style="padding-left:18px;margin:0 0 20px;font-size:13px;display:flex;flex-direction:column;gap:7px">
-                ${c.perks.map((p) => `<li>${escapeHtml(p)}</li>`).join("")}
-              </ul>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <div class="segmented">
+              <button class="seg-btn ${yearly ? "is-active" : ""}" data-billing="yearly">Annual (Save 25%)</button>
+              <button class="seg-btn ${!yearly ? "is-active" : ""}" data-billing="monthly">Monthly</button>
             </div>
-            <button class="btn ${c.id === recPlan ? "btn-accent" : "btn-primary"}" style="width:100%" data-select-plan="${c.id}">
-              ${store.data.activeWorkspace.plan === c.id ? `Current Workspace Plan (${c.name})` : `Activate ${c.name} on Workspace ->`}
-            </button>
+            <div class="segmented">
+              <button class="seg-btn ${!inr ? "is-active" : ""}" data-currency="USD">USD ($)</button>
+              <button class="seg-btn ${inr ? "is-active" : ""}" data-currency="INR">INR (&#8377;)</button>
+            </div>
           </div>
-        `).join("")}
-      </div>
-
-      <div class="card" style="margin-top:20px;background:#141418;color:#FAFAFA;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap">
-        <div>
-          <span class="kicker" style="color:#FDBA74">LIMITED FOUNDING DEAL · ONE-TIME PAYMENT</span>
-          <h3 style="margin:6px 0;font-size:24px;font-family:Georgia,serif;font-style:italic">Founding Lifetime Deal — ${cur === "usd" ? "$249 once" : "₹20,999 once"}, own Creator forever</h3>
-          <p style="margin:0;font-size:13px;color:#A1A1AA">5 Instagram accounts, all 35 Carousel Themes, unlimited Auto-DMs, 2,000 AI DMs/mo &amp; all 58 Claude MCP tools with zero recurring subscription.</p>
         </div>
-        <button class="btn btn-accent btn-lg" data-select-plan="lifetime">Unlock Founding Lifetime -></button>
+
+        <div class="pricing-grid">
+          ${plans.map((p) => {
+            let price = "$0";
+            let unit = "forever free · no card needed";
+            if (p.id === "lifetime") {
+              price = inr ? `&#8377;${p.priceOneTimeInr.toLocaleString("en-IN")}` : `$${p.priceOneTimeUsd}`;
+              unit = "one-time payment · own forever";
+            } else if (p.priceMonthlyUsd > 0) {
+              if (inr) {
+                price = `&#8377;${(yearly ? Math.round(p.priceYearlyInr / 12) : p.priceMonthlyInr).toLocaleString("en-IN")}`;
+              } else {
+                price = `$${yearly ? (p.priceYearlyUsd / 12).toFixed(0) : p.priceMonthlyUsd}`;
+              }
+              unit = yearly ? "per month, billed annually" : "per month, cancel anytime";
+            }
+            return `
+              <div class="card plan-card ${p.popular ? "is-popular" : ""}">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <span style="font-family:var(--font-display);font-weight:700;font-size:17px;">${escHtml(p.name)}</span>
+                    ${p.badge ? `<span class="badge ${p.popular ? "badge-brand" : ""}">${escHtml(p.badge)}</span>` : ""}
+                  </div>
+                  <p style="font-size:13px;color:var(--ink-muted);min-height:40px;line-height:1.5;">${escHtml(p.tagline || p.description)}</p>
+                  <div style="margin:18px 0 4px;" class="plan-price">${price}</div>
+                  <div style="font-size:12px;color:var(--ink-muted);">${unit}</div>
+                  <ul class="plan-list">
+                    ${(p.highlights || []).map((h) => `<li>${icon("check", 15)}${escHtml(h)}</li>`).join("")}
+                  </ul>
+                </div>
+                <button class="btn ${p.popular ? "btn-primary" : ""}" style="width:100%;" data-try-plan="${p.id}">
+                  ${p.id === "starter" ? "Start Free with Starter" : `Activate ${escHtml(p.name)}`}
+                </button>
+              </div>
+            `;
+          }).join("")}
+        </div>
+
+        <div class="card table-wrap" style="margin-top:36px;">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Complete Plan Comparison</div>
+              <div class="card-sub">Exact workspace limits &amp; Official Instagram API capabilities across tiers</div>
+            </div>
+          </div>
+          <table class="v-table">
+            <thead>
+              <tr>
+                <th>Capability</th>
+                <th>Starter ($0)</th>
+                <th>Growth</th>
+                <th>Studio</th>
+                <th>Founding Pass</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${matrixRows.map(([feat, c1, c2, c3, c4]) => `
+                <tr>
+                  <td><strong>${feat}</strong></td>
+                  <td>${c1}</td>
+                  <td>${c2}</td>
+                  <td>${c3}</td>
+                  <td><strong>${c4}</strong></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   `;
 }
 
-export function renderMarketingPage() {
-  const page = store.sitePage;
-  const m = store.data.metrics;
+export function renderLandingPage() {
+  const m = store.bundle.metrics;
+  const heroTab = store.ui.heroTab || "workflow";
+  const themes = store.bundle.themes || [];
+  const chosenTheme = themes.find((t) => t.id === store.ui.landingThemeId) || themes[0] || { id: "swiss_white", name: "Swiss White", bg: "#FFFFFF", fg: "#09090B", accent: "#4F46E5" };
+  const postsPerWeek = Number(store.ui.calcPostsPerWeek || 6);
+  const commentsPerPost = Number(store.ui.calcCommentsPerPost || 85);
+  const monthlyDms = postsPerWeek * 4 * commentsPerPost;
+  const monthlyClicks = Math.round(monthlyDms * 0.74);
+  const hoursSaved = Math.max(4, Math.round((monthlyDms * 0.45) / 60 + postsPerWeek * 1.2));
+  const openFaq = store.ui.openFaqIdx ?? 0;
 
-  if (page === "themes") {
-    const categories = ["All", "Editorial", "Bold", "Dark", "Minimal", "Playful", "Photo"];
-    const filtered = store.data.themes.filter((t) => {
-      if (themeCategory !== "All" && t.category !== themeCategory) return false;
-      if (themeNoPhotoOnly && !String(t.photoRequirement).toLowerCase().includes("no photo")) return false;
-      if (themeSearch && !`${t.name} ${t.desc} ${t.category}`.toLowerCase().includes(themeSearch.toLowerCase())) return false;
-      return true;
-    });
+  const niches = [
+    "Product Designers", "Indie SaaS Founders", "Fitness & Strength Coaches", "Ceramic & Craft Studios",
+    "Developer Educators", "Creative Agencies", "Hospitality & Cafes", "Visual Photographers",
+    "Architecture Studios", "Newsletter Writers", "Design Systems Teams", "E-Commerce Brands"
+  ];
 
-    return `
-      <div class="marketing-container">
-        <div class="page-head">
-          <div>
-            <span class="kicker">35 CURATED CAROUSEL DESIGN SYSTEMS</span>
-            <h1 class="editorial-title" style="font-size:44px">Carousel Themes Catalog</h1>
-            <p style="color:var(--text-muted);margin:6px 0 0">Pick any theme below to launch it directly inside the interactive AI Carousel Studio.</p>
-          </div>
-          <button class="btn btn-accent" id="btn-theme-surprise">✦ Surprise Me</button>
-        </div>
+  const capabilities = [
+    ["upload", "Smart Upload & Aspect-Ratio Studio", "Drop any screenshot, photo, or MP4 into the composer. Resize, smart-fit, zoom, and export crisp 4:5 or 9:16 frames with zero cut-off text.", "/app/create"],
+    ["calendar", "Drag-and-Drop Publishing Calendar", "Move posts across Month or Queue views effortlessly. Background worker automatically publishes due containers on schedule.", "/app/calendar"],
+    ["grid", "Visual Grid + Live Post Statistics", "Preview upcoming posts beside published tiles with live views, saves, and engagement metrics directly on every tile.", "/app/grid"],
+    ["layers", "16-Preset Carousel Layout Studio", "Craft crisp 1080x1350 educational decks with Swiss & editorial presets, AI deck generation, custom hex pickers, and PNG export.", "/app/carousels"],
+    ["bolt", "Keyword Comment-to-DM Rules", "Deliver instant resource buttons when viewers comment your keyword — with public reply rotation and follower verification.", "/app/automations"],
+    ["inbox", "3-Pane Unified Inbox & CRM", "Reply inside Meta's 24-hour window, summarize threads with AI, filter priority leads, and persist sponsor notes in SQLite.", "/app/inbox"],
+    ["chart", "Trial Reels & Save-Rate Analytics", "Benchmark non-follower Trial Reels before graduating winners to your main profile grid, and export clean CSV reports.", "/app/analytics"],
+    ["sparkles", "AI Post Pack & Caption Rewriter", "Generate scored hooks, full structured captions, 3-tier safe tags, auto first comments, and custom visual cover cards in one click.", "/app/create"],
+    ["code", "58-Tool Claude & Cursor MCP Server", "Connect Claude Desktop or Cursor directly to POST /mcp to audit metrics, schedule batches, and manage workflows via natural language.", "/app/settings"]
+  ];
 
-        <div class="card" style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            ${categories.map((c) => `<button class="btn btn-sm ${themeCategory === c ? "btn-accent" : ""}" data-theme-cat="${c}">${c}</button>`).join("")}
-          </div>
-          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-            <label style="font-size:12.5px;font-weight:700;cursor:pointer">
-              <input type="checkbox" id="chk-no-photo" ${themeNoPhotoOnly ? "checked" : ""} /> No photos needed only
-            </label>
-            <input class="input" id="inp-theme-search" style="width:210px" placeholder="Search 35 themes…" value="${escapeHtml(themeSearch)}" />
-          </div>
-        </div>
-
-        <div class="grid-3">
-          ${filtered.map((t) => `
-            <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;gap:14px">
-              <div>
-                <div style="aspect-ratio:4/3;border-radius:12px;padding:18px;background:${t.bg};color:${t.fg};border:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between">
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span class="mono" style="font-size:10px;padding:3px 8px;border-radius:999px;background:${t.pillBg};color:${t.fg}">${escapeHtml(t.category)}</span>
-                    ${t.isNew ? `<span class="mono" style="font-size:10px;font-weight:800;color:${t.accent}">NEW</span>` : `<span class="mono" style="font-size:10px;opacity:0.7">1/5</span>`}
-                  </div>
-                  <div>
-                    <div style="font-family:${t.fontStyle === "serif" || t.fontStyle === "editorial" ? "'Fraunces', serif" : "'Inter', sans-serif"};font-size:21px;font-weight:800;line-height:1.15;margin-bottom:6px">
-                      ${escapeHtml(t.name)}
-                    </div>
-                    <div style="height:4px;width:54px;border-radius:3px;background:${t.accent}"></div>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.8">
-                    <span>${escapeHtml(t.photoRequirement)}</span>
-                    <span>Swipe &gt;</span>
-                  </div>
-                </div>
-                <p style="font-size:12.5px;color:var(--text-muted);margin:12px 0 0">${escapeHtml(t.desc)}</p>
-              </div>
-              <button class="btn btn-primary btn-sm" style="width:100%" data-use-theme="${t.id}">Generate with "${escapeHtml(t.name)}" -></button>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    `;
-  }
-
-  if (page === "pricing") return `<div class="marketing-container">${renderPricingBlock()}</div>`;
-
-  if (page === "campaigns") {
-    return `
-      <div class="marketing-container">
-        <div class="hero-section">
-          <span class="pill-badge">PAID CREATOR CAMPAIGNS</span>
-          <h1 class="hero-headline">Post Reels about ReelDrop. <em>Get paid per view.</em></h1>
-          <p class="hero-sub">Film genuine workflow breakdowns showing your Scheduler, 35 Carousel Themes, or Auto-DM results — earn performance payouts per 1,000 verified views.</p>
-        </div>
-        <div class="card" style="max-width:620px;margin:0 auto">
-          <h3 style="margin-top:0">Apply for Q4 Creator Briefs</h3>
-          <form id="campaign-form">
-            <div class="field"><label>Instagram Handle *</label><input class="input" name="igHandle" required placeholder="@maya.creates" /></div>
-            <div class="field"><label>Creator Email *</label><input class="input" type="email" name="email" required placeholder="maya@studio.io" /></div>
-            <div class="field"><label>Median 30-Day Reel Views</label><input class="input" type="number" name="avgViews" value="25000" /></div>
-            <div class="field"><label>Primary Niche</label><input class="input" name="niche" value="Creator Workflow & Design" /></div>
-            <button class="btn btn-primary btn-lg" type="submit" style="width:100%">Submit Creator Campaign Application -></button>
-          </form>
-        </div>
-      </div>
-    `;
-  }
-
-  if (page === "docs") {
-    return `
-      <div class="marketing-container">
-        <span class="kicker">OFFICIAL API ARCHITECTURE &amp; SAFETY DOCS</span>
-        <h1 class="editorial-title" style="font-size:44px">Account Safety, Graph API &amp; DM Limits</h1>
-        <div class="grid-3" style="margin-top:24px">
-          <div class="card">
-            <h3>1. Official Meta Graph &amp; Messenger Webhooks</h3>
-            <p style="color:var(--text-muted)">ReelDrop never asks for your Instagram password or runs headless browsers. Publishing uses <code>/{ig-user-id}/media</code> &amp; <code>/media_publish</code>; DM automations subscribe to official <code>comments</code>, <code>messages</code>, and <code>messaging_postbacks</code> webhooks.</p>
-          </div>
-          <div class="card">
-            <h3>2. DM Safety &amp; 24h Window Rules</h3>
-            <p style="color:var(--text-muted)">Max 3 link buttons per DM (labels &le;20 chars, <code>https://</code> required). Past-comment retrigger caps at 50 comments/post across 5 posts. Standard Inbox replies enforce Meta's 24-hour window from the user's last interaction.</p>
-          </div>
-          <div class="card">
-            <h3>3. Streamable HTTP MCP Server (58 Tools)</h3>
-            <p style="color:var(--text-muted)">Connect Claude Desktop, Claude Code, Cursor, or Windsurf directly to <code>/mcp</code> to run all 58 tools across scheduling, captions, carousels, grid, comments, automations, and analytics.</p>
-            <button class="btn btn-primary btn-sm" data-goto-app="mcp">Open Live 58-Tool MCP Console -></button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
+  const faqs = [
+    ["Is Velora 100% safe for my Instagram creator or brand account?", "Yes. Velora uses Official Meta Graph & Instagram Messenger OAuth scopes exclusively — we never ask for your Instagram password, never run headless browser bots, and automatically enforce hourly Messenger rate caps and natural public reply rotation."],
+    ["What happens if I upload a landscape screenshot or non-standard photo?", "Velora's built-in Resize & Crop Studio inspects image dimensions automatically on upload, applies Smart Fit with a soft studio backdrop so zero text gets cut off, and lets you crop, zoom, or export exact 1080x1350 (4:5) or 1080x1920 (9:16) frames."],
+    ["How does the Follower Verification Gate work on DM workflows?", "When enabled on Growth or Studio plans, non-followers who comment your keyword receive a polite card inviting them to follow your account first and tap 'Confirm Follow' — unlocking your primary resource link immediately once verified."],
+    ["What aspect ratios do the Visual Profile Grid and Carousel Studio support?", "Carousel Studio renders full 1080x1350 (4:5 vertical portrait) cards for maximum feed height, while the Profile Grid Planner lets you toggle live between 4:5, 3:4, and classic 1:1 square crops with live tile statistics."],
+    ["Do I need a credit card to use the Starter plan?", "No credit card is required. Starter is free forever and includes 1 workspace, unlimited post scheduling, visual grid planning, 12 free creator calculators, and up to 5 active keyword DM rules."],
+    ["Can multiple team members collaborate across client workspaces?", "Yes. Studio and Founding Pass workspaces support up to 5 connected Instagram accounts, instant workspace switching from the top-left rail, and role-based team invites (Owner, Content Manager, Editor, Analyst)."],
+    ["How does the Claude Desktop & Cursor MCP integration work?", "Every Velora instance exposes a compliant JSON-RPC 2.0 Model Context Protocol endpoint at POST /mcp with 58 registered tools covering scheduling, grid swaps, carousels, DM simulations, inbox replies, and analytics."],
+    ["Can we deploy Velora directly to Vercel in one click?", "Yes. Velora ships zero-configuration Vercel Serverless routing (vercel.json + api/index.js) with seamless SQLite snapshot hydration, so deploying from GitHub works immediately with zero external database setup."]
+  ];
 
   return `
-    <div class="marketing-container">
-      <section class="hero-section">
-        <span class="pill-badge">✓ Meta Tech Provider · Official Instagram API</span>
-        <h1 class="hero-headline">ReelDrop: the AI Instagram growth tool. <em>Official API, no bots.</em></h1>
-        <p class="hero-sub">Schedule Reels and Stories, design multi-slide AI Carousels across 35 editorial themes, plan your 3:4 profile grid, and convert every comment into an instant DM link — all from one clean workspace.</p>
-        <div class="hero-ctas">
-          <button class="btn btn-primary btn-lg" data-goto-app="scheduler">Open Live Workspace (@${escapeHtml(store.data.activeWorkspace.ig_handle)}) -></button>
-          <button class="btn btn-lg" id="btn-hero-create-ws">+ Create Free Workspace</button>
-          <button class="btn btn-lg" data-goto-app="rea-evidence">◉ Inspect REA Evidence</button>
+    ${renderMarketingNavbar("/")}
+    <main class="stage-animate">
+      <!-- SECTION 1: MONUMENTAL HERO + FIXED-DIMENSION INTERACTIVE STUDIO STAGE -->
+      <section class="mkt-hero">
+        <div class="mkt-container">
+          <div class="mkt-hero-center">
+            <h1 class="mkt-h1">Plan your grid. Ship on schedule. Turn comments into DMs.</h1>
+            <p class="mkt-lead">
+              Velora replaces scattered scheduling tabs, fragile DM bots, and messy spreadsheets with one fast, calm studio — complete with visual grid planning, smart image cropping, AI post generation, and official Messenger workflows.
+            </p>
+            <div class="mkt-cta-row">
+              <a href="/app/overview" data-link class="btn btn-primary btn-lg" style="height:48px;padding:0 26px;font-size:15px;">
+                Explore Live Studio ${icon("arrowRight", 16)}
+              </a>
+              <a href="/sign-up" data-link class="btn btn-lg" style="height:48px;padding:0 24px;font-size:15px;">
+                Create Free Account
+              </a>
+              <a href="/tools" data-link class="btn btn-ghost btn-lg" style="height:48px;">
+                Try 12 Free Tools
+              </a>
+            </div>
+            <div class="mkt-trust-pills">
+              <span>${icon("check", 14)} Free forever Starter tier</span>
+              <span>${icon("check", 14)} Official Meta OAuth security</span>
+              <span>${icon("check", 14)} 4 preloaded demo workspaces</span>
+              <span>${icon("check", 14)} 58-tool MCP API included</span>
+            </div>
+          </div>
+
+          <!-- Full-Width Locked-Height Interactive Studio Showcase Window (Zero Fluctuation) -->
+          <div class="mkt-window">
+            <div class="mkt-window-bar">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div class="mkt-window-dots"><span></span><span></span><span></span></div>
+                <span class="mono" style="color:var(--ink-muted);">velora.so/app &mdash; @maya.studio (Studio Workspace)</span>
+              </div>
+              <a href="/app/overview" data-link class="btn btn-sm">Open Full Screen ${icon("external", 13)}</a>
+            </div>
+            <div class="mkt-showcase-body">
+              <div class="mkt-showcase-rail" role="tablist" aria-label="Interactive Product Preview">
+                ${[
+                  ["workflow", "bolt", "Comment -> DM"],
+                  ["grid", "grid", "Profile Grid"],
+                  ["calendar", "calendar", "Queue & Calendar"],
+                  ["carousels", "layers", "Carousel Studio"],
+                  ["inbox", "inbox", "Unified Inbox"]
+                ].map(([id, ic, label]) => `
+                  <button type="button" class="mkt-rail-btn ${heroTab === id ? "is-active" : ""}" data-hero-tab="${id}">
+                    <span style="display:inline-flex;align-items:center;gap:9px;">${icon(ic, 16)}<span>${label}</span></span>
+                    ${icon("chevronRight", 14)}
+                  </button>
+                `).join("")}
+              </div>
+              <div id="hero-showcase-viewport" class="mkt-showcase-stage" style="min-width:0;background:var(--bg-surface);">
+                ${renderHeroShowcaseMain()}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <div class="card" style="padding:18px;border:1px solid var(--border-strong)">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px">
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <!-- SECTION 2: NICHE MARQUEE + LIVE METRICS STRIP -->
+      <div class="mkt-marquee-wrap" aria-label="Creator communities using Velora">
+        <div class="mkt-marquee-track">
+          ${[...niches, ...niches].map((n) => `
+            <span class="mkt-niche-pill">${icon("check", 13)} ${escHtml(n)}</span>
+          `).join("")}
+        </div>
+      </div>
+
+      <section class="mkt-section" style="padding:72px 0;">
+        <div class="mkt-container">
+          <div class="mkt-metrics-grid">
+            <div class="card mkt-metric-card">
+              <div class="mkt-stat-num">${fmtNum(m.creators_signed_up)}+</div>
+              <div class="mkt-stat-label">Active Creator Workspaces</div>
+              <p style="font-size:13px;color:var(--ink-muted);">Solo creators, educators, design studios &amp; consumer brands</p>
+            </div>
+            <div class="card mkt-metric-card">
+              <div class="mkt-stat-num">${fmtNum(m.dms_sent_automatically)}</div>
+              <div class="mkt-stat-label">Automated DMs Delivered</div>
+              <p style="font-size:13px;color:var(--ink-muted);">Sent via Official Instagram Messenger API webhooks</p>
+            </div>
+            <div class="card mkt-metric-card">
+              <div class="mkt-stat-num">${fmtNum(m.posts_scheduled)}</div>
+              <div class="mkt-stat-label">Reels &amp; Carousels Queued</div>
+              <p style="font-size:13px;color:var(--ink-muted);">Zero missed slots with background SQLite WAL worker</p>
+            </div>
+            <div class="card mkt-metric-card">
+              <div class="mkt-stat-num">75.4%</div>
+              <div class="mkt-stat-label">Median DM Button Tap Rate</div>
+              <p style="font-size:13px;color:var(--ink-muted);">Compared to ~3.8% average click-through on static bio links</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2B: STRICT EQUAL-HEIGHT COMPARISON CARDS + 4-STEP FLOW -->
+      <section class="mkt-section" style="padding:84px 0;">
+        <div class="mkt-container">
+          <div class="mkt-sec-head-center">
+            <h2 class="mkt-h2">Replace five disconnected subscriptions with one calm workspace.</h2>
+            <p style="font-size:15.5px;color:var(--ink-secondary);">
+              No more exporting slides in one tab, previewing grid crops in a second, scheduling in a third, running fragile DM bots in a fourth, and tracking sponsors in spreadsheets.
+            </p>
+          </div>
+
+          <div class="equal-cards" style="margin-bottom:44px;">
+            <div class="card card-pad" style="padding:30px;">
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span class="badge badge-danger">Old Fragmented Workflow</span>
+                  <span class="mono" style="color:var(--ink-muted);">~$148 / month</span>
+                </div>
+                <h3 style="font-size:20px;">Five tabs that never talk to each other</h3>
+                <div style="display:flex;flex-direction:column;gap:11px;font-size:14px;color:var(--ink-secondary);">
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("x", 16)}<span>Separate scheduler ($29/mo) with clipped screenshots and no 4:5 profile grid stats view</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("x", 16)}<span>Separate DM bot ($49/mo) charging surprise overages when a Reel goes viral</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("x", 16)}<span>Static bio link page ($19/mo) losing 94% of interested Reel viewers</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("x", 16)}<span>Slide templates ($25/mo) + manual spreadsheet sponsorship tracking</span></div>
+                </div>
+              </div>
+              <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink-muted);">
+                <span>5 logins &middot; Constant manual exports</span>
+                <span class="mono">$1,776 / year</span>
+              </div>
+            </div>
+
+            <div class="card card-pad" style="padding:30px;border-color:var(--ink-primary);box-shadow:var(--shadow-md);">
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span class="badge badge-success">Unified Velora Studio</span>
+                  <span class="mono" style="font-weight:700;">$0 to start &middot; $12 Growth</span>
+                </div>
+                <h3 style="font-size:20px;">Every publishing &amp; DM workflow wired together</h3>
+                <div style="display:flex;flex-direction:column;gap:11px;font-size:14px;color:var(--ink-secondary);">
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("check", 16)}<span>Smart Resize &amp; Crop Studio + 16-preset Carousel designer + AI Post Pack in one composer</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("check", 16)}<span>Drag tiles directly on the 4:5 / 3:4 Profile Grid with live views &amp; save rates</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("check", 16)}<span>Official Meta OAuth DMs sync straight into your 3-pane Inbox + Contact CRM</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("check", 16)}<span>Query analytics &amp; batch-schedule directly from Claude or Cursor over MCP</span></div>
+                </div>
+              </div>
+              <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink-primary);font-weight:600;">
+                <span>1 workspace &middot; Zero per-DM fees</span>
+                <a href="/app/overview" data-link style="color:var(--brand);">Open Live Studio &rarr;</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="mkt-metrics-grid">
             ${[
-              ["scheduler", "▦ Visual Scheduler"],
-              ["autadm", "⚡ Comment -> Auto DM"],
-              ["carousels", "❖ 35 Carousel Themes"],
-              ["mcp", "◈ Claude MCP (58 Tools)"]
-            ].map(([k, label]) => `
-              <button class="btn btn-sm ${heroTab === k ? "btn-accent" : ""}" data-hero-tab="${k}">${label}</button>
+              ["STEP 01", "Connect Official OAuth", "Link up to 5 Instagram Creator or Business accounts in 30 seconds — zero password sharing."],
+              ["STEP 02", "Compose & Smart-Crop", "Drop any photo or video, auto-fit aspect ratios with zero cut-off text, and polish copy with AI."],
+              ["STEP 03", "Attach Keyword DM Rule", "Pair any post or Story with instant CTA button DMs, reply rotation, and follower gates."],
+              ["STEP 04", "Close Leads & Scale", "Reply inside the 24h Messenger window, log sponsor notes in CRM, and graduate winning Trial Reels."]
+            ].map(([step, t, d]) => `
+              <div class="card card-pad" style="padding:24px;background:var(--bg-surface);">
+                <span class="mono" style="color:var(--brand);font-weight:700;">${step}</span>
+                <h3 style="font-size:16.5px;margin:8px 0 6px;">${t}</h3>
+                <p style="font-size:13.5px;color:var(--ink-secondary);line-height:1.55;">${d}</p>
+              </div>
             `).join("")}
           </div>
-          <span class="mono" style="font-size:11px;color:var(--text-muted)">LIVE REELDROP ENGINE · VERCEL READY + 58 MCP TOOLS</span>
         </div>
+      </section>
 
-        ${heroTab === "scheduler" ? `
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;align-items:center">
+      <!-- SECTION 3: COMPOSER, SMART CROP & VISUAL GRID -->
+      <section class="mkt-section mkt-section-alt">
+        <div class="mkt-container">
+          <div class="mkt-deep-row">
             <div>
-              <span class="kicker">PLAN · SCHEDULE · SHIP</span>
-              <h3 class="editorial-title" style="font-size:30px">Batch a full month in one sitting</h3>
-              <p style="color:var(--text-muted)">Color-coded calendar for Reels, Carousels, Stories &amp; Posts with Trial Reel non-follower testing, First-Comment auto-posting, and attached DM automations.</p>
-              <button class="btn btn-primary" data-goto-app="scheduler">Launch Interactive Scheduler -></button>
+              <h2 class="mkt-h2">See how every post fits and performs before a single follower sees it.</h2>
+              <p style="font-size:15.5px;color:var(--ink-secondary);line-height:1.65;">
+                Stop guessing where Instagram crops wide screenshots or truncates your opening hook. Upload local media with live progress tracking, adjust aspect ratios inside the interactive Crop Studio, and arrange your profile grid visually.
+              </p>
+              <div class="mkt-check-list">
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Built-In Resize &amp; Smart Fit Studio:</strong> Fit landscape screenshots cleanly onto blurred or editorial mattes, or crop exact 4:5, 9:16, and 1:1 frames.</span></div>
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>AI Post Pack &amp; 125-Character Fold Check:</strong> Generate scored hooks, structured captions, and safe niche hashtags in one click.</span></div>
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Drag-and-Drop Grid + Live Stats:</strong> Reorder planned tiles while inspecting views, likes, saves, and engagement rate directly on the grid.</span></div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                <a href="/app/create" data-link class="btn btn-primary">Open Post Composer ${icon("arrowRight", 15)}</a>
+                <a href="/app/grid" data-link class="btn">Preview Profile Grid</a>
+              </div>
             </div>
-            <div style="background:var(--bg-subtle);padding:14px;border-radius:14px;display:flex;flex-direction:column;gap:8px">
-              ${store.data.posts.slice(0, 4).map((p) => `
-                <div class="post-chip type-${p.media_type}" style="padding:9px 12px" data-goto-app="scheduler">
-                  <div class="chip-row">
-                    <span class="mono" style="font-size:10px">${p.media_type} · ${p.status}</span>
-                    <span class="mono" style="font-size:10px">${new Date(p.scheduled_at).toLocaleDateString()}</span>
+
+            <div class="card card-pad" style="padding:26px;background:var(--bg-page);display:flex;flex-direction:column;gap:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:700;font-size:14.5px;">Live Pre-Flight Publishing Checklist</span>
+                <span class="badge badge-success">Ready for Slot 20:30</span>
+              </div>
+              <div style="padding:16px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+                <div style="font-size:12px;color:var(--ink-muted);">Opening 125-Character Hook Preview (Before "...more")</div>
+                <div style="font-size:14px;line-height:1.5;">
+                  <strong>@maya.studio</strong> Most teams overcomplicate design tokens before shipping their very first component library. Comment "REPO" below... <span style="color:var(--ink-muted);">more</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:8px;border-top:1px solid var(--border-subtle);">
+                  <span class="badge badge-success">5 Safe Niche Tags</span>
+                  <span class="badge badge-info">1080&times;1350 Smart Crop OK</span>
+                  <span class="badge badge-brand">DM Rule Linked: REPO</span>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" class="tabular">
+                <div class="card card-pad" style="padding:14px;"><div style="font-size:11.5px;color:var(--ink-muted);">Best Window</div><strong style="font-size:16px;">20:30 IST</strong></div>
+                <div class="card card-pad" style="padding:14px;"><div style="font-size:11.5px;color:var(--ink-muted);">Auto First Comment</div><strong style="font-size:16px;">Armed</strong></div>
+                <div class="card card-pad" style="padding:14px;"><div style="font-size:11.5px;color:var(--ink-muted);">Trial Reel Mode</div><strong style="font-size:16px;">Optional</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: HIGH-DETAIL LIGHT PEARL-SILVER INSTAGRAM MESSENGER SIMULATOR -->
+      <section class="mkt-section">
+        <div class="mkt-container">
+          <div class="mkt-deep-row is-reversed">
+            <div style="display:flex;justify-content:center;">
+              <div class="phone-frame" style="max-width:392px;">
+                <div class="phone-screen">
+                  <!-- Crisp Native iOS Light Status Bar -->
+                  <div class="phone-status-bar">
+                    <span>9:41</span>
+                    <div class="phone-island"></div>
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;">5G &middot; 100%</span>
                   </div>
-                  <div style="font-size:13px;font-weight:700">${escapeHtml(p.title)}</div>
+
+                  <!-- Authentic Instagram Direct Header -->
+                  <div class="phone-ig-header">
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <div class="phone-story-ring">
+                        <div class="phone-story-ring-inner">M</div>
+                      </div>
+                      <div>
+                        <div style="display:flex;align-items:center;gap:4px;font-weight:700;font-size:13px;color:#09090B;">
+                          <span>maya.studio</span>
+                          <span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#3B82F6;color:#FFFFFF;align-items:center;justify-content:center;font-size:9px;">&#10003;</span>
+                        </div>
+                        <div style="font-size:10.5px;color:#059669;font-weight:600;">Active now &middot; Official Messenger API</div>
+                      </div>
+                    </div>
+                    <span style="padding:3px 9px;border-radius:999px;background:#EEF2FF;color:#4338CA;font-size:10.5px;font-weight:700;">Interactive</span>
+                  </div>
+
+                  <!-- Light Crisp Conversation Stream -->
+                  <div id="landing-phone-chat-list" style="height:296px;overflow-y:auto;padding:14px;background:#FAFAFA;display:flex;flex-direction:column;gap:10px;">
+                    ${renderLandingPhoneChatMessages()}
+                  </div>
+
+                  <!-- Light Quick Trigger Chips & Input Bar -->
+                  <div style="padding:10px 12px 14px;border-top:1px solid #E2E8F0;background:#FFFFFF;">
+                    <div style="display:flex;gap:5px;margin-bottom:8px;overflow-x:auto;">
+                      ${["REPO", "KIT", "RATES", "GUIDE"].map((kw) => `
+                        <button type="button" data-landing-quick-kw="${kw}" style="padding:4px 10px;border-radius:999px;border:1px solid #CBD5E1;background:#F8FAFC;color:#1E293B;font-size:11px;font-weight:600;white-space:nowrap;">Send "${kw}"</button>
+                      `).join("")}
+                    </div>
+                    <form id="form-landing-phone-chat" style="display:flex;gap:6px;">
+                      <input id="landing-phone-input" value="KIT" placeholder="Message @maya.studio (e.g. KIT)..." style="flex:1;height:36px;padding:0 12px;border-radius:999px;border:1px solid #CBD5E1;background:#F8FAFC;color:#09090B;font-size:12.5px;" />
+                      <button type="submit" class="btn btn-brand btn-sm" style="height:36px;padding:0 15px;border-radius:999px;">Send</button>
+                    </form>
+                  </div>
                 </div>
-              `).join("")}
+              </div>
             </div>
-          </div>
-        ` : heroTab === "autadm" ? `
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;align-items:center">
+
             <div>
-              <span class="kicker">COMMENT · STORY · INCOMING DM</span>
-              <h3 class="editorial-title" style="font-size:30px">Turn every "LINK" comment into clicks</h3>
-              <p style="color:var(--text-muted)">Rotating natural public replies, follower-verification gate ("I followed ✓"), up to 3 HTTPS link buttons, timed follow-ups, and past-comment sweeps.</p>
-              <button class="btn btn-primary" data-goto-app="automation-builder">Open 3-Step Automation Builder -></button>
-            </div>
-            <div style="background:#121215;color:#FAFAFA;padding:16px;border-radius:18px;display:flex;flex-direction:column;gap:8px;font-size:13px">
-              <div style="align-self:flex-start;background:#26262C;padding:8px 12px;border-radius:14px">Commented <strong>REPO</strong> on your Reel ★</div>
-              <div style="align-self:flex-end;background:#D94826;padding:8px 12px;border-radius:14px">Hit Follow first so Meta lets me send links, then tap below!</div>
-              <div style="align-self:flex-start;background:#26262C;padding:8px 12px;border-radius:14px">I followed ✓</div>
-              <div style="align-self:flex-end;background:#27272F;border:1px solid #3F3F46;padding:10px 12px;border-radius:14px">
-                Amazing! Here are all 7 open-source creator repos:
-                <div style="margin-top:8px;background:#FAFAFA;color:#111;text-align:center;padding:6px;border-radius:8px;font-weight:700">7 GitHub Repos Pack ↗</div>
+              <h2 class="mkt-h2">"Link in bio" loses 9 out of 10 interested viewers. Meet them in DMs.</h2>
+              <p style="font-size:15.5px;color:var(--ink-secondary);line-height:1.65;">
+                Type <code class="mono">REPO</code>, <code class="mono">KIT</code>, or <code class="mono">RATES</code> directly inside the preview phone on the left — every automated reply card, public comment rotation, follower gate, and 2-hour follow-up runs on Official Meta Messenger OAuth.
+              </p>
+              <div class="mkt-check-list">
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Past-Comment Sweep:</strong> Post went viral before you attached a workflow? Retroactively deliver DMs to up to 250 missed comments in one click.</span></div>
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Follower Verification Gate:</strong> Turn viral non-follower comments into verified followers automatically before unlocking primary links.</span></div>
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Direct Unified Inbox Sync:</strong> Every automated thread appears neatly inside your 3-pane Inbox &amp; Contact CRM.</span></div>
               </div>
+              <a href="/app/automations" data-link class="btn btn-primary">Open Full Workflow Builder ${icon("arrowRight", 15)}</a>
             </div>
-          </div>
-        ` : heroTab === "carousels" ? `
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;align-items:center">
-            <div>
-              <span class="kicker">35 CURATED THEMES</span>
-              <h3 class="editorial-title" style="font-size:30px">Prompt -> 10 styled slides in seconds</h3>
-              <p style="color:var(--text-muted)">From <em>Bold Highlight</em> and <em>Reading Room</em> to <em>Manga</em>, <em>Night Study</em>, and <em>Swiss Grid</em> — live slide-by-slide copy &amp; photo editor included.</p>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-primary" data-goto-app="carousels">Open Carousel Studio -></button>
-                <button class="btn" data-site-nav="themes">Browse All 35 Themes</button>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-              ${store.data.themes.slice(0, 3).map((t) => `
-                <div style="aspect-ratio:4/5;background:${t.bg};color:${t.fg};padding:12px;border-radius:12px;border:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between">
-                  <span class="mono" style="font-size:9px">${t.category}</span>
-                  <strong style="font-family:'Fraunces',serif;font-size:15px">${t.name}</strong>
-                  <span style="font-size:10px;color:${t.accent}">Swipe &gt;</span>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        ` : `
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;align-items:center">
-            <div>
-              <span class="kicker">MODEL CONTEXT PROTOCOL · /MCP</span>
-              <h3 class="editorial-title" style="font-size:30px">Run your Instagram directly from Claude</h3>
-              <p style="color:var(--text-muted)">All 58 real JSON-RPC MCP tools live on <code>POST /mcp</code> — schedule Reels in bulk, generate carousels, dry-run DM automations, reply to comments, and query analytics.</p>
-              <button class="btn btn-primary" data-goto-app="mcp">Try Interactive 58-Tool MCP Console -></button>
-            </div>
-            <pre style="margin:0;background:#111114;color:#A7F3D0;padding:14px;border-radius:14px;font-size:12px;overflow-x:auto">$ claude mcp add --transport http reeldrop ${escapeHtml(location.origin)}/mcp
-
-> "Schedule 3 Trial Reels for next week and attach my REPO DM automation"
-✓ generate_reel_captions (4 variants)
-✓ schedule_reels_bulk (3 Reels queued)
-✓ dry_run_automation (keyword: REPO -> verified)</pre>
-          </div>
-        `}
-      </div>
-
-      <div class="marquee-wrap">
-        <div class="marquee-track">
-          ${[...NICHES, ...NICHES].map((n) => `<span class="marquee-item">${escapeHtml(n)}</span>`).join("")}
-        </div>
-      </div>
-
-      <section style="margin-bottom:54px">
-        <div style="text-align:center;margin-bottom:20px">
-          <span class="kicker">LIVE PLATFORM TELEMETRY</span>
-          <p style="margin:4px 0 0;color:var(--text-muted)">Real-time workspace metrics — updates immediately as you schedule posts &amp; trigger DMs.</p>
-        </div>
-        <div class="grid-3">
-          <div class="card">
-            <span class="kicker">CREATORS SIGNED UP</span>
-            <div class="stat-big">${m.creators_signed_up.toLocaleString()}</div>
-            <p style="margin:0;font-size:12.5px;color:var(--text-muted)">Verified OAuth workspaces — zero passwords stored.</p>
-          </div>
-          <div class="card">
-            <span class="kicker">DMS SENT AUTOMATICALLY</span>
-            <div class="stat-big" style="color:var(--accent)">${m.dms_sent_automatically.toLocaleString()}</div>
-            <p style="margin:0;font-size:12.5px;color:var(--text-muted)">"I followed ✓" -> "Amazing! Here are your links." via official Messenger API.</p>
-          </div>
-          <div class="card">
-            <span class="kicker">REELS &amp; POSTS SCHEDULED</span>
-            <div class="stat-big">${m.reels_scheduled.toLocaleString()}</div>
-            <p style="margin:0;font-size:12.5px;color:var(--text-muted)">Auto-published on schedule across Reels, Carousels &amp; Stories.</p>
           </div>
         </div>
       </section>
 
-      <section style="margin-bottom:56px">
-        <div style="margin-bottom:22px">
-          <span class="kicker">EVERYTHING IN ONE PLACE</span>
-          <h2 class="editorial-title" style="font-size:40px">Nine tools replaced by one calm studio</h2>
-        </div>
-        <div class="grid-3">
-          ${[
-            ["Schedule and automate posting", "Queue Reels, Carousels, Stories & Trial Reels with auto first-comments.", "scheduler", "Open Scheduler"],
-            ["Automatic carousels (35 themes)", "Turn any topic into 3–10 styled slides across Bold Highlight, Reading Room & Manga.", "carousels", "Open Carousels"],
-            ["Create Studio & AI Captions", "Full-page multi-format composer with live iPhone preview, @collab & AI captions.", "create", "Open Create Studio"],
-            ["Auto DM for growth engine", "Comment, Story reply & Incoming DM triggers with Follow Gate & timed follow-ups.", "automations", "Open Automations"],
-            ["Visual Grid planner · NEW", "Drag or click tiles to swap publish times, switch 1:1 / 4:5 / 3:4 crop & drop idea notes.", "grid", "Plan Grid"],
-            ["Instagram DM Inbox & Comments", "Unified 24h Meta window inbox + comment stream with Hot Lead ★ flags & AI drafts.", "inbox", "Open Inbox"],
-            ["Performance & Trial Reel Analytics", "Track reach, average watch time, saves, follower velocity & Trial Reel graduation.", "analytics", "View Analytics"],
-            ["Works with Claude (58 MCP Tools)", "Control scheduling, captions, carousels, grid, comments, automations & analytics in Claude.", "mcp", "Open MCP Console"],
-            ["REA Reverse-Engineering Vault", "Inspect SHA-256 verified network captures, SQLite audits & Obligation Ledger.", "rea-evidence", "Inspect Evidence"]
-          ].map(([title, desc, target, cta]) => `
-            <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;gap:14px">
-              <div>
-                <h3 style="margin:0 0 8px;font-size:17px">${title}</h3>
-                <p style="margin:0;color:var(--text-muted);font-size:13px">${desc}</p>
-              </div>
-              <button class="btn btn-sm" style="align-self:flex-start" data-goto-app="${target}">${cta} -></button>
+      <!-- SECTION 5: INTERACTIVE CAROUSEL STUDIO PLAYGROUND -->
+      <section class="mkt-section mkt-section-alt">
+        <div class="mkt-container">
+          <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:36px;">
+            <div style="max-width:640px;">
+              <h2 class="mkt-h2">16 restrained, editorial slide systems. Zero generic templates.</h2>
+              <p style="font-size:15.5px;color:var(--ink-secondary);">
+                Click any preset below to restyle the live 3-slide carousel deck right here — or customize background, ink, and accent hex codes inside the Studio.
+              </p>
             </div>
-          `).join("")}
-        </div>
-      </section>
-
-      <section class="card" style="background:var(--accent-soft);border-color:rgba(217,72,38,0.28);margin-bottom:52px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
-        <div>
-          <span class="kicker" style="color:var(--accent)">CREATOR REFERRAL PROGRAM</span>
-          <h3 class="editorial-title" style="font-size:30px">Give a free month. Get a free month.</h3>
-          <p style="margin:6px 0 0;color:var(--text-muted)">Share your personal link — friends get month 1 free and you stack up to 12 free months per year (${store.data.activeWorkspace.referral_months_earned}/12 earned).</p>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <code style="padding:10px 14px;border-radius:10px;background:var(--bg-surface);border:1px solid var(--border);font-weight:700">${location.origin}/r/${escapeHtml(store.data.activeWorkspace.referral_code)}</code>
-          <button class="btn btn-primary" id="btn-copy-referral">Copy Referral Link</button>
-        </div>
-      </section>
-
-      <section style="margin-bottom:32px">
-        <div class="page-head">
-          <div>
-            <span class="kicker">NO SIGNUP · RUNS IN BROWSER</span>
-            <h2 class="editorial-title" style="font-size:38px">20 Free Instagram Creator Tools</h2>
+            <a href="/app/carousels" data-link class="btn btn-primary">Open Carousel Designer ${icon("arrowRight", 15)}</a>
           </div>
-          <button class="btn btn-primary" data-site-nav="free-tools">Explore All 20 Free Tools -></button>
-        </div>
-        <div class="grid-4">
-          ${store.data.freeTools.slice(0, 8).map((tool) => `
-            <div class="card" style="padding:16px;cursor:pointer" data-open-tool="${tool.slug}">
-              <span class="kicker" style="color:var(--accent)">${escapeHtml(tool.category)}</span>
-              <h4 style="margin:6px 0;font-size:15px">${escapeHtml(tool.name)}</h4>
-              <p style="margin:0;font-size:12px;color:var(--text-muted)">${escapeHtml(tool.desc)}</p>
-            </div>
-          `).join("")}
-        </div>
-      </section>
 
-      ${renderPricingBlock()}
-
-      <section style="margin-top:64px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:28px;align-items:start">
-        <div>
-          <span class="kicker">FREQUENTLY ASKNA QUESTIONS</span>
-          <h2 class="editorial-title" style="font-size:36px;margin-bottom:18px">Everything clear upfront</h2>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            ${FAQS.map(([q, a], idx) => `
-              <div class="card" style="padding:14px 18px;cursor:pointer" data-faq="${idx}">
-                <div style="display:flex;justify-content:space-between;align-items:center;font-weight:700">
-                  <span>${escapeHtml(q)}</span>
-                  <span>${openFaqIdx === idx ? "−" : "+"}</span>
-                </div>
-                ${openFaqIdx === idx ? `<p style="margin:10px 0 0;color:var(--text-muted);font-size:13px">${escapeHtml(a)}</p>` : ""}
-              </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">
+            ${themes.slice(0, 8).map((t) => `
+              <button type="button" class="btn btn-sm ${t.id === chosenTheme.id ? "btn-primary" : ""}" data-landing-theme="${escHtml(t.id)}">
+                <span style="width:11px;height:11px;border-radius:50%;background:${escHtml(t.bg)};border:1px solid var(--border-strong);display:inline-block;"></span>
+                ${escHtml(t.name)}
+              </button>
             `).join("")}
           </div>
-        </div>
 
-        <div class="card" style="background:#0E0E11;color:#FAFAFA;padding:28px;border-radius:28px;text-align:center">
-          <div class="mono" style="font-size:12px;color:#A1A1AA">Tue 21 Oct</div>
-          <div style="font-size:52px;font-weight:800;letter-spacing:-0.03em;margin:2px 0 20px">9:18</div>
-          <div style="display:flex;flex-direction:column;gap:10px;text-align:left">
+          <div id="landing-carousel-cards" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;">
             ${[
-              ["maya.creates", "started following you · via Trial Reel", "now"],
-              ["jordan.films", "replied 'I followed ✓' — 2 links delivered", "1m ago"],
-              ["sofia.shots", "saved your Bold Highlight carousel", "4m ago"],
-              ["arjun.codes", "commented REPO — public reply + DM sent", "9m ago"]
-            ].map(([u, msg, t]) => `
-              <div style="background:rgba(255,255,255,0.09);padding:11px 14px;border-radius:16px;display:flex;justify-content:space-between;align-items:center;gap:8px">
-                <div>
-                  <div style="font-weight:700;font-size:13px">@${u}</div>
-                  <div style="font-size:12px;color:#D4D4D8">${msg}</div>
+              ["SLIDE 01 · HOOK", "Most interfaces feel cluttered for one simple reason", "Too many competing borders, font weights, and accent colors fighting for eye contact at once."],
+              ["SLIDE 02 · SYSTEM", "Anchor hierarchy with optical contrast, not decoration", "Pair a tight geometric display headline with calm neutral body copy and generous outer margins."],
+              ["SLIDE 03 · ACTION", "Bookmark this deck + reply GUIDE for our Figma kit", "Export crisp 1080x1350 PNG slides directly or schedule straight onto your workspace queue."]
+            ].map(([kicker, head, copy], idx) => `
+              <div class="mkt-carousel-preview-card" style="background:${escHtml(chosenTheme.bg)};color:${escHtml(chosenTheme.fg)};border:1px solid var(--border);border-radius:16px;padding:30px 28px;min-height:330px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow-sm);transition:background-color 180ms ease,color 180ms ease;">
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;opacity:0.72;">
+                  <span>${kicker}</span>
+                  <span class="mono">0${idx + 1} / 03</span>
                 </div>
-                <span class="mono" style="font-size:10px;color:#A1A1AA">${t}</span>
+                <div>
+                  <div style="width:36px;height:3.5px;background:${escHtml(chosenTheme.accent)};border-radius:2px;margin-bottom:16px;"></div>
+                  <h3 style="color:inherit;font-size:22px;line-height:1.18;margin-bottom:12px;">${head}</h3>
+                  <p style="font-size:14px;line-height:1.6;opacity:0.84;">${copy}</p>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;opacity:0.65;padding-top:14px;border-top:1px solid rgba(128,128,128,0.22);">
+                  <span>Preset: ${escHtml(chosenTheme.name)}</span>
+                  <span>1080&times;1350 PNG</span>
+                </div>
               </div>
             `).join("")}
           </div>
         </div>
       </section>
 
-      <footer style="margin-top:68px;padding-top:26px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;color:var(--text-muted);font-size:12.5px">
-        <div>
-          <strong style="color:var(--text-main)">ReelDrop</strong> · Reconstructed Full-Stack + Vercel Serverless Edition (10517933 Canada Ltd. architecture)
+      <!-- SECTION 6: COMPLETE 9-MODULE CAPABILITY BENTO -->
+      <section class="mkt-section">
+        <div class="mkt-container">
+          <div class="mkt-sec-head-center">
+            <h2 class="mkt-h2">Nine tightly integrated tools. One fast keyboard-first workspace.</h2>
+            <p style="font-size:15.5px;color:var(--ink-secondary);">
+              Press <kbd class="kbd">&#8984;K</kbd> anywhere inside Velora to jump between modules, switch brand accounts, or run the publishing queue worker in milliseconds.
+            </p>
+          </div>
+
+          <div class="mkt-bento">
+            ${capabilities.map(([ic, title, desc, link]) => `
+              <a href="${link}" data-link class="card mkt-feature-card">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <div class="mkt-icon-box">${icon(ic, 20)}</div>
+                  ${icon("arrowRight", 15)}
+                </div>
+                <h3 style="font-size:17px;margin-top:4px;">${title}</h3>
+                <p style="font-size:13.8px;color:var(--ink-secondary);line-height:1.6;">${desc}</p>
+              </a>
+            `).join("")}
+          </div>
         </div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap">
-          <a href="#" data-site-nav="home">Home</a>
-          <a href="#" data-site-nav="themes">35 Themes</a>
-          <a href="#" data-site-nav="free-tools">20 Free Tools</a>
-          <a href="#" data-site-nav="pricing">Pricing</a>
-          <a href="#" data-site-nav="campaigns">Campaigns</a>
-          <a href="#" data-site-nav="docs">Safety &amp; Docs</a>
-          <a href="#" data-goto-app="rea-evidence">REA Evidence Ledger</a>
+      </section>
+
+      <!-- SECTION 7: INTERACTIVE CREATOR IMPACT ESTIMATOR -->
+      <section class="mkt-section mkt-section-alt">
+        <div class="mkt-container">
+          <div class="split-2" style="gap:40px;align-items:center;">
+            <div>
+              <h2 class="mkt-h2">See what automated comment-to-DM links unlock every month</h2>
+              <p style="font-size:15px;color:var(--ink-secondary);line-height:1.65;margin-bottom:26px;">
+                Drag the sliders to match your weekly posting cadence and typical comment volume per post.
+              </p>
+
+              <div class="card card-pad" style="display:flex;flex-direction:column;gap:20px;background:var(--bg-page);">
+                <div class="field">
+                  <div class="field-label" style="font-size:14px;">
+                    <span>Posts &amp; Reels published per week</span>
+                    <strong id="calc-posts-val" class="tabular">${postsPerWeek} posts / wk</strong>
+                  </div>
+                  <input type="range" class="v-range" id="calc-posts-slider" min="1" max="21" value="${postsPerWeek}" />
+                </div>
+
+                <div class="field">
+                  <div class="field-label" style="font-size:14px;">
+                    <span>Average keyword comments per post</span>
+                    <strong id="calc-comments-val" class="tabular">${commentsPerPost} comments</strong>
+                  </div>
+                  <input type="range" class="v-range" id="calc-comments-slider" min="10" max="400" step="5" value="${commentsPerPost}" />
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+              <div class="card card-pad" style="padding:26px;grid-column:span 2;background:var(--bg-inverse);color:var(--ink-inverse);">
+                <div style="font-size:12.5px;opacity:0.72;">Estimated High-Intent Link Clicks / Month</div>
+                <div id="calc-out-clicks" class="mkt-stat-num" style="color:inherit;margin:8px 0 6px;">${monthlyClicks.toLocaleString()} clicks / mo</div>
+                <div style="font-size:13px;opacity:0.8;">vs ~${Math.max(12, Math.round(monthlyDms * 0.045)).toLocaleString()} clicks relying on a passive "link in bio" callout</div>
+              </div>
+              <div class="card card-pad" style="padding:24px;">
+                <div style="font-size:12.5px;color:var(--ink-muted);">Automated DMs Sent / Month</div>
+                <div id="calc-out-dms" class="mkt-stat-num" style="margin-top:6px;">${monthlyDms.toLocaleString()}</div>
+              </div>
+              <div class="card card-pad" style="padding:24px;">
+                <div style="font-size:12.5px;color:var(--ink-muted);">Manual Studio Hours Saved</div>
+                <div id="calc-out-hours" class="mkt-stat-num" style="margin-top:6px;">${hoursSaved} hrs / mo</div>
+              </div>
+            </div>
+          </div>
         </div>
-      </footer>
-    </div>
+      </section>
+
+      <!-- SECTION 8: CLAUDE DESKTOP & CURSOR MCP DEVELOPER SHOWCASE -->
+      <section class="mkt-section">
+        <div class="mkt-container">
+          <div class="mkt-deep-row">
+            <div>
+              <h2 class="mkt-h2">Control your entire publishing studio directly from Claude or Cursor.</h2>
+              <p style="font-size:15.5px;color:var(--ink-secondary);line-height:1.65;margin-bottom:22px;">
+                Velora ships a first-class Streamable HTTP MCP server out of the box with 58 registered tools. Connect Claude Desktop, Cursor, or your own internal agents to inspect analytics, batch-schedule Reels, swap grid tiles, or dry-run DM rules in seconds.
+              </p>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                <button type="button" class="btn btn-primary" id="btn-copy-mcp-snippet">${icon("copy", 15)} Copy MCP Config JSON</button>
+                <a href="/app/settings" data-link class="btn">Open Interactive MCP Console ${icon("arrowRight", 14)}</a>
+              </div>
+            </div>
+
+            <div class="card card-pad" style="background:#09090B;color:#FAFAFA;border-color:#27272A;padding:24px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid #27272A;margin-bottom:14px;">
+                <span class="mono" style="color:#A1A1AA;">claude_desktop_config.json</span>
+                <span class="badge" style="background:#18181B;color:#34D399;border-color:#27272A;">58 Tools Ready</span>
+              </div>
+              <pre class="mono" style="margin:0;font-size:12.5px;line-height:1.65;color:#E4E4E7;overflow-x:auto;">{
+  "mcpServers": {
+    "velora": {
+      "url": "https://velora.so/mcp",
+      "transport": "streamable-http"
+    }
+  }
+}
+
+// Example prompts in Claude / Cursor:
+// 1. "Schedule my 3 draft Reels into next week's 09:30 slots"
+// 2. "Create a 6-slide Swiss White carousel on CSS Grid"
+// 3. "Sweep past comments matching REPO on @maya.studio"</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 9: FREE CREATOR TOOLS SHOWCASE STRIP -->
+      <section class="mkt-section mkt-section-alt">
+        <div class="mkt-container">
+          <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:36px;">
+            <div>
+              <h2 class="mkt-h2">12 free browser-native utilities for everyday publishing</h2>
+            </div>
+            <a href="/tools" data-link class="btn">View All 12 Creator Tools ${icon("arrowRight", 14)}</a>
+          </div>
+          <div class="mkt-bento">
+            ${(store.bundle.freeTools || []).slice(0, 6).map((t) => `
+              <a href="/tools/${escHtml(t.slug)}" data-link class="card mkt-feature-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span class="badge">${escHtml(t.category)}</span>
+                  ${icon("arrowRight", 14)}
+                </div>
+                <h3 style="font-size:16.5px;">${escHtml(t.name)}</h3>
+                <p style="font-size:13.5px;color:var(--ink-secondary);line-height:1.55;">${escHtml(t.desc)}</p>
+              </a>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 10: CREATOR & STUDIO STORIES -->
+      <section class="mkt-section">
+        <div class="mkt-container">
+          <div class="mkt-sec-head-center">
+            <h2 class="mkt-h2">Built for teams who care deeply about how their work shows up</h2>
+          </div>
+
+          <div class="mkt-quotes-grid">
+            ${[
+              ["Maya Kapoor", "@maya.studio · Design Systems Educator · 48.2K followers", "Switching from three separate tools to Velora cut our Sunday batch workflow to 40 minutes. Our Figma starter Reels now send over 1,800 resource DMs automatically with a 75% click rate.", "#0F172A"],
+              ["Arjun Nair", "@arjun.fit · Strength & Mobility Coach · 92.4K followers", "The Follower Gate alone paid for an entire year in week one. Viewers commenting MOBILITY follow the page, confirm in one tap, and get our training PDF immediately.", "#065F46"],
+              ["Koko Takahashi", "@koko.ceramics · Small-Batch Studio · 34.9K followers", "Planning seasonal ceramic drops on the 4:5 Profile Grid means our feed colors always feel intentional. Customers DM KILN on restock Reels and check out before batches sell through.", "#7C2D12"],
+              ["Rohan Deshmukh", "@rohan.codes · Indie Founder · 61.0K followers", "Having our sponsorship notes right beside Instagram DMs — plus being able to query post saves from Cursor over MCP — makes Velora feel like Linear for social publishing.", "#1E3A8A"]
+            ].map(([name, role, quote, color]) => `
+              <div class="card card-pad" style="padding:28px;display:flex;flex-direction:column;justify-content:space-between;gap:20px;">
+                <p style="font-size:15px;line-height:1.65;color:var(--ink-primary);">"${quote}"</p>
+                <div style="display:flex;align-items:center;gap:12px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+                  <span class="ws-avatar" style="width:38px;height:38px;font-size:14px;background:${color};">${name[0]}</span>
+                  <div>
+                    <div style="font-weight:600;font-size:14px;">${name}</div>
+                    <div style="font-size:12.5px;color:var(--ink-muted);">${role}</div>
+                  </div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 11: PLANS, PRICING & COMPARISON MATRIX -->
+      ${renderPricingSection(false)}
+
+      <!-- SECTION 12: INTERACTIVE FAQ ACCORDION + GRAND CLOSING CTA BANNER -->
+      <section class="mkt-section">
+        <div class="mkt-container">
+          <div class="mkt-sec-head-center">
+            <h2 class="mkt-h2">Frequently asked questions</h2>
+            <p style="font-size:15px;color:var(--ink-secondary);">Everything about Official Meta API limits, smart image cropping, pricing, and MCP.</p>
+          </div>
+
+          <div class="mkt-faq-list">
+            ${faqs.map(([q, a], idx) => {
+              const isOpen = openFaq === idx;
+              return `
+                <div class="card">
+                  <button type="button" class="mkt-faq-btn" data-faq-idx="${idx}" aria-expanded="${isOpen}">
+                    <span>${escHtml(q)}</span>
+                    ${icon(isOpen ? "x" : "plus", 17)}
+                  </button>
+                  ${isOpen ? `<div class="mkt-faq-answer">${escHtml(a)}</div>` : ""}
+                </div>
+              `;
+            }).join("")}
+          </div>
+
+          <div class="mkt-cta-banner" style="margin-top:88px;">
+            <h2 class="mkt-h2" style="color:inherit;max-width:680px;margin-bottom:0;">
+              Give your content the calm, reliable studio it deserves.
+            </h2>
+            <p style="font-size:16px;opacity:0.82;max-width:560px;line-height:1.6;">
+              Jump straight into the live sandbox with 4 preloaded creator accounts — or create your own workspace right now.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:6px;">
+              <a href="/app/overview" data-link class="btn btn-brand btn-lg" style="height:48px;padding:0 28px;">
+                Open Interactive Studio ${icon("arrowRight", 16)}
+              </a>
+              <a href="/sign-up" data-link class="btn btn-lg" style="height:48px;padding:0 24px;background:#FFFFFF;color:#09090B;border-color:#FFFFFF;">
+                Create Free Account
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    ${renderMarketingFooter()}
   `;
 }
 
-export function bindMarketingEvents(root, openWorkspaceModal) {
-  root.querySelectorAll("[data-hero-tab]").forEach((btn) => { btn.onclick = () => { heroTab = btn.dataset.heroTab; notify(); }; });
-  root.querySelectorAll("[data-cycle]").forEach((btn) => { btn.onclick = () => { store.billingCycle = btn.dataset.cycle; notify(); }; });
-  root.querySelectorAll("[data-cur]").forEach((btn) => { btn.onclick = () => { store.currency = btn.dataset.cur; notify(); }; });
-  root.querySelectorAll("[data-adv]").forEach((chk) => { chk.onchange = () => { advisorQ[chk.dataset.adv] = chk.checked; notify(); }; });
-  root.querySelectorAll("[data-select-plan]").forEach((btn) => {
-    btn.onclick = async () => {
-      const plan = btn.dataset.selectPlan;
-      const bundle = await apiRequest("/api/workspaces/switch-plan", {
-        method: "POST",
-        body: JSON.stringify({ workspaceId: store.data.activeWorkspace.id, plan, billingCycle: store.billingCycle })
-      });
-      store.data = bundle;
-      notify();
-      toast(`Switched @${bundle.activeWorkspace.ig_handle} to ${bundle.activeWorkspace.planSpec.name} plan!`);
-    };
-  });
-  root.querySelectorAll("[data-faq]").forEach((card) => {
-    card.onclick = () => {
-      const idx = Number(card.dataset.faq);
-      openFaqIdx = openFaqIdx === idx ? -1 : idx;
-      notify();
-    };
-  });
-  root.querySelectorAll("[data-open-tool]").forEach((el) => {
-    el.onclick = () => {
-      store.selectedFreeTool = el.dataset.openTool;
-      store.sitePage = "free-tools";
-      notify();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    };
-  });
-  root.querySelectorAll("[data-theme-cat]").forEach((btn) => { btn.onclick = () => { themeCategory = btn.dataset.themeCat; notify(); }; });
-  const chkNoPhoto = root.querySelector("#chk-no-photo");
-  if (chkNoPhoto) chkNoPhoto.onchange = () => { themeNoPhotoOnly = chkNoPhoto.checked; notify(); };
-  const inpSearch = root.querySelector("#inp-theme-search");
-  if (inpSearch) inpSearch.oninput = () => { themeSearch = inpSearch.value; notify(); };
-  const btnSurprise = root.querySelector("#btn-theme-surprise");
-  if (btnSurprise) {
-    btnSurprise.onclick = () => {
-      const list = store.data.themes;
-      const pick = list[Math.floor(Math.random() * list.length)];
-      toast(`Surprise pick: "${pick.name}" (${pick.category}) — opening Studio!`);
-      store.mode = "app";
-      store.appPage = "carousels";
-      store.pendingThemeId = pick.id;
-      notify();
-    };
-  }
-  root.querySelectorAll("[data-use-theme]").forEach((btn) => {
-    btn.onclick = () => {
-      store.pendingThemeId = btn.dataset.useTheme;
-      store.mode = "app";
-      store.appPage = "carousels";
-      notify();
-    };
-  });
-  const btnRef = root.querySelector("#btn-copy-referral");
-  if (btnRef) {
-    btnRef.onclick = () => {
-      navigator.clipboard?.writeText(`${location.origin}/r/${store.data.activeWorkspace.referral_code}`);
-      toast("Copied referral link! Friends get month 1 free.");
-    };
-  }
-  const btnHeroWs = root.querySelector("#btn-hero-create-ws");
-  if (btnHeroWs) btnHeroWs.onclick = openWorkspaceModal;
+export function renderPricingPage() {
+  return `
+    ${renderMarketingNavbar("/pricing")}
+    <main class="stage-animate">
+      ${renderPricingSection(true)}
+    </main>
+    ${renderMarketingFooter()}
+  `;
+}
 
-  const cmpForm = root.querySelector("#campaign-form");
-  if (cmpForm) {
-    cmpForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const fd = new FormData(cmpForm);
-      const res = await apiRequest("/api/campaigns/apply", {
-        method: "POST",
-        body: JSON.stringify(Object.fromEntries(fd.entries()))
-      });
-      toast(res.message);
-      cmpForm.reset();
-    };
-  }
+export function renderPartnersPage() {
+  return `
+    ${renderMarketingNavbar("/partners")}
+    <main class="mkt-container stage-animate" style="padding-top:56px;padding-bottom:84px;">
+      <div class="split-2">
+        <div>
+          <h1 class="mkt-h2" style="font-size:38px;">Earn 30% recurring commission or ship sponsored workflow demos</h1>
+          <p style="font-size:15.5px;color:var(--ink-secondary);line-height:1.65;margin:14px 0 26px;">
+            Share how you plan your feed or automate comment links using Velora. Partners receive free Studio access plus direct sponsorship payouts or recurring revenue share.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            ${[
+              ["Creator Walkthroughs ($250 – $1,200/video)", "Show a genuine 45-second screen recording of your grid planning or comment-to-DM workflow."],
+              ["30% Recurring Partner Share", "Every referred paid workspace credits your partner balance automatically every billing cycle."],
+              ["Full Studio Sandbox Included", "All approved creator partners receive complimentary Studio access across 5 workspaces."]
+            ].map(([t, d]) => `
+              <div class="card card-pad">
+                <div style="font-weight:600;font-size:14.5px;margin-bottom:4px;">${t}</div>
+                <div style="font-size:13px;color:var(--ink-secondary);">${d}</div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <form id="form-partner-apply" class="card card-pad" style="padding:28px;display:flex;flex-direction:column;gap:14px;">
+          <h3 style="font-size:18px;">Apply to Partner Program</h3>
+          <div class="field">
+            <label class="field-label">Your Name</label>
+            <input class="input" name="name" required placeholder="Maya Kapoor" />
+          </div>
+          <div class="field">
+            <label class="field-label">Work Email</label>
+            <input class="input" type="email" name="email" required placeholder="maya@studio.design" />
+          </div>
+          <div class="field">
+            <label class="field-label">Instagram or YouTube Handle</label>
+            <input class="input" name="handle" required placeholder="@maya.studio" />
+          </div>
+          <div class="field">
+            <label class="field-label">Average Views per Post</label>
+            <select class="select" name="views">
+              <option>5,000 – 25,000 views</option>
+              <option>25,000 – 100,000 views</option>
+              <option>100,000+ views</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-lg" type="submit">Submit Partner Application</button>
+        </form>
+      </div>
+    </main>
+    ${renderMarketingFooter()}
+  `;
+}
+
+export function renderDocsPage() {
+  const articles = [
+    ["Official Meta API Safety & Rate Limits", "Velora connects exclusively through Official Instagram Graph OAuth tokens — never scraping or requesting your Instagram password. Meta permits up to 200 automated private replies per post comment hour and up to 50 published media containers per 24 hours."],
+    ["Smart Image Resize, Aspect-Ratio & Crop Studio", "Upload PNG, JPEG, WebP, MP4, or WebM assets directly in the Post Composer. Landscape screenshots automatically engage Smart Fit with a soft studio backdrop so zero text gets cut off, and you can export high-res 4:5, 9:16, 1:1, or 1.91:1 crops directly to SQLite."],
+    ["Designing Comment-to-DM Workflows", "Attach up to 3 HTTPS call-to-action buttons per automated DM (20 characters max per label). Rotate multiple public comment replies to keep engagement natural, and optionally enable Follower Verification before sending primary links."],
+    ["Connecting Claude Desktop or Cursor via MCP", "Point any Model Context Protocol client to POST /mcp on your Velora deployment URL. All 58 workspace, calendar, grid, carousel, workflow, inbox, and analytics tools are exposed via JSON-RPC 2.0."]
+  ];
+
+  return `
+    ${renderMarketingNavbar("/docs")}
+    <main class="mkt-container stage-animate" style="padding-top:56px;padding-bottom:84px;max-width:920px;">
+      <h1 class="mkt-h2" style="font-size:36px;margin-bottom:8px;">Velora Product Guide &amp; API Reference</h1>
+      <p style="font-size:15.5px;color:var(--ink-secondary);margin-bottom:28px;">
+        Everything you need to configure publishing queues, smart image crops, DM rules, and MCP integrations safely.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        ${articles.map(([title, body]) => `
+          <article class="card card-pad" style="padding:24px;">
+            <h2 style="font-size:18px;margin-bottom:8px;">${title}</h2>
+            <p style="font-size:14px;color:var(--ink-secondary);line-height:1.65;">${body}</p>
+          </article>
+        `).join("")}
+      </div>
+    </main>
+    ${renderMarketingFooter()}
+  `;
+}
+
+export function renderAuthPage(mode = "sign-in") {
+  const isSignUp = mode === "sign-up";
+  return `
+    ${renderMarketingNavbar(isSignUp ? "/sign-up" : "/sign-in")}
+    <main class="mkt-container stage-animate" style="padding:64px 16px 92px;display:flex;justify-content:center;">
+      <div class="card card-pad" style="width:100%;max-width:430px;padding:30px;display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <h1 style="font-size:23px;">${isSignUp ? "Create your Velora account" : "Sign in to Velora"}</h1>
+          <p style="font-size:13.5px;color:var(--ink-muted);margin-top:4px;">
+            ${isSignUp
+              ? "Start free with unlimited scheduling and 4 preloaded demo workspaces."
+              : "Use demo credentials maya@velora.so / demo1234 or your own account."}
+          </p>
+        </div>
+
+        <form id="form-auth" data-mode="${mode}" style="display:flex;flex-direction:column;gap:13px;">
+          ${isSignUp ? `
+            <div class="field">
+              <label class="field-label">Full Name</label>
+              <input class="input" name="name" required placeholder="Maya Kapoor" />
+            </div>
+          ` : ""}
+          <div class="field">
+            <label class="field-label">Email Address</label>
+            <input class="input" type="email" name="email" required value="${isSignUp ? "" : "maya@velora.so"}" placeholder="you@studio.com" />
+          </div>
+          <div class="field">
+            <label class="field-label">Password</label>
+            <input class="input" type="password" name="password" required minlength="6" value="${isSignUp ? "" : "demo1234"}" placeholder="Minimum 6 characters" />
+          </div>
+          <button class="btn btn-primary btn-lg" type="submit" style="width:100%;margin-top:4px;">
+            ${isSignUp ? "Create Account & Open Studio" : "Sign In to Studio"}
+          </button>
+        </form>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);font-size:12.5px;color:var(--ink-muted);">
+          ${isSignUp
+            ? `<span>Already have an account? <a href="/sign-in" data-link style="color:var(--ink-primary);font-weight:600;">Sign in</a></span>`
+            : `<span>New here? <a href="/sign-up" data-link style="color:var(--ink-primary);font-weight:600;">Create account</a></span>`}
+          <a href="/app/overview" data-link style="color:var(--brand);font-weight:600;">Instant Demo &rarr;</a>
+        </div>
+      </div>
+    </main>
+    ${renderMarketingFooter()}
+  `;
 }

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EEF2F6"/>
+      <stop offset="100%" stop-color="#DCE4EC"/>
+    </linearGradient>
+    <filter id="sh" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#0F172A" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="1350" fill="url(#g)"/>
+  <circle cx="920" cy="180" r="340" fill="#FFFFFF" fill-opacity="0.45"/>
+  <circle cx="140" cy="1180" r="290" fill="#FFFFFF" fill-opacity="0.35"/>
+
+  <!-- Top Editorial Header -->
+  <rect x="88" y="88" width="270" height="48" rx="24" fill="#FFFFFF" fill-opacity="0.88"/>
+  <text x="223" y="119" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#334155">SYSTEM BENCHMARK</text>
+
+  <!-- Center Studio Visual Mockup Card -->
+  <g filter="url(#sh)">
+    <rect x="88" y="210" width="904" height="580" rx="34" fill="#FFFFFF"/>
+    <rect x="136" y="262" width="190" height="18" rx="9" fill="#E2E8F0"/>
+    <circle cx="912" cy="271" r="10" fill="#334155" fill-opacity="0.25"/>
+    <line x1="88" y1="312" x2="992" y2="312" stroke="#F1F5F9" stroke-width="3"/>
+
+    <!-- Visual Diagram Elements inside Studio Frame -->
+    <rect x="136" y="356" width="380" height="382" rx="22" fill="#EEF2F6"/>
+    <rect x="172" y="396" width="140" height="16" rx="8" fill="#334155" fill-opacity="0.25"/>
+    <rect x="172" y="432" width="290" height="34" rx="10" fill="#0F172A" fill-opacity="0.85"/>
+    <rect x="172" y="482" width="240" height="22" rx="8" fill="#64748B" fill-opacity="0.35"/>
+    <rect x="172" y="644" width="188" height="54" rx="14" fill="#334155"/>
+    <rect x="204" y="665" width="124" height="12" rx="6" fill="#FFFFFF"/>
+
+    <rect x="552" y="356" width="392" height="178" rx="22" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>
+    <polyline fill="none" stroke="#334155" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" points="592,488 658,452 722,466 798,412 864,424 912,388"/>
+    <circle cx="912" cy="388" r="9" fill="#334155"/>
+
+    <rect x="552" y="560" width="186" height="178" rx="22" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>
+    <text x="586" y="638" font-family="Inter, system-ui, sans-serif" font-size="44" font-weight="800" fill="#0F172A">+74%</text>
+    <rect x="586" y="668" width="116" height="14" rx="7" fill="#94A3B8" fill-opacity="0.5"/>
+
+    <rect x="758" y="560" width="186" height="178" rx="22" fill="#334155" fill-opacity="0.10"/>
+    <text x="792" y="638" font-family="Inter, system-ui, sans-serif" font-size="44" font-weight="800" fill="#334155">4.8x</text>
+    <rect x="792" y="668" width="116" height="14" rx="7" fill="#334155" fill-opacity="0.4"/>
+  </g>
+
+  <!-- Crisp Editorial Bottom Typography inside 4:5 & 3:4 Safe Zone -->
+  <text x="88" y="925" font-family="Plus Jakarta Sans, Inter, system-ui, sans-serif" font-size="64" font-weight="800" letter-spacing="-1.8" fill="#0F172A">Micro-Interactions Under</text>
+  <text x="88" y="1002" font-family="Plus Jakarta Sans, Inter, system-ui, sans-serif" font-size="64" font-weight="800" letter-spacing="-1.8" fill="#0F172A">160ms</text>
+  <text x="88" y="1072" font-family="Inter, system-ui, sans-serif" font-size="29" font-weight="500" fill="#475569">Why subtle spring curves make interfaces feel effortless</text>
+
+  <line x1="88" y1="1158" x2="992" y2="1158" stroke="#0F172A" stroke-opacity="0.12" stroke-width="2"/>
+  <text x="88" y="1218" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700" fill="#0F172A">@velora.studio</text>
+  <text x="992" y="1218" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="23" font-weight="600" fill="#334155">Swipe Breakdown -&gt;</text>
+</svg>
