@@ -6,6 +6,9 @@ import {
   loginAccount,
   logoutAccount,
   uploadMediaFile,
+  inspectImageDimensions,
+  renderCroppedStudioImage,
+  generateAiVisualCardDataUrl,
   resetAllDemoData,
   mcpCall,
   showToast,
@@ -14,6 +17,8 @@ import {
 import { icon, brandLogo } from "./icons.js";
 import {
   renderLandingPage,
+  renderHeroShowcaseMain,
+  renderLandingPhoneChatMessages,
   renderPricingPage,
   renderPartnersPage,
   renderDocsPage,
@@ -62,7 +67,7 @@ function toggleTheme() {
   store.theme = store.theme === "dark" ? "light" : "dark";
   localStorage.setItem("velora_theme", store.theme);
   document.documentElement.setAttribute("data-theme", store.theme);
-  renderRoute();
+  renderRoute({ forceShell: true });
 }
 
 function renderAppShell(activeRouteId, stageHtml) {
@@ -176,25 +181,32 @@ function renderAppShell(activeRouteId, stageHtml) {
   `;
 }
 
+let lastRenderedRoutePath = "";
+
 export function renderRoute(opts = {}) {
   if (!store.bundle) return;
   const resetScroll = Boolean(opts && opts.resetScroll);
+  const forceShell = Boolean(opts && opts.forceShell);
+  const savedScrollY = window.scrollY;
   const root = document.getElementById("velora-root");
   const path = currentPath();
 
   // Redirect legacy aliases seamlessly
   if (path === "/app" || path === "/app/") {
     window.history.replaceState({}, "", "/app/overview");
-    return renderRoute();
+    return renderRoute(opts);
   }
   if (path === "/app/scheduler") {
     window.history.replaceState({}, "", "/app/calendar");
-    return renderRoute();
+    return renderRoute(opts);
   }
   if (path === "/free-tools") {
     window.history.replaceState({}, "", "/tools");
-    return renderRoute();
+    return renderRoute(opts);
   }
+
+  const isRouteChange = path !== lastRenderedRoutePath;
+  lastRenderedRoutePath = path;
 
   if (path.startsWith("/app/")) {
     const seg = path.split("/")[2] || "overview";
@@ -211,16 +223,29 @@ export function renderRoute(opts = {}) {
       default: stageHtml = renderOverview(); break;
     }
 
-    // Persistent shell smooth update when already inside /app/*
+    // Persistent shell smooth update when already inside /app/* (zero sidebar flash / zero page jank)
     const existingStage = document.getElementById("velora-app-stage");
-    if (existingStage && !document.querySelector(".mkt-nav")) {
-      root.innerHTML = renderAppShell(seg, stageHtml);
+    if (existingStage && !document.querySelector(".mkt-nav") && !forceShell) {
+      existingStage.innerHTML = stageHtml;
+      if (!isRouteChange && existingStage.firstElementChild) {
+        existingStage.firstElementChild.classList.remove("stage-animate");
+      }
+      document.querySelectorAll(".app-sidebar .nav-item[href^='/app/']").forEach((link) => {
+        link.classList.toggle("is-active", link.getAttribute("href") === `/app/${seg}`);
+      });
+      document.querySelectorAll(".mobile-bottom-nav .mobile-tab-btn[href^='/app/']").forEach((link) => {
+        link.classList.toggle("is-active", link.getAttribute("href") === `/app/${seg}`);
+      });
     } else {
       root.innerHTML = renderAppShell(seg, stageHtml);
+      bindShellChromeInteractions();
     }
+
     bindAppInteractions();
     const inboxScroll = document.getElementById("inbox-msg-scroll");
     if (inboxScroll) inboxScroll.scrollTop = inboxScroll.scrollHeight;
+    if (resetScroll) window.scrollTo({ top: 0 });
+    else if (!isRouteChange) window.scrollTo({ top: savedScrollY });
     return;
   }
 
@@ -238,7 +263,11 @@ export function renderRoute(opts = {}) {
     root.innerHTML = renderLandingPage();
   }
 
+  if (!isRouteChange && root.querySelector("main.stage-animate")) {
+    root.querySelector("main.stage-animate").classList.remove("stage-animate");
+  }
   if (resetScroll) window.scrollTo({ top: 0 });
+  else if (!isRouteChange) window.scrollTo({ top: savedScrollY });
   bindMarketingInteractions();
 }
 
@@ -590,26 +619,45 @@ function bindMarketingInteractions() {
     });
   });
 
+  const bindHeroInnerControls = () => {
+    document.querySelectorAll("[data-landing-sim]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        store.ui.landingSimScenario = btn.dataset.landingSim;
+        const vp = document.getElementById("hero-showcase-viewport");
+        if (vp) {
+          vp.innerHTML = renderHeroShowcaseMain();
+          bindHeroInnerControls();
+        }
+      });
+    });
+
+    document.querySelectorAll("[data-landing-crop]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        store.ui.landingGridCrop = btn.dataset.landingCrop;
+        const vp = document.getElementById("hero-showcase-viewport");
+        if (vp) {
+          vp.innerHTML = renderHeroShowcaseMain();
+          bindHeroInnerControls();
+        }
+      });
+    });
+  };
+
   document.querySelectorAll("[data-hero-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       store.ui.heroTab = btn.dataset.heroTab;
-      renderRoute();
+      document.querySelectorAll("[data-hero-tab]").forEach((b2) => {
+        b2.classList.toggle("is-active", b2.dataset.heroTab === store.ui.heroTab);
+      });
+      const vp = document.getElementById("hero-showcase-viewport");
+      if (vp) {
+        vp.innerHTML = renderHeroShowcaseMain();
+        bindHeroInnerControls();
+      }
     });
   });
 
-  document.querySelectorAll("[data-landing-sim]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      store.ui.landingSimScenario = btn.dataset.landingSim;
-      renderRoute();
-    });
-  });
-
-  document.querySelectorAll("[data-landing-crop]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      store.ui.landingGridCrop = btn.dataset.landingCrop;
-      renderRoute();
-    });
-  });
+  bindHeroInnerControls();
 
   document.querySelectorAll("[data-landing-theme]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -682,9 +730,13 @@ function bindMarketingInteractions() {
       { role: "them", badge: "You commented / DMed", text: clean },
       reply
     ];
-    renderRoute();
     const box = document.getElementById("landing-phone-chat-list");
-    if (box) box.scrollTop = box.scrollHeight;
+    if (box) {
+      box.innerHTML = renderLandingPhoneChatMessages();
+      box.scrollTop = box.scrollHeight;
+    } else {
+      renderRoute();
+    }
   };
 
   document.querySelectorAll("[data-landing-quick-kw]").forEach((btn) => {
@@ -757,22 +809,22 @@ function bindMarketingInteractions() {
 }
 
 /* ============================================================================
-   EVENT BINDINGS FOR STUDIO DASHBOARD (/app/*)
+   EVENT BINDINGS FOR PERSISTENT SHELL CHROME + STUDIO STAGE (/app/*)
    ============================================================================ */
-function bindAppInteractions() {
+function bindShellChromeInteractions() {
   document.getElementById("btn-theme-toggle")?.addEventListener("click", toggleTheme);
   document.getElementById("btn-open-palette")?.addEventListener("click", openCommandPalette);
   document.getElementById("btn-mobile-sidebar")?.addEventListener("click", () => {
     store.mobileSidebarOpen = true;
-    renderRoute();
+    renderRoute({ forceShell: true });
   });
   document.getElementById("btn-mobile-more")?.addEventListener("click", () => {
     store.mobileSidebarOpen = !store.mobileSidebarOpen;
-    renderRoute();
+    renderRoute({ forceShell: true });
   });
   document.getElementById("mobile-sidebar-close")?.addEventListener("click", () => {
     store.mobileSidebarOpen = false;
-    renderRoute();
+    renderRoute({ forceShell: true });
   });
   document.getElementById("btn-logout")?.addEventListener("click", () => {
     logoutAccount();
@@ -785,8 +837,11 @@ function bindAppInteractions() {
     store.ui.selectedThreadId = null;
     store.ui.selectedCarouselId = null;
     showToast(`Switched workspace to @${store.bundle.activeWorkspace.ig_handle}`);
-    renderRoute();
+    renderRoute({ forceShell: true });
   });
+}
+
+function bindAppInteractions() {
 
   document.getElementById("btn-run-queue-worker")?.addEventListener("click", async () => {
     const res = await apiRequest("/api/queue/run-worker", "POST", { workspaceId: store.activeWorkspaceId, publishNextScheduled: true });
@@ -832,22 +887,73 @@ function bindAppInteractions() {
     });
   });
 
-  /* --- CREATE POST COMPOSER --- */
+  /* --- CREATE POST COMPOSER: AI CO-PILOT, UPLOAD PROGRESS & CROP STUDIO --- */
   document.querySelectorAll("[data-composer-type]").forEach((btn) => {
-    btn.addEventListener("click", () => { store.ui.composerMediaType = btn.dataset.composerType; renderRoute(); });
+    btn.addEventListener("click", () => {
+      store.ui.composerMediaType = btn.dataset.composerType;
+      if (btn.dataset.composerType === "REEL" || btn.dataset.composerType === "STORY") {
+        store.ui.composerAspect = "9:16";
+        store.ui.composerPreviewTab = "reel";
+      } else {
+        store.ui.composerAspect = "4:5";
+        store.ui.composerPreviewTab = "feed";
+      }
+      renderRoute();
+    });
   });
-  document.querySelectorAll("[data-cover-style]").forEach((btn) => {
-    btn.addEventListener("click", () => { store.ui.composerCoverStyle = btn.dataset.coverStyle; renderRoute(); });
+
+  document.querySelectorAll("[data-quick-aspect]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      store.ui.composerAspect = btn.dataset.quickAspect;
+      store.ui.composerPreviewTab = btn.dataset.quickAspect === "9:16" ? "reel" : "feed";
+      renderRoute();
+    });
   });
-  document.getElementById("btn-clear-media")?.addEventListener("click", () => {
-    store.ui.composerMediaUrl = "";
+
+  document.querySelectorAll("[data-quick-fit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      store.ui.composerMediaFit = btn.dataset.quickFit;
+      renderRoute();
+    });
+  });
+
+  document.querySelectorAll("[data-preview-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      store.ui.composerPreviewTab = btn.dataset.previewMode;
+      renderRoute();
+    });
+  });
+
+  document.getElementById("btn-toggle-preview-fold")?.addEventListener("click", () => {
+    store.ui.composerCaptionExpanded = !store.ui.composerCaptionExpanded;
     renderRoute();
   });
-  document.querySelectorAll("[data-pick-asset]").forEach((btn) => {
+
+  document.querySelectorAll("[data-pick-preset-media]").forEach((btn) => {
     btn.addEventListener("click", () => {
+      store.ui.composerMediaUrl = btn.dataset.pickPresetMedia;
+      store.ui.composerMediaDims = "1080 x 1350 px · 4:5 Studio Art";
+      store.ui.composerMediaFit = "cover";
+      renderRoute();
+    });
+  });
+
+  document.getElementById("btn-clear-media")?.addEventListener("click", () => {
+    store.ui.composerMediaUrl = "";
+    store.ui.composerMediaDims = "";
+    renderRoute();
+  });
+
+  document.querySelectorAll("[data-pick-asset]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
       const asset = store.bundle.mediaAssets.find((m) => m.id === btn.dataset.pickAsset);
       if (asset) {
         store.ui.composerMediaUrl = asset.url;
+        if (!asset.mime_type.startsWith("video")) {
+          const d = await inspectImageDimensions(asset.url);
+          store.ui.composerMediaDims = `${d.width} x ${d.height} px`;
+          store.ui.composerMediaFit = d.width > d.height ? "contain" : "cover";
+        }
         renderRoute();
       }
     });
@@ -855,18 +961,240 @@ function bindAppInteractions() {
 
   const handleFilesUpload = async (fileList) => {
     if (!fileList || !fileList.length) return;
-    const file = fileList[0];
-    showToast(`Uploading ${file.name}...`);
+    const files = Array.from(fileList);
+    const file = files[0];
+    const renderProgress = (pct, label) => {
+      const slot = document.getElementById("composer-upload-progress-slot");
+      if (slot) {
+        slot.innerHTML = `
+          <div class="upload-progress-card" style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--brand);">
+              <span>${escHtml(label)}</span>
+              <span class="mono">${pct}%</span>
+            </div>
+            <div class="upload-progress-track">
+              <div class="upload-progress-fill" style="width:${pct}%;"></div>
+            </div>
+          </div>
+        `;
+      }
+    };
+
     try {
-      const res = await uploadMediaFile(file, store.activeWorkspaceId);
+      const res = await uploadMediaFile(file, store.activeWorkspaceId, renderProgress);
       store.ui.composerMediaUrl = res.asset.url;
-      if (file.type.startsWith("video")) store.ui.composerMediaType = "REEL";
-      showToast(`Uploaded ${file.name} (${Math.max(1, Math.round(res.asset.size_bytes / 1024))} KB)`);
+      if (file.type.startsWith("video")) {
+        store.ui.composerMediaType = "REEL";
+        store.ui.composerAspect = "9:16";
+        store.ui.composerMediaDims = "Video Asset Ready";
+      } else {
+        const isLandscape = res.width > res.height;
+        store.ui.composerMediaDims = `${res.width} x ${res.height} px${isLandscape ? " · Smart Fit Active" : ""}`;
+        store.ui.composerMediaFit = isLandscape ? "contain" : "cover";
+      }
+      if (files.length > 1) {
+        store.ui.composerSlidesMedia = [res.asset.url];
+        for (const extra of files.slice(1, 6)) {
+          const up2 = await uploadMediaFile(extra, store.activeWorkspaceId, renderProgress);
+          store.ui.composerSlidesMedia.push(up2.asset.url);
+        }
+        store.ui.composerMediaType = "CAROUSEL";
+      }
+      showToast(`Uploaded ${file.name} (${res.width}x${res.height}px) — click Resize & Crop Studio anytime`);
+      renderRoute();
+    } catch (err) {
+      store.ui.uploadProgress = { active: false, pct: 0, label: "" };
+      showToast(err.message, true);
+      renderRoute();
+    }
+  };
+
+  // Interactive <canvas> Resize & Aspect-Ratio Crop Studio Modal Bindings
+  const refreshCropLiveCanvas = async () => {
+    const cs = store.ui.cropStudio;
+    if (!cs.open || !cs.srcUrl) return;
+    try {
+      const out = await renderCroppedStudioImage(cs);
+      cs.previewUrl = out.dataUrl;
+      const imgEl = document.getElementById("crop-live-preview-img");
+      if (imgEl) imgEl.src = out.dataUrl;
+    } catch {}
+  };
+
+  document.getElementById("btn-open-crop-studio")?.addEventListener("click", async () => {
+    const src = store.ui.composerMediaUrl || "/media/post-01.svg";
+    const dims = await inspectImageDimensions(src);
+    store.ui.cropStudio = {
+      open: true,
+      srcUrl: src,
+      previewUrl: src,
+      origW: dims.width,
+      origH: dims.height,
+      aspect: store.ui.composerAspect || "4:5",
+      fitMode: dims.width > dims.height ? "contain" : store.ui.composerMediaFit || "contain",
+      bgStyle: "blur",
+      zoom: 100,
+      panX: 0,
+      panY: 0,
+      padding: 44
+    };
+    const out = await renderCroppedStudioImage(store.ui.cropStudio);
+    store.ui.cropStudio.previewUrl = out.dataUrl;
+    renderRoute();
+  });
+
+  document.getElementById("btn-close-crop-modal")?.addEventListener("click", () => {
+    store.ui.cropStudio.open = false;
+    renderRoute();
+  });
+  document.getElementById("crop-modal-backdrop")?.addEventListener("click", (e) => {
+    if (e.target.id === "crop-modal-backdrop") {
+      store.ui.cropStudio.open = false;
+      renderRoute();
+    }
+  });
+  document.querySelectorAll("[data-crop-aspect]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      store.ui.cropStudio.aspect = btn.dataset.cropAspect;
+      await refreshCropLiveCanvas();
+      renderRoute();
+    });
+  });
+  document.querySelectorAll("[data-crop-fit]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      store.ui.cropStudio.fitMode = btn.dataset.cropFit;
+      await refreshCropLiveCanvas();
+      renderRoute();
+    });
+  });
+  document.querySelectorAll("[data-crop-bg]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      store.ui.cropStudio.bgStyle = btn.dataset.cropBg;
+      await refreshCropLiveCanvas();
+      renderRoute();
+    });
+  });
+  document.getElementById("crop-zoom-slider")?.addEventListener("input", (e) => {
+    store.ui.cropStudio.zoom = Number(e.target.value);
+    const v = document.getElementById("crop-zoom-val");
+    if (v) v.textContent = `${e.target.value}%`;
+    refreshCropLiveCanvas();
+  });
+  document.getElementById("crop-panx-slider")?.addEventListener("input", (e) => {
+    store.ui.cropStudio.panX = Number(e.target.value);
+    const v = document.getElementById("crop-panx-val");
+    if (v) v.textContent = `${e.target.value}%`;
+    refreshCropLiveCanvas();
+  });
+  document.getElementById("crop-pany-slider")?.addEventListener("input", (e) => {
+    store.ui.cropStudio.panY = Number(e.target.value);
+    const v = document.getElementById("crop-pany-val");
+    if (v) v.textContent = `${e.target.value}%`;
+    refreshCropLiveCanvas();
+  });
+  document.getElementById("btn-reset-crop")?.addEventListener("click", async () => {
+    store.ui.cropStudio.zoom = 100;
+    store.ui.cropStudio.panX = 0;
+    store.ui.cropStudio.panY = 0;
+    await refreshCropLiveCanvas();
+    renderRoute();
+  });
+  document.getElementById("btn-apply-crop")?.addEventListener("click", async () => {
+    try {
+      const rendered = await renderCroppedStudioImage(store.ui.cropStudio);
+      const uploaded = await apiRequest("/api/media/upload", "POST", {
+        workspaceId: store.activeWorkspaceId,
+        filename: `cropped-${store.ui.cropStudio.aspect.replace(":", "x")}.png`,
+        mimeType: "image/png",
+        dataUrl: rendered.dataUrl
+      });
+      store.ui.composerMediaUrl = uploaded.asset.url;
+      store.ui.composerAspect = store.ui.cropStudio.aspect;
+      store.ui.composerMediaFit = "cover";
+      store.ui.composerMediaDims = `${rendered.width} x ${rendered.height} px · High-Res Cropped`;
+      store.ui.cropStudio.open = false;
+      showToast(`Applied ${rendered.width}x${rendered.height}px studio crop`);
       renderRoute();
     } catch (err) {
       showToast(err.message, true);
     }
-  };
+  });
+
+  // AI Full Post Co-Pilot + AI Visual Cover Art + AI Caption Rewriter
+  document.getElementById("btn-generate-ai-pack")?.addEventListener("click", async () => {
+    const topic = document.getElementById("ai-topic-input")?.value || "Design Systems";
+    const tone = document.getElementById("ai-tone-select")?.value || "Editorial";
+    const goal = document.getElementById("ai-goal-select")?.value || "dm_keyword";
+    store.ui.aiTopic = topic;
+    store.ui.aiTone = tone;
+    store.ui.aiGoal = goal;
+    try {
+      const res = await apiRequest("/api/ai/post-pack", "POST", {
+        workspaceId: store.activeWorkspaceId,
+        topic,
+        tone,
+        goal,
+        mediaType: store.ui.composerMediaType
+      });
+      store.ui.aiPack = res.pack;
+      store.ui.composerTitle = topic;
+      store.ui.composerCaption = res.pack.caption;
+      store.ui.composerHashtags = res.pack.hashtags;
+      store.ui.composerFirstComment = res.pack.firstComment;
+      showToast("Generated complete AI post pack (hooks, caption, hashtags & first comment)");
+      renderRoute();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  document.querySelectorAll("[data-apply-ai-hook]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const current = document.getElementById("comp-caption")?.value || store.ui.composerCaption || "";
+      const rest = current.split("\n").slice(1).join("\n").trim();
+      store.ui.composerCaption = `${btn.dataset.applyAiHook}${rest ? `\n\n${rest}` : ""}`;
+      showToast("Updated opening hook");
+      renderRoute();
+    });
+  });
+
+  document.getElementById("btn-generate-ai-visual")?.addEventListener("click", async () => {
+    const headline = document.getElementById("ai-topic-input")?.value || document.getElementById("comp-title")?.value || "Clean Architecture Scales Faster";
+    const themes = ["editorial", "indigo", "slate", "emerald"];
+    const picked = themes[Math.floor(Math.random() * themes.length)];
+    const dataUrl = await generateAiVisualCardDataUrl({
+      category: `${store.ui.aiTone || "STUDIO"} BRIEFING`,
+      headline,
+      igHandle: store.bundle.activeWorkspace.ig_handle,
+      theme: picked
+    });
+    const uploaded = await apiRequest("/api/media/upload", "POST", {
+      workspaceId: store.activeWorkspaceId,
+      filename: "ai-studio-cover.png",
+      mimeType: "image/png",
+      dataUrl
+    });
+    store.ui.composerMediaUrl = uploaded.asset.url;
+    store.ui.composerMediaFit = "cover";
+    store.ui.composerAspect = "4:5";
+    store.ui.composerMediaDims = "1080 x 1350 px · AI Studio Cover";
+    showToast("Generated & attached custom 1080x1350 AI cover image");
+    renderRoute();
+  });
+
+  document.querySelectorAll("[data-ai-rewrite]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const caption = document.getElementById("comp-caption")?.value || "";
+      const res = await apiRequest("/api/ai/rewrite", "POST", {
+        caption,
+        mode: btn.dataset.aiRewrite,
+        keyword: "GUIDE"
+      });
+      store.ui.composerCaption = res.caption;
+      showToast(`Rewrote caption (${btn.textContent.trim()})`);
+      renderRoute();
+    });
+  });
 
   document.getElementById("composer-file-input")?.addEventListener("change", (e) => handleFilesUpload(e.target.files));
   const dz = document.getElementById("composer-dropzone");
@@ -1039,6 +1367,11 @@ function bindAppInteractions() {
   });
 
   /* --- VISUAL PROFILE GRID & DRAG SWAP --- */
+  document.getElementById("btn-toggle-grid-stats")?.addEventListener("click", () => {
+    store.ui.gridShowStats = !store.ui.gridShowStats;
+    renderRoute();
+  });
+
   document.querySelectorAll("[data-grid-crop]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       await apiRequest("/api/workspaces/settings", "POST", { workspaceId: store.activeWorkspaceId, gridCrop: btn.dataset.gridCrop });
@@ -1227,6 +1560,54 @@ function bindAppInteractions() {
   /* --- DM WORKFLOWS & INTERACTIVE CHAT SIMULATOR --- */
   document.getElementById("btn-open-new-workflow")?.addEventListener("click", openNewWorkflowDrawer);
 
+  document.getElementById("auto-status-filter")?.addEventListener("change", (e) => {
+    store.ui.autoFilterStatus = e.target.value;
+    renderRoute();
+  });
+  document.getElementById("auto-trigger-filter")?.addEventListener("change", (e) => {
+    store.ui.autoTriggerFilter = e.target.value;
+    renderRoute();
+  });
+
+  document.getElementById("form-ai-workflow-builder")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const prompt = document.getElementById("ai-workflow-prompt")?.value || "";
+    if (!prompt.trim()) return;
+    try {
+      const res = await apiRequest("/api/ai/workflow-from-prompt", "POST", {
+        workspaceId: store.activeWorkspaceId,
+        prompt
+      });
+      store.ui.autoPromptText = "";
+      if (res.bundle?.automations?.[0]?.id) {
+        store.ui.expandedAutoIds[res.bundle.automations[0].id] = true;
+      }
+      showToast(`Created & activated workflow: "${res.workflowDraft.name}"`);
+      renderRoute();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  document.querySelectorAll("[data-toggle-flow-expand]").forEach((head) => {
+    head.addEventListener("click", (e) => {
+      if (e.target.closest("[data-stop-prop]")) return;
+      const id = head.dataset.toggleFlowExpand;
+      store.ui.expandedAutoIds[id] = !store.ui.expandedAutoIds[id];
+      renderRoute();
+    });
+  });
+
+  document.querySelectorAll("[data-quick-test-auto]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const sel = document.getElementById("sim-auto-select");
+      const inp = document.getElementById("sim-message-input");
+      if (sel) sel.value = btn.dataset.quickTestAuto;
+      if (inp) inp.value = btn.dataset.kw || "REPO";
+      document.getElementById("form-live-sim")?.requestSubmit();
+    });
+  });
+
   document.querySelectorAll("[data-toggle-auto]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       await apiRequest("/api/automations/toggle", "POST", { automationId: btn.dataset.toggleAuto });
@@ -1302,6 +1683,21 @@ function bindAppInteractions() {
   document.querySelectorAll("[data-inbox-filter]").forEach((btn) => {
     btn.addEventListener("click", () => { store.ui.inboxFilter = btn.dataset.inboxFilter; renderRoute(); });
   });
+  document.getElementById("inbox-filter-dropdown")?.addEventListener("change", (e) => {
+    store.ui.inboxFilter = e.target.value;
+    renderRoute();
+  });
+  document.getElementById("inbox-tag-dropdown")?.addEventListener("change", (e) => {
+    store.ui.inboxTagFilter = e.target.value;
+    renderRoute();
+  });
+  document.querySelectorAll("[data-toggle-crm-sec]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.toggleCrmSec;
+      store.ui.inboxCrmOpen[key] = !store.ui.inboxCrmOpen[key];
+      renderRoute();
+    });
+  });
   document.getElementById("inbox-search-input")?.addEventListener("input", (e) => {
     store.ui.inboxSearch = e.target.value;
     renderRoute();
@@ -1328,8 +1724,26 @@ function bindAppInteractions() {
     });
   });
 
+  document.getElementById("inbox-quick-snippet-select")?.addEventListener("change", (e) => {
+    if (!e.target.value) return;
+    const inp = document.getElementById("inbox-reply-input");
+    if (inp) { inp.value = e.target.value; inp.focus(); }
+    e.target.value = "";
+  });
+
+  document.getElementById("inbox-ai-tone")?.addEventListener("change", (e) => {
+    store.ui.inboxTone = e.target.value;
+  });
+
   document.getElementById("btn-ai-draft-reply")?.addEventListener("click", async (e) => {
-    const res = await apiRequest("/api/inbox/ai-suggest", "POST", { threadId: e.currentTarget.dataset.thread });
+    const threadId = e.currentTarget.dataset.thread;
+    const tone = document.getElementById("inbox-ai-tone")?.value || store.ui.inboxTone || "helpful";
+    store.ui.inboxTone = tone;
+    const res = await apiRequest("/api/inbox/ai-suggest", "POST", { threadId, tone });
+    if (res.summary) {
+      store.ui.inboxThreadSummary = { threadId, ...res.summary };
+      renderRoute();
+    }
     const inp = document.getElementById("inbox-reply-input");
     if (inp) { inp.value = res.draft; inp.focus(); }
   });

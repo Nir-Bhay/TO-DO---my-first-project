@@ -6,8 +6,8 @@ export function renderMarketingNavbar(activePath = "/") {
   const user = store.currentUser;
   return `
     <div style="background:var(--bg-inverse);color:var(--ink-inverse);font-size:12.5px;padding:8px 16px;text-align:center;border-bottom:1px solid var(--border);">
-      <span style="font-weight:600;">Velora Studio 3.0</span> &mdash; Local MP4/Image Composer, Drag &amp; Drop Feed Grid, 16 Editorial Carousel Systems &amp; 58-Tool MCP API &middot;
-      <a href="/app/overview" data-link style="color:var(--brand);font-weight:700;margin-left:6px;text-decoration:underline;">Open Live Studio &rarr;</a>
+      <span style="font-weight:600;">Velora Studio 3.0</span> &mdash; AI Post Co-Pilot, Smart Image Crop Studio, Live Stats Profile Grid &amp; 58-Tool MCP API &middot;
+      <a href="/app/overview" data-link style="color:#A5B4FC;font-weight:700;margin-left:6px;text-decoration:underline;">Open Live Studio &rarr;</a>
     </div>
     <header class="mkt-nav">
       <div class="mkt-nav-inner">
@@ -52,7 +52,7 @@ export function renderMarketingFooter() {
           <div style="display:flex;flex-direction:column;gap:12px;">
             ${brandLogo(true)}
             <p style="font-size:13.5px;color:var(--ink-muted);max-width:310px;line-height:1.6;">
-              Visual grid planning, local video &amp; carousel scheduling, slide layout tools, and account-safe Instagram DM workflows built for independent creators and lean brand teams.
+              Visual grid planning, smart resize &amp; crop publishing, carousel layout systems, and official Instagram DM workflows built for independent creators and lean brand teams.
             </p>
             <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
               <span class="badge badge-success"><span class="dot"></span>All Systems Operational</span>
@@ -65,7 +65,7 @@ export function renderMarketingFooter() {
           <div style="display:flex;flex-direction:column;gap:9px;font-size:13.5px;">
             <strong style="font-size:12px;color:var(--ink-primary);letter-spacing:0.02em;margin-bottom:2px;">Publishing Studio</strong>
             <a href="/app/overview" data-link style="color:var(--ink-secondary);">Workspace Overview</a>
-            <a href="/app/create" data-link style="color:var(--ink-secondary);">Video &amp; Photo Composer</a>
+            <a href="/app/create" data-link style="color:var(--ink-secondary);">AI Post &amp; Crop Composer</a>
             <a href="/app/calendar" data-link style="color:var(--ink-secondary);">Drag &amp; Drop Calendar</a>
             <a href="/app/grid" data-link style="color:var(--ink-secondary);">Visual Profile Grid</a>
             <a href="/app/carousels" data-link style="color:var(--ink-secondary);">Carousel Layout Studio</a>
@@ -92,52 +92,57 @@ export function renderMarketingFooter() {
   `;
 }
 
-function renderHeroShowcaseMain() {
+export function renderHeroShowcaseMain() {
   const tab = store.ui.heroTab || "workflow";
   const sim = store.ui.landingSimScenario || "repo";
   const crop = store.ui.landingGridCrop || "4:5";
 
   if (tab === "grid") {
-    const aspectStyle = crop === "1:1" ? "1/1" : crop === "3:4" ? "3/4" : "4/5";
     return `
-      <div style="padding:26px;display:flex;flex-direction:column;gap:18px;">
+      <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
           <div style="display:flex;align-items:center;gap:12px;">
-            <span class="ws-avatar" style="width:40px;height:40px;font-size:15px;background:#0F172A;">M</span>
+            <span class="ws-avatar" style="width:38px;height:38px;font-size:14px;background:#0F172A;">M</span>
             <div>
-              <div style="font-weight:700;font-size:15px;">@maya.studio &middot; Visual Feed Planner</div>
-              <div style="font-size:12.5px;color:var(--ink-muted);">Preview crop balance before scheduling any Reel or Carousel</div>
+              <div style="font-weight:700;font-size:15px;">@maya.studio &middot; Live Visual Profile Grid</div>
+              <div style="font-size:12.5px;color:var(--ink-muted);">Inspect real post cover balance &amp; live engagement metrics side-by-side</div>
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <div class="segmented">
               ${["4:5", "3:4", "1:1"].map((r) => `
-                <button class="seg-btn ${crop === r ? "is-active" : ""}" data-landing-crop="${r}">${r} Crop</button>
+                <button type="button" class="seg-btn ${crop === r ? "is-active" : ""}" data-landing-crop="${r}">${r}</button>
               `).join("")}
             </div>
             <a href="/app/grid" data-link class="btn btn-sm btn-primary">Open Full Grid ${icon("arrowRight", 13)}</a>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-width:680px;">
+        <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:stretch;flex:1;">
           ${[
-            ["cover-cobalt", "DARK MODE COLOR RULE", "TODAY · 20:30", "+@figma.design"],
-            ["cover-cream", "8 TYPOGRAPHY RULES", "TOMORROW · 09:30", "CAROUSEL · 8 CARDS"],
-            ["cover-noir", "FIGMA VARIABLES IN 9M", "112.4K VIEWS", "4.8% SAVE RATE"],
-            ["cover-stone", "7 OPEN-SOURCE UI KITS", "68.4K VIEWS", "1,842 DMs SENT"],
-            ["cover-slate", "SAAS ONBOARDING AUDIT", "94.1K VIEWS", "PUBLISHED"],
-            ["cover-terracotta", "HOW WE PRICE AUDITS", "49.2K VIEWS", "PUBLISHED"]
-          ].map(([cls, label, topMeta, bottomMeta]) => `
-            <div class="${cls}" style="aspect-ratio:${aspectStyle};padding:14px;border-radius:10px;display:flex;flex-direction:column;justify-content:space-between;transition:aspect-ratio 160ms ease;">
-              <div style="display:flex;justify-content:space-between;gap:4px;font-size:10px;font-weight:650;opacity:0.84;">
-                <span>${topMeta}</span>
+            ["/media/post-01.svg", "112.4K", "4.8% saves", "Scheduled 20:30"],
+            ["/media/post-02.svg", "94.1K", "5.3% saves", "Carousel · 8p"],
+            ["/media/post-03.svg", "68.4K", "1,842 DMs", "Published"],
+            ["/media/post-04.svg", "81.9K", "4.4% saves", "Published"],
+            ["/media/post-05.svg", "129.0K", "6.1% saves", "Published"],
+            ["/media/post-06.svg", "54.2K", "3.9% saves", "Published"]
+          ].map(([imgUrl, views, metric, status]) => `
+            <div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--bg-subtle);display:flex;flex-direction:column;justify-content:space-between;">
+              <img src="${imgUrl}" alt="Grid post preview" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;" />
+              <div style="position:relative;z-index:2;padding:8px;display:flex;justify-content:flex-end;">
+                <span style="padding:2px 7px;border-radius:999px;background:rgba(255,255,255,0.92);color:#09090B;font-size:10px;font-weight:700;">${status}</span>
               </div>
-              <div>
-                <strong style="font-family:var(--font-display);font-size:14.5px;line-height:1.16;display:block;margin-bottom:6px;">${label}</strong>
-                <span style="font-size:10px;opacity:0.75;">${bottomMeta}</span>
+              <div style="position:relative;z-index:2;padding:24px 9px 9px;background:linear-gradient(180deg,transparent,rgba(9,9,11,0.82));color:#FFFFFF;font-size:11px;font-weight:600;">
+                <div>${views} views</div>
+                <div style="font-size:10px;opacity:0.84;">${metric}</div>
               </div>
             </div>
           `).join("")}
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);font-size:12.5px;color:var(--ink-muted);">
+          <span>Drag tiles inside Studio to swap scheduled publish timestamps effortlessly</span>
+          <span class="mono">Active ratio: ${crop}</span>
         </div>
       </div>
     `;
@@ -145,36 +150,39 @@ function renderHeroShowcaseMain() {
 
   if (tab === "calendar") {
     return `
-      <div style="padding:26px;display:flex;flex-direction:column;gap:18px;">
+      <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
           <div>
-            <div style="font-weight:700;font-size:16px;">October Publishing Queue &amp; Auto-Worker</div>
-            <div style="font-size:13px;color:var(--ink-muted);">Drag posts between dates or trigger the SQLite background queue worker anytime</div>
+            <div style="font-weight:700;font-size:16px;">October Publishing Queue &amp; Background Worker</div>
+            <div style="font-size:13px;color:var(--ink-muted);">Drag posts across dates or publish immediately through the SQLite queue worker</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <span class="badge badge-success"><span class="dot"></span>Worker Polling Active</span>
+            <span class="badge badge-success"><span class="dot"></span>Queue Worker Healthy</span>
             <a href="/app/calendar" data-link class="btn btn-sm btn-primary">Open Calendar ${icon("arrowRight", 13)}</a>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;flex:1;">
           ${[
-            ["Wed, Oct 21 · 20:30", "REEL · 9:16", "The 60-30-10 Color Rule in Dark Mode UI", "Scheduled", "Keyword rule: PALETTE"],
-            ["Thu, Oct 22 · 09:30", "CAROUSEL · 8 SLIDES", "8 Typography Rules I Wish I Knew Earlier", "Scheduled", "Swiss White preset"],
-            ["Fri, Oct 23 · 14:00", "TRIAL REEL", "Behind the Scenes: 45-Minute Weekly Batch", "Trial Test", "Non-follower sample"],
-            ["Sun, Oct 25 · 18:00", "CAROUSEL · 6 SLIDES", "Client Handoff Checklist for Small Teams", "Draft", "Caption template linked"]
-          ].map(([slot, fmt, title, badgeTxt, foot]) => `
-            <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:12px;">
-              <div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                  <span class="badge">${fmt}</span>
-                  <span class="badge badge-info">${badgeTxt}</span>
+            ["Wed, Oct 21 · 20:30", "REEL · 9:16", "The 60-30-10 Color Rule in Dark Mode UI", "Scheduled", "Keyword: PALETTE", "/media/post-01.svg"],
+            ["Thu, Oct 22 · 09:30", "CAROUSEL · 8 SLIDES", "8 Typography Rules I Wish I Knew Earlier", "Scheduled", "Swiss White", "/media/post-02.svg"],
+            ["Fri, Oct 23 · 14:00", "TRIAL REEL", "Behind the Scenes: 45-Minute Weekly Batch", "Trial Test", "Non-follower sample", "/media/post-03.svg"],
+            ["Sun, Oct 25 · 18:00", "CAROUSEL · 6 SLIDES", "Client Handoff Checklist for Small Teams", "Draft", "AI Caption Ready", "/media/post-04.svg"]
+          ].map(([slot, fmt, title, badgeTxt, foot, thumb]) => `
+            <div class="card card-pad" style="background:var(--bg-page);display:flex;gap:14px;align-items:center;justify-content:space-between;">
+              <img src="${thumb}" alt="" style="width:68px;height:86px;border-radius:9px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;" />
+              <div style="min-width:0;flex:1;display:flex;flex-direction:column;justify-content:space-between;height:100%;gap:8px;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
+                    <span class="badge">${fmt}</span>
+                    <span class="badge badge-info">${badgeTxt}</span>
+                  </div>
+                  <div style="font-weight:600;font-size:14px;line-height:1.35;">${title}</div>
                 </div>
-                <div style="font-weight:650;font-size:14px;line-height:1.35;">${title}</div>
-              </div>
-              <div style="padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--ink-muted);display:flex;justify-content:space-between;" class="tabular">
-                <span>${slot}</span>
-                <span>${foot}</span>
+                <div style="font-size:12px;color:var(--ink-muted);display:flex;justify-content:space-between;" class="tabular">
+                  <span>${slot}</span>
+                  <span>${foot}</span>
+                </div>
               </div>
             </div>
           `).join("")}
@@ -185,28 +193,28 @@ function renderHeroShowcaseMain() {
 
   if (tab === "carousels") {
     return `
-      <div style="padding:26px;display:flex;flex-direction:column;gap:18px;">
+      <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
           <div>
             <div style="font-weight:700;font-size:16px;">1080&times;1350 Carousel Layout Studio</div>
-            <div style="font-size:13px;color:var(--ink-muted);">16 restrained Swiss &amp; editorial design systems + custom brand hex overrides + PNG export</div>
+            <div style="font-size:13px;color:var(--ink-muted);">16 restrained Swiss &amp; editorial design systems + AI deck writer + high-res PNG export</div>
           </div>
           <a href="/app/carousels" data-link class="btn btn-sm btn-primary">Launch Carousel Studio ${icon("arrowRight", 13)}</a>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;flex:1;">
           ${[
-            ["#FFFFFF", "#09090B", "#E11D48", "01 / HOOK", "Why most design systems fail before component #12", "Start with spacing & type scale tokens before naming 40 surface shades."],
-            ["#09090B", "#FAFAFA", "#38BDF8", "02 / CONTRAST", "Reserve pure black and high chroma for one clear action", "When every badge shouts at equal weight, readers scan nothing at all."],
+            ["#FFFFFF", "#09090B", "#4F46E5", "01 / HOOK", "Why most design systems fail before component #12", "Start with spacing & type scale tokens before naming 40 surface shades."],
+            ["#0F172A", "#F8FAFC", "#38BDF8", "02 / CONTRAST", "Reserve pure black and high chroma for one clear action", "When every badge shouts at equal weight, readers scan nothing at all."],
             ["#F5F2EB", "#1C1917", "#B45309", "03 / PAYOFF", "Comment GUIDE below for the full Figma variable starter file", "Delivered automatically to your DMs in under 2 seconds via Velora."]
           ].map(([bg, fg, acc, tag, h, body]) => `
-            <div style="background:${bg};color:${fg};border:1px solid var(--border);border-radius:14px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;min-height:260px;">
+            <div style="background:${bg};color:${fg};border:1px solid var(--border);border-radius:14px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;">
               <div style="font-size:11px;font-weight:700;opacity:0.68;">${tag}</div>
               <div>
                 <div style="width:28px;height:3px;background:${acc};margin-bottom:12px;border-radius:2px;"></div>
-                <div style="font-family:var(--font-display);font-weight:760;font-size:17px;line-height:1.2;margin-bottom:8px;">${h}</div>
-                <p style="font-size:12.5px;opacity:0.8;line-height:1.5;">${body}</p>
+                <div style="font-family:var(--font-display);font-weight:700;font-size:17px;line-height:1.22;margin-bottom:8px;">${h}</div>
+                <p style="font-size:12.5px;opacity:0.82;line-height:1.5;">${body}</p>
               </div>
-              <div style="font-size:11px;opacity:0.6;">@maya.studio &rarr;</div>
+              <div style="font-size:11px;opacity:0.62;">@maya.studio &rarr;</div>
             </div>
           `).join("")}
         </div>
@@ -216,40 +224,48 @@ function renderHeroShowcaseMain() {
 
   if (tab === "inbox") {
     return `
-      <div style="padding:26px;display:flex;flex-direction:column;gap:16px;">
+      <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
           <div>
             <div style="font-weight:700;font-size:16px;">3-Pane Unified Inbox &amp; Sponsorship CRM</div>
-            <div style="font-size:13px;color:var(--ink-muted);">Track Meta's 24-hour reply window, filter hot brand leads, and save deal notes right beside the chat</div>
+            <div style="font-size:13px;color:var(--ink-muted);">Track Meta's 24-hour reply window, draft multi-tone AI replies, and log sponsor deals beside every chat</div>
           </div>
           <a href="/app/inbox" data-link class="btn btn-sm btn-primary">Open Unified Inbox ${icon("arrowRight", 13)}</a>
         </div>
-        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;">
-          <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;gap:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <strong>@linear.brandpartnerships</strong>
-              <span class="badge badge-success">21.4h Window Left</span>
+        <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:16px;flex:1;">
+          <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:12px;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong>@linear.brandpartnerships</strong>
+                <span class="badge badge-success">21.4h Window Left</span>
+              </div>
+              <div class="bubble is-them" style="max-width:92%;font-size:13px;">Hi Maya! Loved your Figma Variables breakdown. Do you have a November Reel + Story slot open for Q4?</div>
+              <div class="bubble is-me" style="max-width:92%;font-size:13px;">Hi! Yes — our November 14 slot is open. Sending over our Q4 media kit &amp; deliverables sheet right now.</div>
             </div>
-            <div class="bubble is-them" style="max-width:92%;font-size:13px;">Hi Maya! Loved your Figma Variables breakdown. Do you have a November Reel + Story slot open for Q4?</div>
-            <div class="bubble is-me" style="max-width:92%;font-size:13px;">Hi! Yes — our November 14 slot is open. Sending over our Q4 media kit &amp; deliverables sheet right now.</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--ink-muted);padding-top:10px;border-top:1px solid var(--border);">
+              <span>AI Summary: Q4 Sponsor Inquiry ($3,200 est.)</span>
+              <span>Synced via Official Messenger API</span>
+            </div>
           </div>
-          <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;gap:10px;">
-            <div style="font-weight:650;font-size:13.5px;">Persistent Contact CRM Panel</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              <span class="badge badge-brand">Priority Lead</span>
-              <span class="badge">Q4 Sponsor</span>
-              <span class="badge">$3,200 Quote</span>
+          <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:12px;">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="font-weight:600;font-size:14px;">Contact Deal &amp; Notes CRM</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <span class="badge badge-brand">Priority Lead</span>
+                <span class="badge">Q4 Sponsor</span>
+                <span class="badge">$3,200 Quote</span>
+              </div>
+              <div style="padding:12px 14px;border-radius:10px;background:var(--bg-surface);border:1px solid var(--border);font-size:12.5px;line-height:1.55;color:var(--ink-secondary);">
+                Confirmed 60s workflow walkthrough + 2 Story link frames. Contract draft scheduled for Friday 11:00 AM.
+              </div>
             </div>
-            <div style="padding:10px 12px;border-radius:8px;background:var(--bg-surface);border:1px solid var(--border);font-size:12.5px;color:var(--ink-secondary);">
-              Notes synced to SQLite: Confirmed 60s workflow walkthrough + 2 link sticker frames. Follow up Friday 11:00.
-            </div>
+            <a href="/app/inbox" data-link class="btn btn-sm" style="width:100%;">Open Full CRM Thread &rarr;</a>
           </div>
         </div>
       </div>
     `;
   }
 
-  // Default Tab: Interactive Live Keyword DM Scenario Switcher!
   const scenarios = {
     repo: {
       user: "@rohan.codes commented on your Reel",
@@ -270,7 +286,7 @@ function renderHeroShowcaseMain() {
     story: {
       user: "@arjun.fit replied to your Story",
       comment: "RATES",
-      publicReply: null,
+      publicReply: "Auto-triggered directly inside Instagram Direct (no public comment needed)",
       dmBody: "Appreciate you reaching out! Here is our live 2026 Sponsorship Rate Card & available creator slots:",
       cta: "View Media Kit & Rates ->",
       stats: "24/7 instant response on Story replies & Ice Breakers"
@@ -279,21 +295,20 @@ function renderHeroShowcaseMain() {
   const cur = scenarios[sim] || scenarios.repo;
 
   return `
-    <div style="padding:26px;display:flex;flex-direction:column;gap:18px;">
+    <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
       <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
         <div>
           <div style="font-weight:700;font-size:16px;">Interactive Keyword &rarr; Instant Messenger DM</div>
           <div style="font-size:13px;color:var(--ink-muted);">Click a scenario below to preview how Velora handles comments, follow gates, and Story replies</div>
         </div>
         <div class="segmented" style="flex-wrap:wrap;">
-          <button class="seg-btn ${sim === "repo" ? "is-active" : ""}" data-landing-sim="repo">Keyword: "REPO"</button>
-          <button class="seg-btn ${sim === "followgate" ? "is-active" : ""}" data-landing-sim="followgate">Follower Gate</button>
-          <button class="seg-btn ${sim === "story" ? "is-active" : ""}" data-landing-sim="story">Story Reply</button>
+          <button type="button" class="seg-btn ${sim === "repo" ? "is-active" : ""}" data-landing-sim="repo">Keyword: "REPO"</button>
+          <button type="button" class="seg-btn ${sim === "followgate" ? "is-active" : ""}" data-landing-sim="followgate">Follower Gate</button>
+          <button type="button" class="seg-btn ${sim === "story" ? "is-active" : ""}" data-landing-sim="story">Story Reply</button>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;align-items:stretch;">
-        <!-- Left: Trigger Event -->
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch;flex:1;">
         <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:12px;">
           <div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -304,37 +319,65 @@ function renderHeroShowcaseMain() {
               <div style="font-size:11.5px;color:var(--ink-muted);margin-bottom:4px;">${escHtml(cur.user)}</div>
               <div style="font-weight:600;font-size:14px;">"${escHtml(cur.comment)}"</div>
             </div>
-            ${cur.publicReply ? `
-              <div style="margin-top:10px;padding:10px 13px;border-radius:10px;border-left:3px solid var(--brand);background:var(--bg-surface);font-size:12.5px;color:var(--ink-secondary);">
-                <strong style="color:var(--ink-primary);display:block;margin-bottom:2px;">Auto-Rotated Public Comment Reply:</strong>
-                ${escHtml(cur.publicReply)}
-              </div>
-            ` : ""}
+            <div style="margin-top:10px;padding:10px 13px;border-radius:10px;border-left:3px solid var(--brand);background:var(--bg-surface);font-size:12.5px;color:var(--ink-secondary);">
+              <strong style="color:var(--ink-primary);display:block;margin-bottom:2px;">Public Reply Rotation:</strong>
+              ${escHtml(cur.publicReply)}
+            </div>
           </div>
-          <div style="font-size:12px;color:var(--ink-muted);">Up to 10 natural reply variations prevent repetitive bot footprints.</div>
+          <div style="font-size:12px;color:var(--ink-muted);">Up to 10 natural reply variations keep comment threads authentic.</div>
         </div>
 
-        <!-- Right: Automated Private DM Card -->
         <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:12px;">
           <div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-              <span class="badge badge-success"><span class="dot"></span>2. Official Messenger API DM</span>
+              <span class="badge badge-success"><span class="dot"></span>2. Official Messenger API Card</span>
               <span class="mono" style="color:var(--ink-muted);">200 OK</span>
             </div>
-            <div style="padding:15px 16px;border-radius:14px;background:var(--bg-inverse);color:var(--ink-inverse);font-size:13.5px;line-height:1.5;">
+            <div style="padding:16px;border-radius:14px;background:#FFFFFF;color:#09090B;border:1px solid #E2E8F0;box-shadow:var(--shadow-xs);font-size:13.5px;line-height:1.5;">
+              <div style="font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px;">Direct Message &middot; @maya.studio</div>
               <div>${escHtml(cur.dmBody)}</div>
-              <div style="margin-top:12px;padding:9px 12px;border-radius:8px;background:var(--brand);color:#FFFFFF;text-align:center;font-weight:650;font-size:13px;">
+              <div style="margin-top:12px;padding:9px 12px;border-radius:8px;background:#4F46E5;color:#FFFFFF;text-align:center;font-weight:600;font-size:13px;">
                 ${escHtml(cur.cta)}
               </div>
             </div>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-muted);" class="tabular">
             <span>${escHtml(cur.stats)}</span>
-            <a href="/app/automations" data-link style="color:var(--brand);font-weight:650;white-space:nowrap;">Try Live Chat &rarr;</a>
+            <a href="/app/automations" data-link style="color:var(--brand);font-weight:600;white-space:nowrap;">Open Builder &rarr;</a>
           </div>
         </div>
       </div>
     </div>
+  `;
+}
+
+export function renderLandingPhoneChatMessages() {
+  return `
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:12px;background:#F8FAFC;border:1px solid #E2E8F0;margin-bottom:4px;">
+      <img src="/media/post-01.svg" alt="Reel preview" style="width:38px;height:48px;border-radius:7px;object-fit:cover;flex-shrink:0;" />
+      <div style="min-width:0;">
+        <div style="font-size:10.5px;font-weight:600;color:#64748B;">Replied to @maya.studio's Reel</div>
+        <div style="font-size:12px;font-weight:600;color:#09090B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Design Tokens &amp; Color Architecture</div>
+      </div>
+    </div>
+    ${(store.ui.landingChatMsgs || []).map((msg) => {
+      const isBotReply = msg.role === "me";
+      return `
+        <div style="align-self:${isBotReply ? "flex-start" : "flex-end"};max-width:86%;padding:11px 13px;border-radius:15px;font-size:12.5px;line-height:1.45;${
+          isBotReply
+            ? "background:#FFFFFF;color:#09090B;border:1px solid #E2E8F0;box-shadow:0 2px 8px rgba(15,23,42,0.05);"
+            : "background:#EEF2FF;color:#1E1B4B;border:1px solid #C7D2FE;"
+        }">
+          <div style="font-size:10px;color:${isBotReply ? "#64748B" : "#4338CA"};margin-bottom:3px;font-weight:600;">${escHtml(msg.badge)}</div>
+          <div>${escHtml(msg.text)}</div>
+          ${msg.cta ? `
+            <div style="margin-top:9px;padding:8px 11px;border-radius:9px;background:#4F46E5;color:#FFFFFF;text-align:center;font-weight:600;font-size:12px;">
+              ${escHtml(msg.cta)}
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }).join("")}
   `;
 }
 
@@ -346,7 +389,7 @@ export function renderPricingSection(standalone = false) {
   const matrixRows = [
     ["Connected Instagram Workspaces", "1 workspace", "2 workspaces", "5 workspaces", "5 workspaces"],
     ["Video, Photo & Carousel Scheduling", "Unlimited", "Unlimited", "Unlimited", "Unlimited"],
-    ["Visual 4:5 / 3:4 / 1:1 Grid Planner", "Included", "Included", "Included", "Included"],
+    ["Visual 4:5 / 3:4 / 1:1 Grid Planner + Stats", "Included", "Included", "Included", "Included"],
     ["Active Comment-to-DM Workflows", "Up to 5 rules", "Unlimited", "Unlimited", "Unlimited"],
     ["Story Reply & Ice Breaker Triggers", "—", "Included", "Included", "Included"],
     ["Follower Verification Gate & Timed Follow-Ups", "—", "Included", "Included", "Included"],
@@ -361,10 +404,9 @@ export function renderPricingSection(standalone = false) {
       <div class="${standalone ? "" : "mkt-container"}">
         <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:40px;">
           <div>
-            <span class="badge badge-brand" style="margin-bottom:12px;">Transparent Pricing</span>
             <h2 class="mkt-h2">Start free. Upgrade only when your studio scales.</h2>
             <p style="font-size:15.5px;color:var(--ink-secondary);max-width:580px;">
-              Every plan includes unlimited post scheduling, visual grid planning, and official Meta OAuth security — zero per-message surprise fees.
+              Every plan includes unlimited post scheduling, smart image cropping, visual grid planning, and official Meta OAuth security — zero per-message surprise fees.
             </p>
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;">
@@ -398,7 +440,7 @@ export function renderPricingSection(standalone = false) {
               <div class="card plan-card ${p.popular ? "is-popular" : ""}">
                 <div>
                   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                    <span style="font-family:var(--font-display);font-weight:750;font-size:17px;">${escHtml(p.name)}</span>
+                    <span style="font-family:var(--font-display);font-weight:700;font-size:17px;">${escHtml(p.name)}</span>
                     ${p.badge ? `<span class="badge ${p.popular ? "badge-brand" : ""}">${escHtml(p.badge)}</span>` : ""}
                   </div>
                   <p style="font-size:13px;color:var(--ink-muted);min-height:40px;line-height:1.5;">${escHtml(p.tagline || p.description)}</p>
@@ -416,7 +458,6 @@ export function renderPricingSection(standalone = false) {
           }).join("")}
         </div>
 
-        <!-- Full Feature-by-Feature Comparison Matrix -->
         <div class="card table-wrap" style="margin-top:36px;">
           <div class="card-header">
             <div>
@@ -456,7 +497,7 @@ export function renderLandingPage() {
   const m = store.bundle.metrics;
   const heroTab = store.ui.heroTab || "workflow";
   const themes = store.bundle.themes || [];
-  const chosenTheme = themes.find((t) => t.id === store.ui.landingThemeId) || themes[0] || { id: "swiss_white", name: "Swiss White", bg: "#FFFFFF", fg: "#09090B", accent: "#E11D48" };
+  const chosenTheme = themes.find((t) => t.id === store.ui.landingThemeId) || themes[0] || { id: "swiss_white", name: "Swiss White", bg: "#FFFFFF", fg: "#09090B", accent: "#4F46E5" };
   const postsPerWeek = Number(store.ui.calcPostsPerWeek || 6);
   const commentsPerPost = Number(store.ui.calcCommentsPerPost || 85);
   const monthlyDms = postsPerWeek * 4 * commentsPerPost;
@@ -471,22 +512,22 @@ export function renderLandingPage() {
   ];
 
   const capabilities = [
-    ["upload", "Local Video & Photo Upload", "Drop MP4, WebM, PNG, or JPG files directly into the composer. Preview vertical safe zones and audio playback before queuing.", "/app/create"],
+    ["upload", "Smart Upload & Aspect-Ratio Studio", "Drop any screenshot, photo, or MP4 into the composer. Resize, smart-fit, zoom, and export crisp 4:5 or 9:16 frames with zero cut-off text.", "/app/create"],
     ["calendar", "Drag-and-Drop Publishing Calendar", "Move posts across Month or Queue views effortlessly. Background worker automatically publishes due containers on schedule.", "/app/calendar"],
-    ["grid", "Visual 4:5 / 3:4 Profile Grid", "See how upcoming Reels and Carousels align beside published tiles. Drag tiles to swap publishing order cleanly.", "/app/grid"],
-    ["layers", "16-Preset Carousel Layout Studio", "Craft crisp 1080x1350 educational decks with Swiss & editorial presets, custom brand hex pickers, per-slide photos, and PNG export.", "/app/carousels"],
+    ["grid", "Visual Grid + Live Post Statistics", "Preview upcoming posts beside published tiles with live views, saves, and engagement metrics directly on every tile.", "/app/grid"],
+    ["layers", "16-Preset Carousel Layout Studio", "Craft crisp 1080x1350 educational decks with Swiss & editorial presets, AI deck generation, custom hex pickers, and PNG export.", "/app/carousels"],
     ["bolt", "Keyword Comment-to-DM Rules", "Deliver instant resource buttons when viewers comment your keyword — with public reply rotation and follower verification.", "/app/automations"],
-    ["inbox", "3-Pane Unified Inbox & CRM", "Reply inside Meta's 24-hour window, filter priority leads, attach quick snippets, and persist sponsor notes in SQLite.", "/app/inbox"],
+    ["inbox", "3-Pane Unified Inbox & CRM", "Reply inside Meta's 24-hour window, summarize threads with AI, filter priority leads, and persist sponsor notes in SQLite.", "/app/inbox"],
     ["chart", "Trial Reels & Save-Rate Analytics", "Benchmark non-follower Trial Reels before graduating winners to your main profile grid, and export clean CSV reports.", "/app/analytics"],
-    ["fileText", "Reusable Caption Templates & Fold Check", "Save high-performing caption structures, verify your opening 125 characters before truncation, and scan restricted tags.", "/app/create"],
+    ["sparkles", "AI Post Pack & Caption Rewriter", "Generate scored hooks, full structured captions, 3-tier safe tags, auto first comments, and custom visual cover cards in one click.", "/app/create"],
     ["code", "58-Tool Claude & Cursor MCP Server", "Connect Claude Desktop or Cursor directly to POST /mcp to audit metrics, schedule batches, and manage workflows via natural language.", "/app/settings"]
   ];
 
   const faqs = [
     ["Is Velora 100% safe for my Instagram creator or brand account?", "Yes. Velora uses Official Meta Graph & Instagram Messenger OAuth scopes exclusively — we never ask for your Instagram password, never run headless browser bots, and automatically enforce hourly Messenger rate caps and natural public reply rotation."],
-    ["Can I upload real local MP4 videos and high-resolution images?", "Yes. Drag and drop MP4, WebM, PNG, JPEG, or WebP files right into the Create Post composer or Carousel Studio. Assets are stored cleanly in SQLite + workspace media storage and previewed live inside a realistic mobile frame."],
+    ["What happens if I upload a landscape screenshot or non-standard photo?", "Velora's built-in Resize & Crop Studio inspects image dimensions automatically on upload, applies Smart Fit with a soft studio backdrop so zero text gets cut off, and lets you crop, zoom, or export exact 1080x1350 (4:5) or 1080x1920 (9:16) frames."],
     ["How does the Follower Verification Gate work on DM workflows?", "When enabled on Growth or Studio plans, non-followers who comment your keyword receive a polite card inviting them to follow your account first and tap 'Confirm Follow' — unlocking your primary resource link immediately once verified."],
-    ["What aspect ratios do the Visual Profile Grid and Carousel Studio support?", "Carousel Studio renders full 1080x1350 (4:5 vertical portrait) cards for maximum feed height, while the Profile Grid Planner lets you toggle live between 4:5, 3:4, and classic 1:1 square crops."],
+    ["What aspect ratios do the Visual Profile Grid and Carousel Studio support?", "Carousel Studio renders full 1080x1350 (4:5 vertical portrait) cards for maximum feed height, while the Profile Grid Planner lets you toggle live between 4:5, 3:4, and classic 1:1 square crops with live tile statistics."],
     ["Do I need a credit card to use the Starter plan?", "No credit card is required. Starter is free forever and includes 1 workspace, unlimited post scheduling, visual grid planning, 12 free creator calculators, and up to 5 active keyword DM rules."],
     ["Can multiple team members collaborate across client workspaces?", "Yes. Studio and Founding Pass workspaces support up to 5 connected Instagram accounts, instant workspace switching from the top-left rail, and role-based team invites (Owner, Content Manager, Editor, Analyst)."],
     ["How does the Claude Desktop & Cursor MCP integration work?", "Every Velora instance exposes a compliant JSON-RPC 2.0 Model Context Protocol endpoint at POST /mcp with 58 registered tools covering scheduling, grid swaps, carousels, DM simulations, inbox replies, and analytics."],
@@ -496,17 +537,13 @@ export function renderLandingPage() {
   return `
     ${renderMarketingNavbar("/")}
     <main class="stage-animate">
-      <!-- SECTION 1: MONUMENTAL HERO + FULL-WIDTH INTERACTIVE STUDIO STAGE -->
+      <!-- SECTION 1: MONUMENTAL HERO + FIXED-DIMENSION INTERACTIVE STUDIO STAGE -->
       <section class="mkt-hero">
         <div class="mkt-container">
           <div class="mkt-hero-center">
-            <div class="mkt-eyebrow">
-              ${icon("shield", 15)}
-              <span>Official Meta Graph &amp; Messenger API &middot; Built for Serious Creators &amp; Studios</span>
-            </div>
             <h1 class="mkt-h1">Plan your grid. Ship on schedule. Turn comments into DMs.</h1>
             <p class="mkt-lead">
-              Velora replaces scattered scheduling tabs, fragile DM bots, and messy spreadsheets with one fast, calm studio — complete with visual grid planning, carousel design, and instant Messenger workflows.
+              Velora replaces scattered scheduling tabs, fragile DM bots, and messy spreadsheets with one fast, calm studio — complete with visual grid planning, smart image cropping, AI post generation, and official Messenger workflows.
             </p>
             <div class="mkt-cta-row">
               <a href="/app/overview" data-link class="btn btn-primary btn-lg" style="height:48px;padding:0 26px;font-size:15px;">
@@ -521,13 +558,13 @@ export function renderLandingPage() {
             </div>
             <div class="mkt-trust-pills">
               <span>${icon("check", 14)} Free forever Starter tier</span>
-              <span>${icon("check", 14)} Official OAuth (no password sharing)</span>
+              <span>${icon("check", 14)} Official Meta OAuth security</span>
               <span>${icon("check", 14)} 4 preloaded demo workspaces</span>
               <span>${icon("check", 14)} 58-tool MCP API included</span>
             </div>
           </div>
 
-          <!-- Full-Width Interactive Studio Showcase Window -->
+          <!-- Full-Width Locked-Height Interactive Studio Showcase Window (Zero Fluctuation) -->
           <div class="mkt-window">
             <div class="mkt-window-bar">
               <div style="display:flex;align-items:center;gap:12px;">
@@ -545,13 +582,13 @@ export function renderLandingPage() {
                   ["carousels", "layers", "Carousel Studio"],
                   ["inbox", "inbox", "Unified Inbox"]
                 ].map(([id, ic, label]) => `
-                  <button class="mkt-rail-btn ${heroTab === id ? "is-active" : ""}" data-hero-tab="${id}">
+                  <button type="button" class="mkt-rail-btn ${heroTab === id ? "is-active" : ""}" data-hero-tab="${id}">
                     <span style="display:inline-flex;align-items:center;gap:9px;">${icon(ic, 16)}<span>${label}</span></span>
                     ${icon("chevronRight", 14)}
                   </button>
                 `).join("")}
               </div>
-              <div style="min-width:0;background:var(--bg-surface);">
+              <div id="hero-showcase-viewport" class="mkt-showcase-stage" style="min-width:0;background:var(--bg-surface);">
                 ${renderHeroShowcaseMain()}
               </div>
             </div>
@@ -559,7 +596,7 @@ export function renderLandingPage() {
         </div>
       </section>
 
-      <!-- SECTION 2: INFINITE SMOOTH NICHE MARQUEE + LIVE METRICS STRIP -->
+      <!-- SECTION 2: NICHE MARQUEE + LIVE METRICS STRIP -->
       <div class="mkt-marquee-wrap" aria-label="Creator communities using Velora">
         <div class="mkt-marquee-track">
           ${[...niches, ...niches].map((n) => `
@@ -595,52 +632,62 @@ export function renderLandingPage() {
         </div>
       </section>
 
-      <!-- SECTION 2B: STOP DUCT-TAPING 5 DISCONNECTED TOOLS (BEFORE VS. AFTER) + 4-STEP FLOW -->
+      <!-- SECTION 2B: STRICT EQUAL-HEIGHT COMPARISON CARDS + 4-STEP FLOW -->
       <section class="mkt-section" style="padding:84px 0;">
         <div class="mkt-container">
           <div class="mkt-sec-head-center">
-            <span class="badge badge-brand" style="margin-bottom:12px;">Why Studios Switch</span>
             <h2 class="mkt-h2">Replace five disconnected subscriptions with one calm workspace.</h2>
             <p style="font-size:15.5px;color:var(--ink-secondary);">
               No more exporting slides in one tab, previewing grid crops in a second, scheduling in a third, running fragile DM bots in a fourth, and tracking sponsors in spreadsheets.
             </p>
           </div>
 
-          <div class="split-2" style="gap:24px;margin-bottom:44px;">
-            <div class="card card-pad" style="padding:30px;display:flex;flex-direction:column;gap:14px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span class="badge badge-danger">Old Fragmented Workflow</span>
-                <span class="mono" style="color:var(--ink-muted);">~$148 / month</span>
+          <div class="equal-cards" style="margin-bottom:44px;">
+            <div class="card card-pad" style="padding:30px;">
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span class="badge badge-danger">Old Fragmented Workflow</span>
+                  <span class="mono" style="color:var(--ink-muted);">~$148 / month</span>
+                </div>
+                <h3 style="font-size:20px;">Five tabs that never talk to each other</h3>
+                <div style="display:flex;flex-direction:column;gap:11px;font-size:14px;color:var(--ink-secondary);">
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("x", 16)}<span>Separate scheduler ($29/mo) with clipped screenshots and no 4:5 profile grid stats view</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("x", 16)}<span>Separate DM bot ($49/mo) charging surprise overages when a Reel goes viral</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("x", 16)}<span>Static bio link page ($19/mo) losing 94% of interested Reel viewers</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("x", 16)}<span>Slide templates ($25/mo) + manual spreadsheet sponsorship tracking</span></div>
+                </div>
               </div>
-              <h3 style="font-size:20px;">Five tabs that never talk to each other</h3>
-              <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--ink-secondary);">
-                <div style="display:flex;gap:10px;align-items:center;">${icon("x", 16)}<span>Separate scheduler ($29/mo) with no 4:5 profile grid safe-zone view</span></div>
-                <div style="display:flex;gap:10px;align-items:center;">${icon("x", 16)}<span>Separate DM bot ($49/mo) charging surprise overages when a Reel goes viral</span></div>
-                <div style="display:flex;gap:10px;align-items:center;">${icon("x", 16)}<span>Static bio link page ($19/mo) losing 94% of cold Reel viewers</span></div>
-                <div style="display:flex;gap:10px;align-items:center;">${icon("x", 16)}<span>Slide templates ($25/mo) + manual spreadsheet sponsorship notes</span></div>
+              <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink-muted);">
+                <span>5 logins &middot; Constant manual exports</span>
+                <span class="mono">$1,776 / year</span>
               </div>
             </div>
 
-            <div class="card card-pad" style="padding:30px;border-color:var(--ink-primary);box-shadow:var(--shadow-md);display:flex;flex-direction:column;gap:14px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span class="badge badge-success">Unified Velora Studio</span>
-                <span class="mono" style="font-weight:700;">$0 to start &middot; $12 Growth</span>
+            <div class="card card-pad" style="padding:30px;border-color:var(--ink-primary);box-shadow:var(--shadow-md);">
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span class="badge badge-success">Unified Velora Studio</span>
+                  <span class="mono" style="font-weight:700;">$0 to start &middot; $12 Growth</span>
+                </div>
+                <h3 style="font-size:20px;">Every publishing &amp; DM workflow wired together</h3>
+                <div style="display:flex;flex-direction:column;gap:11px;font-size:14px;color:var(--ink-secondary);">
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("check", 16)}<span>Smart Resize &amp; Crop Studio + 16-preset Carousel designer + AI Post Pack in one composer</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("check", 16)}<span>Drag tiles directly on the 4:5 / 3:4 Profile Grid with live views &amp; save rates</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("check", 16)}<span>Official Meta OAuth DMs sync straight into your 3-pane Inbox + Contact CRM</span></div>
+                  <div style="display:flex;gap:10px;align-items:flex-start;">${icon("check", 16)}<span>Query analytics &amp; batch-schedule directly from Claude or Cursor over MCP</span></div>
+                </div>
               </div>
-              <h3 style="font-size:20px;">Every step wired directly together</h3>
-              <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--ink-secondary);">
-                <div style="display:flex;gap:10px;align-items:center;">${icon("check", 16)}<span>Upload video or design a 16-preset Carousel &amp; attach its DM keyword rule in one screen</span></div>
-                <div style="display:flex;gap:10px;align-items:center;">${icon("check", 16)}<span>Drag tiles directly on the 4:5 / 3:4 Profile Grid or Calendar to reschedule</span></div>
-                <div style="display:flex;gap:10px;align-items:center;">${icon("check", 16)}<span>Official Meta OAuth DMs sync straight into your 3-pane Inbox + Contact CRM</span></div>
-                <div style="display:flex;gap:10px;align-items:center;">${icon("check", 16)}<span>Query analytics &amp; batch-schedule directly from Claude or Cursor over MCP</span></div>
+              <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink-primary);font-weight:600;">
+                <span>1 workspace &middot; Zero per-DM fees</span>
+                <a href="/app/overview" data-link style="color:var(--brand);">Open Live Studio &rarr;</a>
               </div>
             </div>
           </div>
 
-          <!-- 4-Step Horizontal Studio Flow -->
           <div class="mkt-metrics-grid">
             ${[
               ["STEP 01", "Connect Official OAuth", "Link up to 5 Instagram Creator or Business accounts in 30 seconds — zero password sharing."],
-              ["STEP 02", "Compose & Check Crop", "Drop local MP4s or build crisp 1080x1350 slide decks while checking your 125-char caption fold."],
+              ["STEP 02", "Compose & Smart-Crop", "Drop any photo or video, auto-fit aspect ratios with zero cut-off text, and polish copy with AI."],
               ["STEP 03", "Attach Keyword DM Rule", "Pair any post or Story with instant CTA button DMs, reply rotation, and follower gates."],
               ["STEP 04", "Close Leads & Scale", "Reply inside the 24h Messenger window, log sponsor notes in CRM, and graduate winning Trial Reels."]
             ].map(([step, t, d]) => `
@@ -654,20 +701,19 @@ export function renderLandingPage() {
         </div>
       </section>
 
-      <!-- SECTION 3: DEEP-DIVE PILLAR 01 — COMPOSER, SAFE ZONES & VISUAL GRID -->
+      <!-- SECTION 3: COMPOSER, SMART CROP & VISUAL GRID -->
       <section class="mkt-section mkt-section-alt">
         <div class="mkt-container">
           <div class="mkt-deep-row">
             <div>
-              <span class="badge" style="margin-bottom:14px;">01 &middot; Publishing &amp; Feed Craft</span>
-              <h2 class="mkt-h2">See exactly how every post lands before a single follower sees it.</h2>
+              <h2 class="mkt-h2">See how every post fits and performs before a single follower sees it.</h2>
               <p style="font-size:15.5px;color:var(--ink-secondary);line-height:1.65;">
-                Stop guessing where Instagram truncates your opening hook or crops your cover typography. Upload local video and photo assets directly, inspect your 125-character fold live, and arrange your entire profile grid visually.
+                Stop guessing where Instagram crops wide screenshots or truncates your opening hook. Upload local media with live progress tracking, adjust aspect ratios inside the interactive Crop Studio, and arrange your profile grid visually.
               </p>
               <div class="mkt-check-list">
-                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Real Local MP4 &amp; Image Upload:</strong> Preview vertical Reels and 4:5 Carousels inside an accurate mobile frame before scheduling.</span></div>
-                <div class="mkt-check-item">${icon("check", 17)}<span><strong>125-Character Fold &amp; Tag Scanner:</strong> Catch cut-off hooks and restricted shadowban-prone hashtags before publishing.</span></div>
-                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Drag-and-Drop Grid &amp; Calendar:</strong> Reorder planned tiles or drag posts across calendar days in one smooth motion.</span></div>
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Built-In Resize &amp; Smart Fit Studio:</strong> Fit landscape screenshots cleanly onto blurred or editorial mattes, or crop exact 4:5, 9:16, and 1:1 frames.</span></div>
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>AI Post Pack &amp; 125-Character Fold Check:</strong> Generate scored hooks, structured captions, and safe niche hashtags in one click.</span></div>
+                <div class="mkt-check-item">${icon("check", 17)}<span><strong>Drag-and-Drop Grid + Live Stats:</strong> Reorder planned tiles while inspecting views, likes, saves, and engagement rate directly on the grid.</span></div>
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:10px;">
                 <a href="/app/create" data-link class="btn btn-primary">Open Post Composer ${icon("arrowRight", 15)}</a>
@@ -686,8 +732,8 @@ export function renderLandingPage() {
                   <strong>@maya.studio</strong> Most teams overcomplicate design tokens before shipping their very first component library. Comment "REPO" below... <span style="color:var(--ink-muted);">more</span>
                 </div>
                 <div style="display:flex;flex-wrap:wrap;gap:8px;padding-top:8px;border-top:1px solid var(--border-subtle);">
-                  <span class="badge badge-success">4 Safe Niche Tags</span>
-                  <span class="badge badge-info">4:5 Feed Safe Zone OK</span>
+                  <span class="badge badge-success">5 Safe Niche Tags</span>
+                  <span class="badge badge-info">1080&times;1350 Smart Crop OK</span>
                   <span class="badge badge-brand">DM Rule Linked: REPO</span>
                 </div>
               </div>
@@ -701,44 +747,52 @@ export function renderLandingPage() {
         </div>
       </section>
 
-      <!-- SECTION 4: DEEP-DIVE PILLAR 02 — LIVE INTERACTIVE PHONE CHAT SIMULATOR RIGHT ON HOME PAGE -->
+      <!-- SECTION 4: HIGH-DETAIL LIGHT PEARL-SILVER INSTAGRAM MESSENGER SIMULATOR -->
       <section class="mkt-section">
         <div class="mkt-container">
           <div class="mkt-deep-row is-reversed">
             <div style="display:flex;justify-content:center;">
-              <div class="phone-frame" style="max-width:390px;">
-                <div class="phone-screen" style="background:#0F0F12;">
-                  <div class="phone-notch"></div>
-                  <div style="padding:8px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
+              <div class="phone-frame" style="max-width:392px;">
+                <div class="phone-screen">
+                  <!-- Crisp Native iOS Light Status Bar -->
+                  <div class="phone-status-bar">
+                    <span>9:41</span>
+                    <div class="phone-island"></div>
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;">5G &middot; 100%</span>
+                  </div>
+
+                  <!-- Authentic Instagram Direct Header -->
+                  <div class="phone-ig-header">
                     <div style="display:flex;align-items:center;gap:9px;">
-                      <span class="ws-avatar" style="width:28px;height:28px;background:#E11D48;font-size:12px;">M</span>
+                      <div class="phone-story-ring">
+                        <div class="phone-story-ring-inner">M</div>
+                      </div>
                       <div>
-                        <div style="font-weight:700;font-size:13px;color:#fff;">@maya.studio</div>
-                        <div style="font-size:10.5px;color:#34D399;">Official Messenger Live Demo</div>
+                        <div style="display:flex;align-items:center;gap:4px;font-weight:700;font-size:13px;color:#09090B;">
+                          <span>maya.studio</span>
+                          <span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#3B82F6;color:#FFFFFF;align-items:center;justify-content:center;font-size:9px;">&#10003;</span>
+                        </div>
+                        <div style="font-size:10.5px;color:#059669;font-weight:600;">Active now &middot; Official Messenger API</div>
                       </div>
                     </div>
-                    <span class="badge" style="background:#1F1F26;color:#E4E4E7;border-color:#2E2E38;">Try Me Live</span>
+                    <span style="padding:3px 9px;border-radius:999px;background:#EEF2FF;color:#4338CA;font-size:10.5px;font-weight:700;">Interactive</span>
                   </div>
 
-                  <div id="landing-phone-chat-list" style="height:285px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
-                    ${(store.ui.landingChatMsgs || []).map((msg) => `
-                      <div style="align-self:${msg.role === "me" ? "flex-end" : "flex-start"};max-width:85%;padding:10px 13px;border-radius:13px;font-size:12.5px;line-height:1.45;background:${msg.role === "me" ? "#FFFFFF" : "#1C1C22"};color:${msg.role === "me" ? "#09090B" : "#F4F4F5"};">
-                        <div style="font-size:10px;opacity:0.65;margin-bottom:3px;font-weight:600;">${escHtml(msg.badge)}</div>
-                        <div>${escHtml(msg.text)}</div>
-                        ${msg.cta ? `<div style="margin-top:8px;padding:7px 10px;border-radius:7px;background:#E11D48;color:#FFFFFF;text-align:center;font-weight:700;font-size:12px;">${escHtml(msg.cta)}</div>` : ""}
-                      </div>
-                    `).join("")}
+                  <!-- Light Crisp Conversation Stream -->
+                  <div id="landing-phone-chat-list" style="height:296px;overflow-y:auto;padding:14px;background:#FAFAFA;display:flex;flex-direction:column;gap:10px;">
+                    ${renderLandingPhoneChatMessages()}
                   </div>
 
-                  <div style="padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,0.08);background:#141418;">
+                  <!-- Light Quick Trigger Chips & Input Bar -->
+                  <div style="padding:10px 12px 14px;border-top:1px solid #E2E8F0;background:#FFFFFF;">
                     <div style="display:flex;gap:5px;margin-bottom:8px;overflow-x:auto;">
                       ${["REPO", "KIT", "RATES", "GUIDE"].map((kw) => `
-                        <button type="button" data-landing-quick-kw="${kw}" style="padding:3px 9px;border-radius:999px;border:1px solid #3F3F46;background:#1F1F26;color:#FAFAFA;font-size:11px;font-weight:600;">Send "${kw}"</button>
+                        <button type="button" data-landing-quick-kw="${kw}" style="padding:4px 10px;border-radius:999px;border:1px solid #CBD5E1;background:#F8FAFC;color:#1E293B;font-size:11px;font-weight:600;white-space:nowrap;">Send "${kw}"</button>
                       `).join("")}
                     </div>
                     <form id="form-landing-phone-chat" style="display:flex;gap:6px;">
-                      <input id="landing-phone-input" value="KIT" placeholder="Type REPO, KIT, or RATES..." style="flex:1;height:34px;padding:0 11px;border-radius:8px;border:1px solid #3F3F46;background:#09090B;color:#FFFFFF;font-size:12.5px;" />
-                      <button type="submit" class="btn btn-brand btn-sm" style="height:34px;padding:0 13px;">Send</button>
+                      <input id="landing-phone-input" value="KIT" placeholder="Message @maya.studio (e.g. KIT)..." style="flex:1;height:36px;padding:0 12px;border-radius:999px;border:1px solid #CBD5E1;background:#F8FAFC;color:#09090B;font-size:12.5px;" />
+                      <button type="submit" class="btn btn-brand btn-sm" style="height:36px;padding:0 15px;border-radius:999px;">Send</button>
                     </form>
                   </div>
                 </div>
@@ -746,10 +800,9 @@ export function renderLandingPage() {
             </div>
 
             <div>
-              <span class="badge badge-brand" style="margin-bottom:14px;">02 &middot; Try Live Right Here</span>
               <h2 class="mkt-h2">"Link in bio" loses 9 out of 10 interested viewers. Meet them in DMs.</h2>
               <p style="font-size:15.5px;color:var(--ink-secondary);line-height:1.65;">
-                Type <code class="mono">REPO</code>, <code class="mono">KIT</code>, or <code class="mono">RATES</code> directly inside the phone on the left — every automated reply card, public comment rotation, follower gate, and 2-hour follow-up runs on Official Meta Messenger OAuth.
+                Type <code class="mono">REPO</code>, <code class="mono">KIT</code>, or <code class="mono">RATES</code> directly inside the preview phone on the left — every automated reply card, public comment rotation, follower gate, and 2-hour follow-up runs on Official Meta Messenger OAuth.
               </p>
               <div class="mkt-check-list">
                 <div class="mkt-check-item">${icon("check", 17)}<span><strong>Past-Comment Sweep:</strong> Post went viral before you attached a workflow? Retroactively deliver DMs to up to 250 missed comments in one click.</span></div>
@@ -762,12 +815,11 @@ export function renderLandingPage() {
         </div>
       </section>
 
-      <!-- SECTION 5: INTERACTIVE CAROUSEL STUDIO PLAYGROUND RIGHT ON LANDING PAGE -->
+      <!-- SECTION 5: INTERACTIVE CAROUSEL STUDIO PLAYGROUND -->
       <section class="mkt-section mkt-section-alt">
         <div class="mkt-container">
           <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:36px;">
             <div style="max-width:640px;">
-              <span class="badge" style="margin-bottom:12px;">03 &middot; Live Design Playground</span>
               <h2 class="mkt-h2">16 restrained, editorial slide systems. Zero generic templates.</h2>
               <p style="font-size:15.5px;color:var(--ink-secondary);">
                 Click any preset below to restyle the live 3-slide carousel deck right here — or customize background, ink, and accent hex codes inside the Studio.
@@ -778,21 +830,21 @@ export function renderLandingPage() {
 
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">
             ${themes.slice(0, 8).map((t) => `
-              <button class="btn btn-sm ${t.id === chosenTheme.id ? "btn-primary" : ""}" data-landing-theme="${escHtml(t.id)}">
+              <button type="button" class="btn btn-sm ${t.id === chosenTheme.id ? "btn-primary" : ""}" data-landing-theme="${escHtml(t.id)}">
                 <span style="width:11px;height:11px;border-radius:50%;background:${escHtml(t.bg)};border:1px solid var(--border-strong);display:inline-block;"></span>
                 ${escHtml(t.name)}
               </button>
             `).join("")}
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;">
+          <div id="landing-carousel-cards" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;">
             ${[
               ["SLIDE 01 · HOOK", "Most interfaces feel cluttered for one simple reason", "Too many competing borders, font weights, and accent colors fighting for eye contact at once."],
               ["SLIDE 02 · SYSTEM", "Anchor hierarchy with optical contrast, not decoration", "Pair a tight geometric display headline with calm neutral body copy and generous outer margins."],
               ["SLIDE 03 · ACTION", "Bookmark this deck + reply GUIDE for our Figma kit", "Export crisp 1080x1350 PNG slides directly or schedule straight onto your workspace queue."]
             ].map(([kicker, head, copy], idx) => `
               <div class="mkt-carousel-preview-card" style="background:${escHtml(chosenTheme.bg)};color:${escHtml(chosenTheme.fg)};border:1px solid var(--border);border-radius:16px;padding:30px 28px;min-height:330px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow-sm);transition:background-color 180ms ease,color 180ms ease;">
-                <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:650;opacity:0.72;">
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;opacity:0.72;">
                   <span>${kicker}</span>
                   <span class="mono">0${idx + 1} / 03</span>
                 </div>
@@ -815,7 +867,6 @@ export function renderLandingPage() {
       <section class="mkt-section">
         <div class="mkt-container">
           <div class="mkt-sec-head-center">
-            <span class="badge" style="margin-bottom:12px;">Complete Studio Suite</span>
             <h2 class="mkt-h2">Nine tightly integrated tools. One fast keyboard-first workspace.</h2>
             <p style="font-size:15.5px;color:var(--ink-secondary);">
               Press <kbd class="kbd">&#8984;K</kbd> anywhere inside Velora to jump between modules, switch brand accounts, or run the publishing queue worker in milliseconds.
@@ -837,12 +888,11 @@ export function renderLandingPage() {
         </div>
       </section>
 
-      <!-- SECTION 7: INTERACTIVE CREATOR ROI & HOURS-SAVED CALCULATOR -->
+      <!-- SECTION 7: INTERACTIVE CREATOR IMPACT ESTIMATOR -->
       <section class="mkt-section mkt-section-alt">
         <div class="mkt-container">
           <div class="split-2" style="gap:40px;align-items:center;">
             <div>
-              <span class="badge badge-brand" style="margin-bottom:12px;">Interactive Impact Estimator</span>
               <h2 class="mkt-h2">See what automated comment-to-DM links unlock every month</h2>
               <p style="font-size:15px;color:var(--ink-secondary);line-height:1.65;margin-bottom:26px;">
                 Drag the sliders to match your weekly posting cadence and typical comment volume per post.
@@ -891,10 +941,9 @@ export function renderLandingPage() {
         <div class="mkt-container">
           <div class="mkt-deep-row">
             <div>
-              <span class="badge" style="margin-bottom:14px;">Model Context Protocol &middot; 58 Live Tools</span>
               <h2 class="mkt-h2">Control your entire publishing studio directly from Claude or Cursor.</h2>
               <p style="font-size:15.5px;color:var(--ink-secondary);line-height:1.65;margin-bottom:22px;">
-                Velora ships a first-class Streamable HTTP MCP server out of the box. Connect Claude Desktop, Cursor, or your own internal agents to inspect analytics, batch-schedule Reels, swap grid tiles, or dry-run DM rules in seconds.
+                Velora ships a first-class Streamable HTTP MCP server out of the box with 58 registered tools. Connect Claude Desktop, Cursor, or your own internal agents to inspect analytics, batch-schedule Reels, swap grid tiles, or dry-run DM rules in seconds.
               </p>
               <div style="display:flex;flex-wrap:wrap;gap:10px;">
                 <button type="button" class="btn btn-primary" id="btn-copy-mcp-snippet">${icon("copy", 15)} Copy MCP Config JSON</button>
@@ -930,7 +979,6 @@ export function renderLandingPage() {
         <div class="mkt-container">
           <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:36px;">
             <div>
-              <span class="badge" style="margin-bottom:12px;">Zero Login Required</span>
               <h2 class="mkt-h2">12 free browser-native utilities for everyday publishing</h2>
             </div>
             <a href="/tools" data-link class="btn">View All 12 Creator Tools ${icon("arrowRight", 14)}</a>
@@ -954,7 +1002,6 @@ export function renderLandingPage() {
       <section class="mkt-section">
         <div class="mkt-container">
           <div class="mkt-sec-head-center">
-            <span class="badge" style="margin-bottom:12px;">Creator Studios on Velora</span>
             <h2 class="mkt-h2">Built for teams who care deeply about how their work shows up</h2>
           </div>
 
@@ -970,7 +1017,7 @@ export function renderLandingPage() {
                 <div style="display:flex;align-items:center;gap:12px;padding-top:14px;border-top:1px solid var(--border-subtle);">
                   <span class="ws-avatar" style="width:38px;height:38px;font-size:14px;background:${color};">${name[0]}</span>
                   <div>
-                    <div style="font-weight:650;font-size:14px;">${name}</div>
+                    <div style="font-weight:600;font-size:14px;">${name}</div>
                     <div style="font-size:12.5px;color:var(--ink-muted);">${role}</div>
                   </div>
                 </div>
@@ -988,7 +1035,7 @@ export function renderLandingPage() {
         <div class="mkt-container">
           <div class="mkt-sec-head-center">
             <h2 class="mkt-h2">Frequently asked questions</h2>
-            <p style="font-size:15px;color:var(--ink-secondary);">Everything about Official Meta API limits, media uploads, pricing, and MCP.</p>
+            <p style="font-size:15px;color:var(--ink-secondary);">Everything about Official Meta API limits, smart image cropping, pricing, and MCP.</p>
           </div>
 
           <div class="mkt-faq-list">
@@ -1006,13 +1053,11 @@ export function renderLandingPage() {
             }).join("")}
           </div>
 
-          <!-- Grand Contrast Closing Banner -->
           <div class="mkt-cta-banner" style="margin-top:88px;">
-            <span class="badge" style="background:rgba(255,255,255,0.14);color:inherit;border-color:transparent;">Ready in 30 seconds &middot; No credit card needed</span>
             <h2 class="mkt-h2" style="color:inherit;max-width:680px;margin-bottom:0;">
               Give your content the calm, reliable studio it deserves.
             </h2>
-            <p style="font-size:16px;opacity:0.8;max-width:560px;line-height:1.6;">
+            <p style="font-size:16px;opacity:0.82;max-width:560px;line-height:1.6;">
               Jump straight into the live sandbox with 4 preloaded creator accounts — or create your own workspace right now.
             </p>
             <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:6px;">
@@ -1047,7 +1092,6 @@ export function renderPartnersPage() {
     <main class="mkt-container stage-animate" style="padding-top:56px;padding-bottom:84px;">
       <div class="split-2">
         <div>
-          <span class="badge badge-brand" style="margin-bottom:14px;">Creator Partner Program</span>
           <h1 class="mkt-h2" style="font-size:38px;">Earn 30% recurring commission or ship sponsored workflow demos</h1>
           <p style="font-size:15.5px;color:var(--ink-secondary);line-height:1.65;margin:14px 0 26px;">
             Share how you plan your feed or automate comment links using Velora. Partners receive free Studio access plus direct sponsorship payouts or recurring revenue share.
@@ -1059,7 +1103,7 @@ export function renderPartnersPage() {
               ["Full Studio Sandbox Included", "All approved creator partners receive complimentary Studio access across 5 workspaces."]
             ].map(([t, d]) => `
               <div class="card card-pad">
-                <div style="font-weight:650;font-size:14.5px;margin-bottom:4px;">${t}</div>
+                <div style="font-weight:600;font-size:14.5px;margin-bottom:4px;">${t}</div>
                 <div style="font-size:13px;color:var(--ink-secondary);">${d}</div>
               </div>
             `).join("")}
@@ -1099,7 +1143,7 @@ export function renderPartnersPage() {
 export function renderDocsPage() {
   const articles = [
     ["Official Meta API Safety & Rate Limits", "Velora connects exclusively through Official Instagram Graph OAuth tokens — never scraping or requesting your Instagram password. Meta permits up to 200 automated private replies per post comment hour and up to 50 published media containers per 24 hours."],
-    ["Scheduling Videos, Photos & Carousels", "Upload MP4, WebM, PNG, or JPEG assets directly in the Post Composer. Scheduled items are stored in SQLite with WAL durability and published automatically by the background queue worker when their timestamp arrives."],
+    ["Smart Image Resize, Aspect-Ratio & Crop Studio", "Upload PNG, JPEG, WebP, MP4, or WebM assets directly in the Post Composer. Landscape screenshots automatically engage Smart Fit with a soft studio backdrop so zero text gets cut off, and you can export high-res 4:5, 9:16, 1:1, or 1.91:1 crops directly to SQLite."],
     ["Designing Comment-to-DM Workflows", "Attach up to 3 HTTPS call-to-action buttons per automated DM (20 characters max per label). Rotate multiple public comment replies to keep engagement natural, and optionally enable Follower Verification before sending primary links."],
     ["Connecting Claude Desktop or Cursor via MCP", "Point any Model Context Protocol client to POST /mcp on your Velora deployment URL. All 58 workspace, calendar, grid, carousel, workflow, inbox, and analytics tools are exposed via JSON-RPC 2.0."]
   ];
@@ -1109,7 +1153,7 @@ export function renderDocsPage() {
     <main class="mkt-container stage-animate" style="padding-top:56px;padding-bottom:84px;max-width:920px;">
       <h1 class="mkt-h2" style="font-size:36px;margin-bottom:8px;">Velora Product Guide &amp; API Reference</h1>
       <p style="font-size:15.5px;color:var(--ink-secondary);margin-bottom:28px;">
-        Everything you need to configure publishing queues, DM rules, and MCP integrations safely.
+        Everything you need to configure publishing queues, smart image crops, DM rules, and MCP integrations safely.
       </p>
       <div style="display:flex;flex-direction:column;gap:14px;">
         ${articles.map(([title, body]) => `

@@ -8,12 +8,22 @@ const QUICK_SNIPPETS = [
 ];
 
 /* ============================================================================
-   6. DM AUTOMATIONS + LIVE INTERACTIVE CHAT SIMULATOR (/app/automations)
+   6. DM AUTOMATIONS + COLLAPSIBLE FLOW PIPELINES + AI WORKFLOW BUILDER (/app/automations)
    ============================================================================ */
 export function renderAutomations() {
   const b = store.bundle;
   const ws = b.activeWorkspace;
-  const selectedAuto = b.automations[0];
+  const statusFilter = store.ui.autoFilterStatus || "all";
+  const triggerFilter = store.ui.autoTriggerFilter || "all";
+  const expandedMap = store.ui.expandedAutoIds || {};
+
+  const filteredAutos = b.automations.filter((a) => {
+    if (statusFilter !== "all" && a.status !== statusFilter) return false;
+    if (triggerFilter !== "all" && a.trigger_type !== triggerFilter) return false;
+    return true;
+  });
+
+  const selectedAuto = filteredAutos[0] || b.automations[0];
   const simMsgs = store.ui.chatSimMessages;
 
   return `
@@ -21,22 +31,43 @@ export function renderAutomations() {
       <div class="page-head">
         <div>
           <h1 class="page-title">DM Workflows</h1>
-          <p class="page-desc">Automate comment-to-DM links, story replies, follower checks, and timed follow-ups via Official Messenger API.</p>
+          <p class="page-desc">Build plain-English AI workflows, inspect collapsible 4-stage pipelines, and test live Messenger delivery.</p>
         </div>
         <div class="head-actions">
-          <button class="btn btn-primary" id="btn-open-new-workflow">${icon("plus", 15)} New Workflow</button>
+          <select class="select" id="auto-status-filter" style="width:auto;">
+            <option value="all" ${statusFilter === "all" ? "selected" : ""}>Status: All (${b.automations.length})</option>
+            <option value="active" ${statusFilter === "active" ? "selected" : ""}>Active Only</option>
+            <option value="paused" ${statusFilter === "paused" ? "selected" : ""}>Paused Only</option>
+          </select>
+          <select class="select" id="auto-trigger-filter" style="width:auto;">
+            <option value="all" ${triggerFilter === "all" ? "selected" : ""}>Trigger: All Types</option>
+            <option value="comment" ${triggerFilter === "comment" ? "selected" : ""}>Post / Reel Comment</option>
+            <option value="story_reply" ${triggerFilter === "story_reply" ? "selected" : ""}>Story Reply</option>
+            <option value="dm_keyword" ${triggerFilter === "dm_keyword" ? "selected" : ""}>Direct Message Keyword</option>
+          </select>
+          <button class="btn btn-primary" id="btn-open-new-workflow">${icon("plus", 15)} Custom Rule</button>
         </div>
       </div>
 
+      <!-- PLAIN-ENGLISH AI WORKFLOW GENERATOR BAR -->
+      <form id="form-ai-workflow-builder" class="card card-pad" style="margin-bottom:20px;border-color:var(--brand-border);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+        <div class="field" style="flex:1;min-width:260px;">
+          <label class="field-label">${icon("wand", 13)} Build Complete Workflow from Plain English</label>
+          <input class="input" id="ai-workflow-prompt" value="${escHtml(store.ui.autoPromptText || "")}" required placeholder="e.g., When viewers comment GUIDE or TEMPLATE, rotate public replies, verify follow, and DM our Notion starter kit" />
+        </div>
+        <button class="btn btn-primary" type="submit">${icon("wand", 14)} Generate &amp; Activate Workflow</button>
+      </form>
+
       <div class="split-2">
-        <!-- Workflows List -->
+        <!-- LEFT: COLLAPSIBLE 4-STAGE WORKFLOW CARDS -->
         <div style="display:flex;flex-direction:column;gap:12px;">
-          ${b.automations.map((a) => {
+          ${filteredAutos.map((a) => {
             const ctr = a.dms_sent ? ((a.link_taps / a.dms_sent) * 100).toFixed(1) : "0.0";
+            const isOpen = Boolean(expandedMap[a.id]);
             return `
-              <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px;">
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
-                  <div>
+              <div class="flow-card">
+                <div class="flow-card-head" data-toggle-flow-expand="${escHtml(a.id)}">
+                  <div style="min-width:0;flex:1;">
                     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                       <strong style="font-size:15px;">${escHtml(a.name)}</strong>
                       <span class="badge ${a.status === "active" ? "badge-success" : ""}">
@@ -44,75 +75,131 @@ export function renderAutomations() {
                       </span>
                       <span class="badge">${escHtml(a.trigger_type)}</span>
                     </div>
-                    <div style="font-size:12.5px;color:var(--ink-muted);margin-top:5px;">
-                      Keywords: ${a.keywords.length ? a.keywords.map((k) => `<code class="mono">${escHtml(k)}</code>`).join(", ") : "Contextual AI Concierge"}
+                    <div style="font-size:12px;color:var(--ink-muted);margin-top:4px;display:flex;gap:14px;flex-wrap:wrap;" class="tabular">
+                      <span>Keywords: ${a.keywords.length ? a.keywords.map((k) => `<code class="mono">${escHtml(k)}</code>`).join(", ") : "AI Concierge"}</span>
+                      <span><strong>${fmtNum(a.dms_sent)}</strong> DMs &middot; <strong>${ctr}%</strong> CTR</span>
                     </div>
                   </div>
-                  <div style="display:flex;gap:6px;">
-                    <button class="btn btn-sm" data-toggle-auto="${escHtml(a.id)}">${a.status === "active" ? "Pause" : "Resume"}</button>
-                    <button class="btn btn-sm btn-ghost" data-delete-auto="${escHtml(a.id)}">${icon("trash", 14)}</button>
+                  <div style="display:flex;align-items:center;gap:6px;" data-stop-prop>
+                    <button type="button" class="btn btn-sm" data-quick-test-auto="${escHtml(a.id)}" data-kw="${escHtml(a.keywords[0] || "REPO")}">Test</button>
+                    <button type="button" class="btn btn-sm" data-toggle-auto="${escHtml(a.id)}">${a.status === "active" ? "Pause" : "Resume"}</button>
+                    <span style="padding:0 4px;color:var(--ink-muted);transform:rotate(${isOpen ? "90deg" : "0deg"});transition:transform 150ms ease;display:inline-flex;">
+                      ${icon("chevronRight", 15)}
+                    </span>
                   </div>
                 </div>
 
-                <div style="padding:10px 12px;border-radius:8px;background:var(--bg-subtle);font-size:12.5px;color:var(--ink-secondary);white-space:pre-line;">${escHtml(a.dm_message || a.ai_prompt)}</div>
+                ${isOpen ? `
+                  <div class="flow-card-body">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px;">
+                      <div class="card card-pad" style="padding:11px 13px;">
+                        <div style="font-size:10.5px;font-weight:700;color:var(--brand);margin-bottom:4px;">STAGE 1 &middot; TRIGGER</div>
+                        <div style="font-size:12.5px;font-weight:600;">${escHtml(a.trigger_type.replace("_", " ").toUpperCase())}</div>
+                        <div style="font-size:11.5px;color:var(--ink-muted);margin-top:2px;">Matches: ${escHtml(a.keywords.join(", ") || "All messages")}</div>
+                      </div>
+                      <div class="card card-pad" style="padding:11px 13px;">
+                        <div style="font-size:10.5px;font-weight:700;color:var(--brand);margin-bottom:4px;">STAGE 2 &middot; PUBLIC REPLY</div>
+                        <div style="font-size:12.5px;font-weight:600;">${a.public_reply_enabled ? `${(a.public_reply_variants || []).length || 3} Rotated Variants` : "Disabled"}</div>
+                        <div style="font-size:11.5px;color:var(--ink-muted);margin-top:2px;">Natural anti-spam rotation</div>
+                      </div>
+                      <div class="card card-pad" style="padding:11px 13px;">
+                        <div style="font-size:10.5px;font-weight:700;color:var(--brand);margin-bottom:4px;">STAGE 3 &middot; FOLLOW GATE</div>
+                        <div style="font-size:12.5px;font-weight:600;">${a.follow_gate_enabled ? "Follower Check Active" : "Direct Open Delivery"}</div>
+                        <div style="font-size:11.5px;color:var(--ink-muted);margin-top:2px;">${a.followup_enabled ? `Follow-up after ${escHtml(a.followup_delay || "2h")}` : "Single send"}</div>
+                      </div>
+                    </div>
 
-                <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-top:4px;font-size:12.5px;" class="tabular">
-                  <div style="display:flex;gap:16px;">
-                    <span><strong>${fmtNum(a.dms_sent)}</strong> DMs delivered</span>
-                    <span><strong>${fmtNum(a.link_taps)}</strong> button taps (${ctr}%)</span>
+                    <div style="padding:12px 14px;border-radius:10px;background:var(--bg-surface);border:1px solid var(--border);font-size:12.5px;color:var(--ink-primary);white-space:pre-line;margin-bottom:12px;">
+                      <div style="font-size:11px;font-weight:600;color:var(--ink-muted);margin-bottom:4px;"> Messenger Card Copy:</div>
+                      ${escHtml(a.dm_message || a.ai_prompt)}
+                      ${(a.buttons || []).length ? `
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                          ${a.buttons.map((btn) => `<span class="badge badge-brand">${escHtml(btn.label)} &rarr;</span>`).join("")}
+                        </div>
+                      ` : ""}
+                    </div>
+
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                      <button type="button" class="btn btn-sm" data-sweep-auto="${escHtml(a.id)}">${icon("refresh", 13)} Sweep Past Comments</button>
+                      <button type="button" class="btn btn-sm btn-danger" data-delete-auto="${escHtml(a.id)}">${icon("trash", 13)} Delete Rule</button>
+                    </div>
                   </div>
-                  <button class="btn btn-sm" data-sweep-auto="${escHtml(a.id)}">${icon("refresh", 13)} Sweep Past Comments</button>
-                </div>
+                ` : ""}
               </div>
             `;
           }).join("")}
         </div>
 
-        <!-- Live Interactive Mobile Chat Simulator -->
-        <div class="card card-pad" style="display:flex;flex-direction:column;gap:14px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div>
-              <div class="card-title">Interactive Workflow Simulator</div>
-              <div class="card-sub">Type any comment or DM below to test live delivery &amp; Inbox sync</div>
-            </div>
-            <button class="btn btn-sm btn-ghost" id="btn-clear-sim">Clear Chat</button>
-          </div>
-
-          <form id="form-live-sim" style="display:flex;flex-direction:column;gap:10px;">
-            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
-              <select class="select" id="sim-auto-select">
-                ${b.automations.map((a) => `<option value="${escHtml(a.id)}">${escHtml(a.name)}</option>`).join("")}
-              </select>
-              <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap;">
-                <input type="checkbox" id="sim-is-follower" checked /> Following @${escHtml(ws.ig_handle)}
-              </label>
+        <!-- RIGHT: CRISP LIGHT PEARL-SILVER MESSENGER DEVICE SIMULATOR -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div class="card-title">Live Messenger Previewer</div>
+                <div class="card-sub">Test keyword triggers, follower gates &amp; Inbox sync in real time</div>
+              </div>
+              <button class="btn btn-sm btn-ghost" id="btn-clear-sim">Reset</button>
             </div>
 
-            <!-- Simulated Phone Chat Window -->
-            <div id="sim-chat-stream" style="height:290px;overflow-y:auto;padding:14px;border-radius:12px;background:var(--bg-page);border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
-              ${simMsgs.length === 0 ? `
-                <div style="margin:auto;text-align:center;color:var(--ink-muted);font-size:12.5px;max-width:250px;">
-                  Send a trigger keyword like <code class="mono">${escHtml(selectedAuto?.keywords?.[0] || "REPO")}</code> below — watch public reply, follow gate, and CTA cards fire in real time.
-                </div>
-              ` : simMsgs.map((m) => `
-                <div class="bubble ${m.role === "user" ? "is-them" : "is-me"}" style="max-width:85%;">
-                  ${m.badge ? `<div style="font-size:10px;opacity:0.72;margin-bottom:3px;font-weight:600;">${escHtml(m.badge)}</div>` : ""}
-                  <div>${escHtml(m.text)}</div>
-                  ${(m.buttons || []).map((btn) => `
-                    <div style="margin-top:8px;padding:6px 10px;border-radius:7px;background:rgba(255,255,255,0.16);text-align:center;font-weight:600;font-size:12px;">
-                      ${escHtml(btn.label)} &rarr;
+            <form id="form-live-sim" style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
+                <select class="select" id="sim-auto-select">
+                  ${b.automations.map((a) => `<option value="${escHtml(a.id)}">${escHtml(a.name)}</option>`).join("")}
+                </select>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap;">
+                  <input type="checkbox" id="sim-is-follower" checked /> Following
+                </label>
+              </div>
+
+              <div class="phone-frame" style="max-width:100%;">
+                <div class="phone-screen">
+                  <div class="phone-status-bar">
+                    <span>9:41</span>
+                    <div class="phone-island"></div>
+                    <span style="font-size:10.5px;">5G &middot; 100%</span>
+                  </div>
+                  <div class="phone-ig-header">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <div class="phone-story-ring"><div class="phone-story-ring-inner">${escHtml(ws.ig_handle[0].toUpperCase())}</div></div>
+                      <div>
+                        <div style="font-weight:700;font-size:12.5px;color:#09090B;">@${escHtml(ws.ig_handle)}</div>
+                        <div style="font-size:10.5px;color:#059669;font-weight:600;">Official Messenger Sandbox</div>
+                      </div>
                     </div>
-                  `).join("")}
-                </div>
-              `).join("")}
-              ${store.ui.chatSimTyping ? `<div class="bubble is-me typing-dots"><span></span><span></span><span></span></div>` : ""}
-            </div>
+                    <span style="font-size:10.5px;color:#64748B;font-weight:600;">Live Test</span>
+                  </div>
 
-            <div style="display:flex;gap:8px;">
-              <input class="input" id="sim-message-input" value="${escHtml(selectedAuto?.keywords?.[0] || "REPO")}" placeholder="Type a comment or DM message..." />
-              <button class="btn btn-primary" type="submit">${icon("send", 15)} Send</button>
-            </div>
-          </form>
+                  <div id="sim-chat-stream" style="height:270px;overflow-y:auto;padding:14px;background:#FAFAFA;display:flex;flex-direction:column;gap:9px;">
+                    ${simMsgs.length === 0 ? `
+                      <div style="margin:auto;text-align:center;color:#64748B;font-size:12.5px;max-width:250px;">
+                        Send <code class="mono" style="background:#EEF2FF;color:#4338CA;padding:2px 6px;border-radius:4px;">${escHtml(selectedAuto?.keywords?.[0] || "REPO")}</code> below — watch public reply rotation &amp; Messenger button cards fire instantly.
+                      </div>
+                    ` : simMsgs.map((m) => `
+                      <div style="align-self:${m.role === "user" ? "flex-end" : "flex-start"};max-width:86%;padding:10px 13px;border-radius:14px;font-size:12.5px;line-height:1.45;${
+                        m.role === "user"
+                          ? "background:#EEF2FF;color:#1E1B4B;border:1px solid #C7D2FE;"
+                          : "background:#FFFFFF;color:#09090B;border:1px solid #E2E8F0;box-shadow:0 2px 6px rgba(15,23,42,0.05);"
+                      }">
+                        ${m.badge ? `<div style="font-size:10px;color:#64748B;margin-bottom:3px;font-weight:600;">${escHtml(m.badge)}</div>` : ""}
+                        <div>${escHtml(m.text)}</div>
+                        ${(m.buttons || []).map((btn) => `
+                          <div style="margin-top:8px;padding:7px 10px;border-radius:8px;background:#4F46E5;color:#FFFFFF;text-align:center;font-weight:600;font-size:12px;">
+                            ${escHtml(btn.label)} &rarr;
+                          </div>
+                        `).join("")}
+                      </div>
+                    `).join("")}
+                    ${store.ui.chatSimTyping ? `<div class="bubble is-them typing-dots"><span></span><span></span><span></span></div>` : ""}
+                  </div>
+
+                  <div style="padding:10px 12px 12px;background:#FFFFFF;border-top:1px solid #E2E8F0;display:flex;gap:6px;">
+                    <input id="sim-message-input" value="${escHtml(selectedAuto?.keywords?.[0] || "REPO")}" placeholder="Type keyword or comment..." style="flex:1;height:35px;padding:0 12px;border-radius:999px;border:1px solid #CBD5E1;background:#F8FAFC;color:#09090B;font-size:12.5px;" />
+                    <button class="btn btn-brand btn-sm" type="submit" style="border-radius:999px;padding:0 15px;">Send</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -120,16 +207,21 @@ export function renderAutomations() {
 }
 
 /* ============================================================================
-   7. UNIFIED INBOX & COMMENTS (/app/inbox) — 3-Pane Chat + Contact CRM
+   7. UNIFIED INBOX & COMMENTS (/app/inbox) — Filter Dropdowns, AI Summary & Collapsible CRM
    ============================================================================ */
 export function renderInbox() {
   const b = store.bundle;
   const tab = store.ui.inboxTab || "dms";
   const filter = store.ui.inboxFilter || "open";
+  const tagFilter = store.ui.inboxTagFilter || "all";
   const search = (store.ui.inboxSearch || "").toLowerCase();
+  const crmOpen = store.ui.inboxCrmOpen || { deal: true, profile: true, templates: false };
+
+  const allTags = Array.from(new Set(b.threads.flatMap((t) => t.tags || [])));
 
   const threads = b.threads.filter((t) => {
     if (search && !t.participant_handle.toLowerCase().includes(search) && !t.participant_name.toLowerCase().includes(search)) return false;
+    if (tagFilter !== "all" && !(t.tags || []).includes(tagFilter)) return false;
     if (filter === "open") return Boolean(t.is_open) && !t.is_archived;
     if (filter === "unread") return t.unread_count > 0;
     if (filter === "priority") return Boolean(t.is_hot_lead);
@@ -144,7 +236,7 @@ export function renderInbox() {
       <div class="page-head">
         <div>
           <h1 class="page-title">Unified Inbox</h1>
-          <p class="page-desc">Respond to Instagram DMs within the 24-hour Messenger window, moderate post comments, and track lead notes.</p>
+          <p class="page-desc">Filter conversations by label, generate multi-tone AI replies, and manage collapsible contact CRM panels.</p>
         </div>
         <div class="head-actions">
           <div class="segmented">
@@ -189,14 +281,23 @@ export function renderInbox() {
         </div>
       ` : `
         <div class="inbox-shell ${store.mobileInboxChatOpen ? "mobile-chat-open" : ""}">
-          <!-- Left Pane: Thread List -->
+          <!-- Left Pane: Search + Status Filter + Label Dropdown + Thread List -->
           <div class="inbox-list-pane">
             <div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
               <input class="input" id="inbox-search-input" value="${escHtml(store.ui.inboxSearch)}" placeholder="Search @handle or name..." style="height:32px;" />
-              <div style="display:flex;gap:4px;overflow-x:auto;">
-                ${[["open", "Open"], ["unread", "Unread"], ["priority", "Priority"], ["all", "All"]].map(([k, lbl]) => `
-                  <button class="btn btn-sm ${filter === k ? "btn-primary" : "btn-ghost"}" style="height:25px;padding:0 8px;font-size:11.5px;" data-inbox-filter="${k}">${lbl}</button>
-                `).join("")}
+              <div style="display:flex;gap:6px;">
+                <select class="select" id="inbox-filter-dropdown" style="height:30px;font-size:12px;padding:0 8px;">
+                  ${[
+                    ["open", "Status: Open Chats"],
+                    ["unread", "Unread Only"],
+                    ["priority", "Priority Leads"],
+                    ["all", "All Conversations"]
+                  ].map(([k, lbl]) => `<option value="${k}" ${filter === k ? "selected" : ""}>${lbl}</option>`).join("")}
+                </select>
+                <select class="select" id="inbox-tag-dropdown" style="height:30px;font-size:12px;padding:0 8px;">
+                  <option value="all" ${tagFilter === "all" ? "selected" : ""}>All Labels</option>
+                  ${allTags.map((tg) => `<option value="${escHtml(tg)}" ${tagFilter === tg ? "selected" : ""}>Label: ${escHtml(tg)}</option>`).join("")}
+                </select>
               </div>
             </div>
             <div style="overflow-y:auto;flex:1;">
@@ -217,14 +318,14 @@ export function renderInbox() {
             </div>
           </div>
 
-          <!-- Center Pane: Active Conversation -->
+          <!-- Center Pane: Active Conversation + AI Summary Banner + Multi-Tone AI Composer -->
           ${activeThread ? `
             <div class="inbox-chat-pane">
               <div style="padding:12px 16px;background:var(--bg-surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                 <div style="display:flex;align-items:center;gap:9px;">
                   <button class="btn btn-sm mobile-menu-trigger" id="btn-mobile-back-threads">${icon("arrowLeft", 14)} Back</button>
                   <div>
-                    <div style="font-weight:650;font-size:14px;">${escHtml(activeThread.participant_name)} <span style="color:var(--ink-muted);font-weight:450;">@${escHtml(activeThread.participant_handle)}</span></div>
+                    <div style="font-weight:600;font-size:14px;">${escHtml(activeThread.participant_name)} <span style="color:var(--ink-muted);font-weight:400;">@${escHtml(activeThread.participant_handle)}</span></div>
                     <div style="font-size:11.5px;color:var(--ink-muted);">
                       ${activeThread.windowOpen
                         ? `<span style="color:var(--success);">&#9679;</span> 24h Meta reply window active (${activeThread.windowHoursRemaining}h left)`
@@ -232,12 +333,22 @@ export function renderInbox() {
                     </div>
                   </div>
                 </div>
-                <div style="display:flex;gap:6px;">
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
                   <button class="btn btn-sm" id="btn-simulate-incoming" data-thread="${escHtml(activeThread.id)}">Simulate Reply</button>
                   <button class="btn btn-sm ${activeThread.is_hot_lead ? "btn-brand" : ""}" data-toggle-hot="${escHtml(activeThread.id)}">Priority</button>
                   <button class="btn btn-sm" data-toggle-close="${escHtml(activeThread.id)}">${activeThread.is_open ? "Close" : "Reopen"}</button>
                 </div>
               </div>
+
+              ${store.ui.inboxThreadSummary?.threadId === activeThread.id ? `
+                <div style="padding:9px 16px;background:var(--brand-soft);border-bottom:1px solid var(--brand-border);display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;">
+                  <div>
+                    <strong style="color:var(--brand);">AI Thread Summary (${escHtml(store.ui.inboxThreadSummary.category)}):</strong>
+                    <span> ${escHtml(store.ui.inboxThreadSummary.summary)}</span>
+                  </div>
+                  <span class="badge badge-brand">${escHtml(store.ui.inboxThreadSummary.priority)} Priority</span>
+                </div>
+              ` : ""}
 
               <div class="inbox-messages" id="inbox-msg-scroll">
                 ${activeThread.messages.map((m) => `
@@ -256,12 +367,25 @@ export function renderInbox() {
               </div>
 
               <div style="padding:12px 16px;background:var(--bg-surface);border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;gap:6px;overflow-x:auto;">
-                  <button type="button" class="btn btn-sm" id="btn-ai-draft-reply" data-thread="${escHtml(activeThread.id)}">${icon("wand", 13)} Draft Reply</button>
-                  ${QUICK_SNIPPETS.map((s, idx) => `
-                    <button type="button" class="btn btn-sm btn-ghost" data-snippet="${escHtml(s)}">Snippet ${idx + 1}</button>
-                  `).join("")}
+                <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;">
+                  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                    <select class="select" id="inbox-ai-tone" style="height:29px;width:auto;font-size:12px;padding:0 8px;">
+                      <option value="helpful" ${store.ui.inboxTone === "helpful" ? "selected" : ""}>AI Tone: Warm &amp; Helpful</option>
+                      <option value="sponsor" ${store.ui.inboxTone === "sponsor" ? "selected" : ""}>AI Tone: Sponsorship Quote</option>
+                      <option value="concise" ${store.ui.inboxTone === "concise" ? "selected" : ""}>AI Tone: Concise Link</option>
+                      <option value="followup" ${store.ui.inboxTone === "followup" ? "selected" : ""}>AI Tone: Friendly Follow-Up</option>
+                    </select>
+                    <button type="button" class="btn btn-sm btn-primary" id="btn-ai-draft-reply" data-thread="${escHtml(activeThread.id)}">
+                      ${icon("wand", 13)} AI Draft &amp; Summarize
+                    </button>
+                  </div>
+
+                  <select class="select" id="inbox-quick-snippet-select" style="height:29px;width:auto;font-size:12px;padding:0 8px;">
+                    <option value="">Insert Quick Snippet...</option>
+                    ${QUICK_SNIPPETS.map((s, idx) => `<option value="${escHtml(s)}">Quick Reply #${idx + 1}: ${escHtml(s.slice(0, 28))}...</option>`).join("")}
+                  </select>
                 </div>
+
                 <form id="form-inbox-reply" data-thread="${escHtml(activeThread.id)}" style="display:flex;gap:8px;">
                   <input class="input" id="inbox-reply-input" placeholder="Write a message to @${escHtml(activeThread.participant_handle)}..." />
                   <button class="btn btn-primary" type="submit">${icon("send", 15)} Send</button>
@@ -269,31 +393,56 @@ export function renderInbox() {
               </div>
             </div>
 
-            <!-- Right Pane: Contact CRM Details & Persistent Notes -->
-            <aside class="inbox-crm-pane">
-              <div style="text-align:center;padding-bottom:12px;border-bottom:1px solid var(--border);">
-                <span class="ws-avatar" style="width:48px;height:48px;font-size:18px;background:${escHtml(activeThread.avatar_color || "#0F172A")};margin:0 auto 8px;">
-                  ${escHtml(activeThread.participant_handle[0].toUpperCase())}
-                </span>
-                <div style="font-weight:650;font-size:14.5px;">${escHtml(activeThread.participant_name)}</div>
-                <div style="font-size:12px;color:var(--ink-muted);" class="tabular">@${escHtml(activeThread.participant_handle)} &middot; ${fmtNum(activeThread.participant_followers || 3400)} followers</div>
+            <!-- Right Pane: Collapsible Contact Profile, Tags & Deal Notes CRM -->
+            <aside class="inbox-crm-pane" style="gap:10px;">
+              <!-- Section 1: Contact Profile Card -->
+              <div class="card" style="overflow:hidden;">
+                <button type="button" data-toggle-crm-sec="profile" style="width:100%;padding:11px 14px;border:none;background:transparent;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:13px;cursor:pointer;">
+                  <span>Contact Profile</span>
+                  <span style="transform:rotate(${crmOpen.profile ? "90deg" : "0deg"});transition:transform 140ms ease;display:inline-flex;">${icon("chevronRight", 14)}</span>
+                </button>
+                ${crmOpen.profile ? `
+                  <div style="padding:4px 14px 14px;text-align:center;border-top:1px solid var(--border-subtle);">
+                    <span class="ws-avatar" style="width:46px;height:46px;font-size:17px;background:${escHtml(activeThread.avatar_color || "#0F172A")};margin:8px auto;">
+                      ${escHtml(activeThread.participant_handle[0].toUpperCase())}
+                    </span>
+                    <div style="font-weight:600;font-size:14px;">${escHtml(activeThread.participant_name)}</div>
+                    <div style="font-size:12px;color:var(--ink-muted);" class="tabular">@${escHtml(activeThread.participant_handle)} &middot; ${fmtNum(activeThread.participant_followers || 3400)} followers</div>
+                  </div>
+                ` : ""}
               </div>
 
-              <div class="field">
-                <label class="field-label">Labels (${activeThread.tags.length}/8)</label>
-                <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                  ${activeThread.tags.map((tag) => `<span class="badge">${escHtml(tag)}</span>`).join("")}
-                </div>
-                <form id="form-add-thread-tag" data-thread="${escHtml(activeThread.id)}" style="display:flex;gap:6px;margin-top:6px;">
-                  <input class="input" name="tag" placeholder="Add tag..." style="height:30px;font-size:12px;" />
-                  <button class="btn btn-sm" type="submit">Add</button>
-                </form>
+              <!-- Section 2: Collapsible Labels & Tags -->
+              <div class="card" style="overflow:hidden;">
+                <button type="button" data-toggle-crm-sec="templates" style="width:100%;padding:11px 14px;border:none;background:transparent;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:13px;cursor:pointer;">
+                  <span>Labels &amp; Tags (${activeThread.tags.length}/8)</span>
+                  <span style="transform:rotate(${crmOpen.templates !== false ? "90deg" : "0deg"});transition:transform 140ms ease;display:inline-flex;">${icon("chevronRight", 14)}</span>
+                </button>
+                ${crmOpen.templates !== false ? `
+                  <div style="padding:10px 14px 14px;border-top:1px solid var(--border-subtle);">
+                    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+                      ${activeThread.tags.map((tag) => `<span class="badge">${escHtml(tag)}</span>`).join("")}
+                    </div>
+                    <form id="form-add-thread-tag" data-thread="${escHtml(activeThread.id)}" style="display:flex;gap:6px;">
+                      <input class="input" name="tag" placeholder="Add tag..." style="height:30px;font-size:12px;" />
+                      <button class="btn btn-sm" type="submit">Add</button>
+                    </form>
+                  </div>
+                ` : ""}
               </div>
 
-              <div class="field" style="flex:1;">
-                <label class="field-label">CRM Contact Notes</label>
-                <textarea class="textarea" id="crm-notes-input" rows="5" placeholder="Deal size, deliverables, follow-up dates...">${escHtml(activeThread.crm_notes || "")}</textarea>
-                <button class="btn btn-sm btn-primary" id="btn-save-crm-notes" data-thread="${escHtml(activeThread.id)}">Save Notes</button>
+              <!-- Section 3: Collapsible Deal & Sponsorship Notes -->
+              <div class="card" style="overflow:hidden;flex:1;">
+                <button type="button" data-toggle-crm-sec="deal" style="width:100%;padding:11px 14px;border:none;background:transparent;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:13px;cursor:pointer;">
+                  <span>Deal &amp; Sponsorship Notes</span>
+                  <span style="transform:rotate(${crmOpen.deal ? "90deg" : "0deg"});transition:transform 140ms ease;display:inline-flex;">${icon("chevronRight", 14)}</span>
+                </button>
+                ${crmOpen.deal ? `
+                  <div style="padding:10px 14px 14px;border-top:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:8px;">
+                    <textarea class="textarea" id="crm-notes-input" rows="5" placeholder="Deal size, deliverables, follow-up dates...">${escHtml(activeThread.crm_notes || "")}</textarea>
+                    <button class="btn btn-sm btn-primary" id="btn-save-crm-notes" data-thread="${escHtml(activeThread.id)}">Save CRM Notes</button>
+                  </div>
+                ` : ""}
               </div>
             </aside>
           ` : ""}

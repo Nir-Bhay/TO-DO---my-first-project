@@ -17,6 +17,12 @@ function formatShortDate(iso) {
     d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
+function getPostVisualUrl(post, idx = 0) {
+  if (post?.media_url) return post.media_url;
+  const fallbackNum = String(((idx % 11) + 1)).padStart(2, "0");
+  return `/media/post-${fallbackNum}.svg`;
+}
+
 /* ============================================================================
    1. OVERVIEW (/app/overview)
    ============================================================================ */
@@ -51,7 +57,7 @@ export function renderOverview() {
       </div>
 
       ${failed.length ? `
-        <div class="card card-pad" style="margin-bottom:18px;background:var(--danger-soft);border-color:rgba(220,38,38,0.28);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+        <div class="card card-pad" style="margin-bottom:18px;background:var(--danger-soft);border-color:rgba(220,38,38,0.24);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
           <div style="display:flex;align-items:center;gap:10px;">
             ${icon("alert", 18)}
             <div style="font-size:13px;">
@@ -95,31 +101,32 @@ export function renderOverview() {
             <a href="/app/calendar" data-link class="btn btn-sm btn-ghost">Calendar ${icon("arrowRight", 14)}</a>
           </div>
           <div>
-            ${b.posts.filter((p) => p.status !== "PUBLISHED").slice(0, 5).map((p) => `
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border-subtle);">
-                <div style="display:flex;align-items:center;gap:12px;min-width:0;">
-                  <div class="cover-${escHtml(p.cover_style || "noir")}" style="width:42px;height:52px;border-radius:7px;flex-shrink:0;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;padding:4px;text-align:center;">
-                    ${p.media_url
-                      ? (p.media_url.startsWith("data:video")
-                        ? `<video src="${escHtml(p.media_url)}" muted style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"></video>`
-                        : `<img src="${escHtml(p.media_url)}" alt="" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;" />`)
-                      : `<span style="font-size:8px;font-weight:700;line-height:1.1;">${escHtml((p.cover_label || p.media_type).slice(0, 16))}</span>`}
-                  </div>
-                  <div style="min-width:0;">
-                    <div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.title)}</div>
-                    <div style="font-size:12px;color:var(--ink-muted);display:flex;align-items:center;gap:8px;margin-top:2px;" class="tabular">
-                      <span>${escHtml(p.media_type)}</span>
-                      <span>&middot;</span>
-                      <span>${formatShortDate(p.scheduled_at)}</span>
+            ${b.posts.filter((p) => p.status !== "PUBLISHED").slice(0, 5).map((p, idx) => {
+              const vis = getPostVisualUrl(p, idx);
+              return `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border-subtle);">
+                  <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+                    <div style="width:44px;height:55px;border-radius:8px;flex-shrink:0;overflow:hidden;border:1px solid var(--border);background:var(--bg-subtle);">
+                      ${vis.startsWith("data:video")
+                        ? `<video src="${escHtml(vis)}" muted style="width:100%;height:100%;object-fit:cover;"></video>`
+                        : `<img src="${escHtml(vis)}" alt="" style="width:100%;height:100%;object-fit:cover;" />`}
+                    </div>
+                    <div style="min-width:0;">
+                      <div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.title)}</div>
+                      <div style="font-size:12px;color:var(--ink-muted);display:flex;align-items:center;gap:8px;margin-top:2px;" class="tabular">
+                        <span>${escHtml(p.media_type)}</span>
+                        <span>&middot;</span>
+                        <span>${formatShortDate(p.scheduled_at)}</span>
+                      </div>
                     </div>
                   </div>
+                  <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                    ${statusBadge(p.status)}
+                    <button class="btn btn-sm" data-inspect-post="${escHtml(p.id)}">Inspect</button>
+                  </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                  ${statusBadge(p.status)}
-                  <button class="btn btn-sm" data-inspect-post="${escHtml(p.id)}">Inspect</button>
-                </div>
-              </div>
-            `).join("")}
+              `;
+            }).join("")}
           </div>
         </div>
 
@@ -141,8 +148,8 @@ export function renderOverview() {
                       </div>
                     </div>
                     <div style="text-align:right;flex-shrink:0;" class="tabular">
-                      <div style="font-weight:650;font-size:13px;">${fmtNum(a.dms_sent)} DMs</div>
-                      <div style="font-size:11.5px;color:var(--success);">${ctr}% clicks</div>
+                      <div style="font-weight:700;font-size:13px;">${fmtNum(a.dms_sent)} DMs</div>
+                      <div style="font-size:11px;color:var(--success);">${ctr}% CTR</div>
                     </div>
                   </div>
                 `;
@@ -152,12 +159,12 @@ export function renderOverview() {
 
           <div class="card">
             <div class="card-header">
-              <div class="card-title">Recent Inbox Activity</div>
+              <div class="card-title">Recent Priority Messages</div>
               <a href="/app/inbox" data-link class="btn btn-sm btn-ghost">Open Inbox ${icon("arrowRight", 14)}</a>
             </div>
             <div>
               ${b.threads.slice(0, 3).map((t) => `
-                <a href="/app/inbox" data-link data-jump-thread="${escHtml(t.id)}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px;border-bottom:1px solid var(--border-subtle);">
+                <a href="/app/inbox" data-link style="padding:11px 18px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;gap:10px;">
                   <div style="display:flex;align-items:center;gap:10px;min-width:0;">
                     <span class="ws-avatar" style="background:${escHtml(t.avatar_color || "#0F172A")};">${escHtml(t.participant_handle[0].toUpperCase())}</span>
                     <div style="min-width:0;">
@@ -177,8 +184,96 @@ export function renderOverview() {
 }
 
 /* ============================================================================
-   2. CREATE POST COMPOSER (/app/create) — Real Video/Image Upload + Live Preview
+   2. CREATE POST COMPOSER (/app/create) — Upload Progress, Resize/Crop & AI Studio
    ============================================================================ */
+export function renderCropStudioModal() {
+  const cs = store.ui.cropStudio;
+  if (!cs || !cs.open || !cs.srcUrl) return "";
+  return `
+    <div class="crop-modal-backdrop" id="crop-modal-backdrop">
+      <div class="crop-modal-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <div>
+            <h3 style="font-size:17px;">Resize, Aspect-Ratio &amp; Crop Studio</h3>
+            <p style="font-size:12.5px;color:var(--ink-muted);">Source resolution: ${cs.origW}&times;${cs.origH}px &middot; Exports crisp 1080px PNG straight to SQLite</p>
+          </div>
+          <button type="button" class="icon-btn" id="btn-close-crop-modal">${icon("x", 17)}</button>
+        </div>
+
+        <div class="split-2" style="align-items:center;">
+          <div class="crop-stage-wrap">
+            <img id="crop-live-preview-img" src="${escHtml(cs.previewUrl || cs.srcUrl)}" alt="Live crop preview" style="max-height:360px;max-width:100%;border-radius:10px;box-shadow:var(--shadow-md);" />
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="field">
+              <label class="field-label">Target Instagram Ratio</label>
+              <div class="segmented" style="width:100%;display:grid;grid-template-columns:repeat(4,1fr);">
+                ${[
+                  ["4:5", "4:5 Feed"],
+                  ["9:16", "9:16 Reel"],
+                  ["1:1", "1:1 Square"],
+                  ["1.91:1", "16:9 Wide"]
+                ].map(([val, label]) => `
+                  <button type="button" class="seg-btn ${cs.aspect === val ? "is-active" : ""}" data-crop-aspect="${val}">${label}</button>
+                `).join("")}
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Framing Mode</label>
+              <div class="segmented" style="width:100%;display:grid;grid-template-columns:1fr 1fr;">
+                <button type="button" class="seg-btn ${cs.fitMode === "contain" ? "is-active" : ""}" data-crop-fit="contain">Smart Fit (No Cut-Off)</button>
+                <button type="button" class="seg-btn ${cs.fitMode === "cover" ? "is-active" : ""}" data-crop-fit="cover">Fill &amp; Crop</button>
+              </div>
+            </div>
+
+            ${cs.fitMode === "contain" ? `
+              <div class="field">
+                <label class="field-label">Studio Matte Backdrop</label>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  ${[
+                    ["blur", "Blurred Glass"],
+                    ["white", "Pearl White"],
+                    ["stone", "Warm Stone"],
+                    ["slate", "Deep Slate"]
+                  ].map(([id, name]) => `
+                    <button type="button" class="btn btn-sm ${cs.bgStyle === id ? "btn-primary" : ""}" data-crop-bg="${id}">${name}</button>
+                  `).join("")}
+                </div>
+              </div>
+            ` : ""}
+
+            <div class="field">
+              <div class="field-label">
+                <span>Zoom Scale</span>
+                <span class="mono" id="crop-zoom-val">${cs.zoom}%</span>
+              </div>
+              <input type="range" class="v-range" id="crop-zoom-slider" min="70" max="220" value="${cs.zoom}" />
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="field">
+                <div class="field-label"><span>Horizontal Pan (X)</span><span class="mono" id="crop-panx-val">${cs.panX}%</span></div>
+                <input type="range" class="v-range" id="crop-panx-slider" min="-60" max="60" value="${cs.panX}" />
+              </div>
+              <div class="field">
+                <div class="field-label"><span>Vertical Pan (Y)</span><span class="mono" id="crop-pany-val">${cs.panY}%</span></div>
+                <input type="range" class="v-range" id="crop-pany-slider" min="-60" max="60" value="${cs.panY}" />
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid var(--border);">
+              <button type="button" class="btn btn-sm" id="btn-reset-crop">Reset Framing</button>
+              <button type="button" class="btn btn-primary" id="btn-apply-crop">${icon("check", 15)} Apply High-Res Crop</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 export function renderCreatePost() {
   const b = store.bundle;
   const ws = b.activeWorkspace;
@@ -187,184 +282,361 @@ export function renderCreatePost() {
   const captionVal = ui.composerCaption || "Most teams overcomplicate design tokens before shipping their very first component library.\n\nComment \"REPO\" below and I will send the complete Figma token starter file straight to your DMs.";
   const tagsVal = ui.composerHashtags || "#designsystems #uidesign #figmatips #productdesign";
   const fullText = `${captionVal}${tagsVal ? `\n\n${tagsVal}` : ""}`;
-  const isVideo = ui.composerMediaUrl && ui.composerMediaUrl.startsWith("data:video");
+  const activeMediaUrl = ui.composerMediaUrl || "/media/post-01.svg";
+  const isVideo = activeMediaUrl.startsWith("data:video");
+  const isContain = ui.composerMediaFit === "contain";
+  const aspectClass = ui.composerAspect === "9:16" || ui.composerMediaType === "REEL" && ui.composerPreviewTab === "reel"
+    ? "is-reel"
+    : ui.composerAspect === "1:1"
+      ? "is-square"
+      : ui.composerAspect === "1.91:1"
+        ? "is-landscape"
+        : "";
 
   return `
     <div class="stage-animate">
       <div class="page-head">
         <div>
           <h1 class="page-title">Create Post</h1>
-          <p class="page-desc">Upload local video or photo media, preview mobile crop &amp; caption fold live, and schedule or publish immediately.</p>
+          <p class="page-desc">Upload media with smart aspect-ratio fitting, co-write hooks &amp; captions with AI, and inspect your live Instagram preview.</p>
         </div>
         <div class="head-actions">
           <div class="segmented">
-            ${["REEL", "CAROUSEL", "POST", "STORY"].map((t) => `
-              <button class="seg-btn ${ui.composerMediaType === t ? "is-active" : ""}" data-composer-type="${t}">${t}</button>
+            ${["POST", "REEL", "CAROUSEL", "STORY"].map((t) => `
+              <button type="button" class="seg-btn ${ui.composerMediaType === t ? "is-active" : ""}" data-composer-type="${t}">${t}</button>
             `).join("")}
           </div>
         </div>
       </div>
 
       <div class="composer-layout">
-        <form id="form-create-post" class="card card-pad" style="display:flex;flex-direction:column;gap:16px;">
-          <!-- Real Local File Dropzone -->
-          <div>
-            <div class="field-label" style="margin-bottom:8px;">
-              <span>Media Asset (MP4, WebM, PNG, JPG, WebP)</span>
-              ${ui.composerMediaUrl ? `<button type="button" class="btn btn-sm btn-ghost" id="btn-clear-media">Clear Uploaded Media</button>` : `<span class="field-hint">Stored in workspace media library</span>`}
-            </div>
-            <label class="dropzone" id="composer-dropzone" for="composer-file-input" style="display:block;">
-              <input type="file" id="composer-file-input" accept="image/*,video/*" multiple style="display:none;" />
-              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
-                ${icon("upload", 22)}
-                <div style="font-weight:600;font-size:13.5px;">Drop video or image files here, or click to browse</div>
-                <div style="font-size:12px;color:var(--ink-muted);">Supports 9:16 Reels, 4:5 Carousels &amp; high-resolution photos &middot; Instant mobile preview</div>
+        <div style="display:flex;flex-direction:column;gap:18px;min-width:0;">
+          <!-- PANEL A: AI POST CO-PILOT & VISUAL COVER GENERATOR -->
+          <div class="card card-pad" style="background:var(--bg-surface);border-color:var(--brand-border);display:flex;flex-direction:column;gap:13px;">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="width:28px;height:28px;border-radius:8px;background:var(--brand-soft);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;">${icon("wand", 15)}</span>
+                <div>
+                  <div style="font-weight:700;font-size:14px;">AI Post Co-Pilot &amp; Visual Card Studio</div>
+                  <div style="font-size:12px;color:var(--ink-muted);">Generate scored hooks, full structured captions, safe hashtags, first comment &amp; custom 1080&times;1350 cover art</div>
+                </div>
               </div>
-            </label>
+              <button type="button" class="btn btn-sm" id="btn-generate-ai-visual">
+                ${icon("image", 14)} Generate AI Cover Image
+              </button>
+            </div>
 
-            ${b.mediaAssets.length ? `
-              <div style="margin-top:10px;display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:4px;">
-                <span style="font-size:11.5px;color:var(--ink-muted);white-space:nowrap;">Recent uploads:</span>
-                ${b.mediaAssets.slice(0, 6).map((m) => `
-                  <button type="button" class="btn btn-sm" data-pick-asset="${escHtml(m.id)}">
-                    ${icon(m.mime_type.startsWith("video") ? "video" : "image", 13)} ${escHtml(m.filename.slice(0, 18))}
-                  </button>
-                `).join("")}
+            <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 150px 165px auto;gap:8px;align-items:end;">
+              <div class="field">
+                <label class="field-label">Post Topic or Raw Idea</label>
+                <input class="input" id="ai-topic-input" value="${escHtml(ui.aiTopic || ui.composerTitle || "Design Tokens Starter Breakdown")}" placeholder="e.g., How we cut SaaS onboarding drop-off by 42%..." />
+              </div>
+              <div class="field">
+                <label class="field-label">Voice &amp; Tone</label>
+                <select class="select" id="ai-tone-select">
+                  ${["Editorial", "Contrarian", "Founder Story", "Tactical Guide"].map((t) => `
+                    <option value="${t}" ${ui.aiTone === t ? "selected" : ""}>${t}</option>
+                  `).join("")}
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Primary Goal</label>
+                <select class="select" id="ai-goal-select">
+                  <option value="dm_keyword" ${ui.aiGoal === "dm_keyword" ? "selected" : ""}>Drive DM Keyword</option>
+                  <option value="saves" ${ui.aiGoal === "saves" ? "selected" : ""}>Maximize Saves</option>
+                  <option value="reach" ${ui.aiGoal === "reach" ? "selected" : ""}>Non-Follower Reach</option>
+                  <option value="launch" ${ui.aiGoal === "launch" ? "selected" : ""}>Product Launch</option>
+                </select>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-generate-ai-pack">
+                ${icon("wand", 14)} Generate Full Post
+              </button>
+            </div>
+
+            ${ui.aiPack ? `
+              <div class="pane-crossfade" style="padding:12px 14px;border-radius:10px;background:var(--bg-page);border:1px solid var(--border);display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;">
+                  <strong>AI Hook Alternatives (Click any hook to replace your opening line)</strong>
+                  <span class="badge badge-success">Optimal Slot: ${escHtml(ui.aiPack.bestSlot)}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;">
+                  ${(ui.aiPack.hooks || []).map((h) => `
+                    <button type="button" class="card card-pad" data-apply-ai-hook="${escHtml(h.text)}" style="padding:10px 12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:5px;">
+                      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--brand);font-weight:700;">
+                        <span>${escHtml(h.label)}</span>
+                        <span>Score ${h.score}/99</span>
+                      </div>
+                      <div style="font-size:12.5px;color:var(--ink-primary);line-height:1.4;">"${escHtml(h.text)}"</div>
+                    </button>
+                  `).join("")}
+                </div>
               </div>
             ` : ""}
           </div>
 
-          <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;">
-            <div class="field">
-              <label class="field-label">Internal Post Title</label>
-              <input class="input" name="title" id="comp-title" required value="${escHtml(ui.composerTitle || "Design Tokens Starter Breakdown")}" />
-            </div>
-            <div class="field">
-              <label class="field-label">Cover Typography Label</label>
-              <input class="input" name="coverLabel" id="comp-cover-label" maxlength="36" value="${escHtml(ui.composerCoverLabel)}" />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="field-label">
-              <span>Fallback Cover Backdrop (used when no custom image/video is uploaded)</span>
-            </label>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              ${COVER_STYLES.map((cs) => `
-                <button type="button" class="btn btn-sm ${ui.composerCoverStyle === cs ? "btn-primary" : ""}" data-cover-style="${cs}">
-                  ${cs}
-                </button>
-              `).join("")}
-            </div>
-          </div>
-
-          <!-- Caption + Templates + Draft Variants -->
-          <div class="field">
-            <div class="field-label" style="flex-wrap:wrap;gap:6px;">
-              <span>Caption <span id="comp-char-counter" class="tabular" style="font-weight:400;color:var(--ink-muted);">(${fullText.length} / 2,200)</span></span>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                <select class="select" id="comp-template-select" style="height:28px;padding:0 8px;font-size:12px;width:auto;">
-                  <option value="">Insert Saved Template...</option>
-                  ${b.templates.map((t) => `<option value="${escHtml(t.id)}">${escHtml(t.title)}</option>`).join("")}
-                </select>
-                <button type="button" class="btn btn-sm" id="btn-save-caption-template">Save as Template</button>
-                <button type="button" class="btn btn-sm" id="btn-caption-assist">${icon("wand", 13)} Draft Ideas</button>
+          <!-- PANEL B: MEDIA UPLOAD + PROGRESS + RESIZE/CROP STUDIO + FORM -->
+          <form id="form-create-post" class="card card-pad" style="display:flex;flex-direction:column;gap:16px;">
+            <div>
+              <div class="field-label" style="margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span>Media Asset &amp; Aspect Framing</span>
+                  ${ui.composerMediaDims ? `<span class="badge badge-info">${escHtml(ui.composerMediaDims)}</span>` : ""}
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  ${!isVideo ? `
+                    <button type="button" class="btn btn-sm btn-primary" id="btn-open-crop-studio">
+                      ${icon("sliders", 13)} Resize &amp; Crop Studio
+                    </button>
+                  ` : ""}
+                  ${ui.composerMediaUrl ? `<button type="button" class="btn btn-sm btn-ghost" id="btn-clear-media">Reset Media</button>` : ""}
+                </div>
               </div>
-            </div>
-            <textarea class="textarea" name="caption" id="comp-caption" rows="5">${escHtml(captionVal)}</textarea>
-            <div id="comp-ai-suggestions"></div>
-          </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="field">
-              <div class="field-label">
-                <span>Hashtags</span>
-                <button type="button" class="btn btn-sm btn-ghost" id="btn-check-tags" style="height:22px;padding:0 6px;">Check Safety</button>
+              <!-- Live Animated Upload Progress Bar Container -->
+              <div id="composer-upload-progress-slot">
+                ${ui.uploadProgress?.active ? `
+                  <div class="upload-progress-card" style="margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--brand);">
+                      <span>${escHtml(ui.uploadProgress.label || "Uploading media...")}</span>
+                      <span class="mono">${ui.uploadProgress.pct}%</span>
+                    </div>
+                    <div class="upload-progress-track">
+                      <div class="upload-progress-fill" style="width:${ui.uploadProgress.pct}%;"></div>
+                    </div>
+                  </div>
+                ` : ""}
               </div>
-              <input class="input" name="hashtags" id="comp-hashtags" value="${escHtml(tagsVal)}" />
-            </div>
-            <div class="field">
-              <label class="field-label">Auto First Comment (Optional)</label>
-              <input class="input" name="firstComment" id="comp-first-comment" placeholder="Comment REPO for the direct link" value="${escHtml(ui.composerFirstComment)}" />
-            </div>
-          </div>
-          <div id="comp-hashtag-report"></div>
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;">
-            <div class="field">
-              <label class="field-label">Schedule Date &amp; Time</label>
-              <input class="input" type="datetime-local" name="scheduledAt" id="comp-sched" value="${escHtml(defaultSched)}" />
-              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;">
-                ${(ws.posting_slots || ["09:30", "14:00", "20:30"]).map((slot) => `
-                  <button type="button" class="badge" style="cursor:pointer;" data-quick-slot="${escHtml(slot)}">Today ${escHtml(slot)}</button>
+              <label class="dropzone" id="composer-dropzone" for="composer-file-input" style="display:block;">
+                <input type="file" id="composer-file-input" accept="image/*,video/*" multiple style="display:none;" />
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                  ${icon("upload", 22)}
+                  <div style="font-weight:600;font-size:13.5px;">Drop screenshots, photos, or MP4 videos here — or click to browse</div>
+                  <div style="font-size:12px;color:var(--ink-muted);">Wide screenshots automatically enable <strong>Smart Fit</strong> so zero text gets cut off &middot; Full interactive crop tool included</div>
+                </div>
+              </label>
+
+              <!-- Quick Inline Aspect Ratio & Fit Mode Bar -->
+              <div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--bg-subtle);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span style="font-size:12px;font-weight:600;color:var(--ink-secondary);">Frame Ratio:</span>
+                  <div class="segmented">
+                    ${[
+                      ["4:5", "4:5 Feed"],
+                      ["9:16", "9:16 Reel"],
+                      ["1:1", "1:1 Square"],
+                      ["1.91:1", "Landscape"]
+                    ].map(([val, lbl]) => `
+                      <button type="button" class="seg-btn ${ui.composerAspect === val ? "is-active" : ""}" data-quick-aspect="${val}">${lbl}</button>
+                    `).join("")}
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:12px;font-weight:600;color:var(--ink-secondary);">Image Fit:</span>
+                  <div class="segmented">
+                    <button type="button" class="seg-btn ${isContain ? "is-active" : ""}" data-quick-fit="contain" title="Shows entire screenshot cleanly with blurred studio backdrop">Smart Fit</button>
+                    <button type="button" class="seg-btn ${!isContain ? "is-active" : ""}" data-quick-fit="cover" title="Fills entire frame edge-to-edge">Fill Frame</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Studio Visual Presets + Uploaded Assets Strip -->
+              <div style="margin-top:10px;display:flex;align-items:center;gap:8px;overflow-x:auto;padding-bottom:4px;">
+                <span style="font-size:11.5px;color:var(--ink-muted);white-space:nowrap;">Studio gallery:</span>
+                ${[1, 2, 3, 4, 5, 6].map((n) => {
+                  const u = `/media/post-0${n}.svg`;
+                  return `
+                    <button type="button" data-pick-preset-media="${u}" style="padding:2px;border-radius:7px;border:2px solid ${activeMediaUrl === u ? "var(--brand)" : "transparent"};background:transparent;flex-shrink:0;">
+                      <img src="${u}" alt="Preset ${n}" style="width:36px;height:45px;border-radius:5px;object-fit:cover;display:block;" />
+                    </button>
+                  `;
+                }).join("")}
+                ${b.mediaAssets.slice(0, 5).map((m) => `
+                  <button type="button" class="btn btn-sm" data-pick-asset="${escHtml(m.id)}">
+                    ${icon(m.mime_type.startsWith("video") ? "video" : "image", 13)} ${escHtml(m.filename.slice(0, 16))}
+                  </button>
                 `).join("")}
               </div>
             </div>
-            <div class="field">
-              <label class="field-label">Attach DM Workflow</label>
-              <select class="select" name="automationId" id="comp-automation">
-                <option value="">None attached</option>
-                ${b.automations.map((a) => `<option value="${escHtml(a.id)}">${escHtml(a.name)}</option>`).join("")}
-              </select>
+
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px;">
+              <div class="field">
+                <label class="field-label">Internal Post Title</label>
+                <input class="input" name="title" id="comp-title" required value="${escHtml(ui.composerTitle || "Design Tokens Starter Breakdown")}" />
+              </div>
+              <div class="field">
+                <label class="field-label">Location Tag (Optional)</label>
+                <input class="input" name="location" id="comp-location" maxlength="40" value="${escHtml(ui.composerLocation || "Bengaluru · Studio")}" />
+              </div>
             </div>
+
+            <!-- Caption + AI Rewrite Bar + Saved Templates -->
             <div class="field">
-              <label class="field-label">Collaborator Handle</label>
-              <input class="input" name="collabHandle" id="comp-collab" placeholder="@figma.design" value="${escHtml(ui.composerCollab)}" />
+              <div class="field-label" style="flex-wrap:wrap;gap:6px;">
+                <span>Caption <span id="comp-char-counter" class="tabular" style="font-weight:400;color:var(--ink-muted);">(${fullText.length} / 2,200)</span></span>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                  <select class="select" id="comp-template-select" style="height:28px;padding:0 8px;font-size:12px;width:auto;">
+                    <option value="">Insert Saved Template...</option>
+                    ${b.templates.map((t) => `<option value="${escHtml(t.id)}">${escHtml(t.title)}</option>`).join("")}
+                  </select>
+                  <button type="button" class="btn btn-sm" id="btn-save-caption-template">Save Template</button>
+                </div>
+              </div>
+              <textarea class="textarea" name="caption" id="comp-caption" rows="5">${escHtml(captionVal)}</textarea>
+
+              <!-- 1-Click Inline AI Caption Rewriter Toolbar -->
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;">
+                <span style="font-size:11.5px;font-weight:600;color:var(--ink-muted);">AI Rewrite:</span>
+                ${[
+                  ["punchier", "Make Punchier"],
+                  ["hook", "Sharper Opening Hook"],
+                  ["shorten", "Trim <125 Chars"],
+                  ["cta", "+ Add DM Keyword CTA"],
+                  ["story", "Founder Story Arc"]
+                ].map(([mode, label]) => `
+                  <button type="button" class="btn btn-sm" style="height:26px;font-size:11.5px;padding:0 9px;" data-ai-rewrite="${mode}">${label}</button>
+                `).join("")}
+              </div>
+              <div id="comp-ai-suggestions"></div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="field">
+                <div class="field-label">
+                  <span>Hashtags</span>
+                  <button type="button" class="btn btn-sm btn-ghost" id="btn-check-tags" style="height:22px;padding:0 6px;">Check Safety</button>
+                </div>
+                <input class="input" name="hashtags" id="comp-hashtags" value="${escHtml(tagsVal)}" />
+              </div>
+              <div class="field">
+                <label class="field-label">Auto First Comment (Optional)</label>
+                <input class="input" name="firstComment" id="comp-first-comment" placeholder="Comment REPO for the direct link" value="${escHtml(ui.composerFirstComment)}" />
+              </div>
+            </div>
+            <div id="comp-hashtag-report"></div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;">
+              <div class="field">
+                <label class="field-label">Schedule Date &amp; Time</label>
+                <input class="input" type="datetime-local" name="scheduledAt" id="comp-sched" value="${escHtml(defaultSched)}" />
+                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;">
+                  ${(ws.posting_slots || ["09:30", "14:00", "20:30"]).map((slot) => `
+                    <button type="button" class="badge" style="cursor:pointer;" data-quick-slot="${escHtml(slot)}">Today ${escHtml(slot)}</button>
+                  `).join("")}
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label">Attach DM Workflow</label>
+                <select class="select" name="automationId" id="comp-automation">
+                  <option value="">None attached</option>
+                  ${b.automations.map((a) => `<option value="${escHtml(a.id)}">${escHtml(a.name)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Collaborator Handle</label>
+                <input class="input" name="collabHandle" id="comp-collab" placeholder="@figma.design" value="${escHtml(ui.composerCollab)}" />
+              </div>
+            </div>
+
+            <label style="display:flex;align-items:center;gap:9px;font-size:13px;padding:10px 12px;border-radius:8px;background:var(--bg-subtle);cursor:pointer;">
+              <input type="checkbox" id="comp-trial-reel" ${ui.composerIsTrial ? "checked" : ""} />
+              <span><strong>Publish as Trial Reel</strong> — test non-follower reach first before graduating to your main profile grid (${ws.trial_reels_used} used this month)</span>
+            </label>
+
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-top:8px;border-top:1px solid var(--border);">
+              <button type="button" class="btn" data-submit-post="DRAFT">Save as Draft</button>
+              <div style="display:flex;gap:8px;">
+                <button type="button" class="btn" data-submit-post="PUBLISHED">Publish Now</button>
+                <button type="submit" class="btn btn-primary">${icon("calendar", 15)} Schedule Post</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- RIGHT STICKY HIGH-DETAIL LIGHT INSTAGRAM POST PREVIEWER -->
+        <aside style="position:sticky;top:76px;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;font-weight:600;color:var(--ink-secondary);">Live Instagram Preview</span>
+            <div class="segmented">
+              <button type="button" class="seg-btn ${ui.composerPreviewTab !== "reel" ? "is-active" : ""}" data-preview-mode="feed">Feed View</button>
+              <button type="button" class="seg-btn ${ui.composerPreviewTab === "reel" ? "is-active" : ""}" data-preview-mode="reel">9:16 Reel</button>
             </div>
           </div>
 
-          <label style="display:flex;align-items:center;gap:9px;font-size:13px;padding:10px 12px;border-radius:8px;background:var(--bg-subtle);cursor:pointer;">
-            <input type="checkbox" id="comp-trial-reel" ${ui.composerIsTrial ? "checked" : ""} />
-            <span><strong>Publish as Trial Reel</strong> — test non-follower reach first before graduating to your main profile grid (${ws.trial_reels_used} used this month)</span>
-          </label>
-
-          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-top:8px;border-top:1px solid var(--border);">
-            <button type="button" class="btn" data-submit-post="DRAFT">Save as Draft</button>
-            <div style="display:flex;gap:8px;">
-              <button type="button" class="btn" data-submit-post="PUBLISHED">Publish Now</button>
-              <button type="submit" class="btn btn-primary">${icon("calendar", 15)} Schedule Post</button>
-            </div>
-          </div>
-        </form>
-
-        <!-- Sticky Live Mobile Phone Preview -->
-        <aside style="position:sticky;top:76px;">
           <div class="phone-frame">
             <div class="phone-screen">
-              <div class="phone-notch"></div>
-              <div style="padding:6px 14px 10px;display:flex;align-items:center;justify-content:space-between;font-size:12px;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span class="ws-avatar" style="width:24px;height:24px;font-size:11px;background:${escHtml(ws.avatar_color)};">${escHtml(ws.ig_handle[0].toUpperCase())}</span>
-                  <strong>${escHtml(ws.ig_handle)}</strong>
-                </div>
-                <span style="font-size:11px;opacity:0.7;">${escHtml(ui.composerMediaType)}</span>
+              <!-- Native iOS Light Status Bar -->
+              <div class="phone-status-bar">
+                <span>9:41</span>
+                <div class="phone-island"></div>
+                <span style="font-size:10.5px;">5G &middot; 100%</span>
               </div>
 
-              <div class="phone-media-box ${ui.composerMediaType === "POST" || ui.composerMediaType === "CAROUSEL" ? "is-feed" : ""} cover-${escHtml(ui.composerCoverStyle)}">
-                ${ui.composerMediaUrl
-                  ? (isVideo
-                    ? `<video src="${escHtml(ui.composerMediaUrl)}" autoplay muted loop playsinline controls></video>`
-                    : `<img src="${escHtml(ui.composerMediaUrl)}" alt="Uploaded media preview" />`)
-                  : `<div style="text-align:center;position:relative;z-index:1;">
-                       <div style="font-size:10.5px;opacity:0.72;margin-bottom:8px;">@${escHtml(ws.ig_handle)}</div>
-                       <div id="preview-cover-label" style="font-family:var(--font-display);font-weight:780;font-size:21px;line-height:1.15;letter-spacing:-0.025em;">${escHtml(ui.composerCoverLabel)}</div>
-                     </div>`
+              <!-- Native Instagram Post Header -->
+              <div class="phone-ig-header">
+                <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+                  <div class="phone-story-ring">
+                    <div class="phone-story-ring-inner">${escHtml(ws.ig_handle[0].toUpperCase())}</div>
+                  </div>
+                  <div style="min-width:0;">
+                    <div style="display:flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:#09090B;">
+                      <span>${escHtml(ws.ig_handle)}</span>
+                      <span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#3B82F6;color:#FFFFFF;align-items:center;justify-content:center;font-size:8.5px;">&#10003;</span>
+                    </div>
+                    <div id="preview-location-text" style="font-size:10.5px;color:#64748B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                      ${escHtml(ui.composerLocation || "Bengaluru · Studio")}
+                    </div>
+                  </div>
+                </div>
+                <span style="font-size:15px;font-weight:700;color:#64748B;letter-spacing:1px;">&bull;&bull;&bull;</span>
+              </div>
+
+              <!-- Smart-Fitted OR Full-Bleed Crisp Visual Frame -->
+              <div class="phone-media-box ${aspectClass} ${isContain ? "is-fit-contain" : ""}">
+                ${isContain && !isVideo ? `<img class="phone-media-backdrop" src="${escHtml(activeMediaUrl)}" alt="" />` : ""}
+                ${isVideo
+                  ? `<video class="media-main" src="${escHtml(activeMediaUrl)}" autoplay muted loop playsinline controls></video>`
+                  : `<img class="media-main" src="${escHtml(activeMediaUrl)}" alt="Post preview" />`
                 }
+                ${ui.composerSlidesMedia?.length > 1 ? `
+                  <span style="position:absolute;top:10px;right:10px;z-index:4;padding:3px 8px;border-radius:999px;background:rgba(15,23,42,0.72);color:#FFFFFF;font-size:10.5px;font-weight:600;">
+                    1 / ${ui.composerSlidesMedia.length}
+                  </span>
+                ` : ""}
               </div>
 
-              <div style="padding:12px 14px 16px;font-size:12px;line-height:1.45;color:#E4E4E7;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;opacity:0.85;">
-                  <div style="display:flex;gap:12px;">${icon("heart", 17)}${icon("message", 17)}${icon("send", 17)}</div>
-                  ${icon("bookmark", 17)}
+              <!-- Authentic Light Instagram Action Row + Likes + Fold Caption -->
+              <div class="phone-ig-actions">
+                <div style="display:flex;align-items:center;gap:13px;">
+                  ${icon("heart", 18)}${icon("message", 18)}${icon("send", 18)}
                 </div>
+                ${icon("bookmark", 18)}
+              </div>
+
+              <div class="phone-ig-caption">
+                <div style="font-weight:700;font-size:12px;margin-bottom:4px;color:#09090B;">1,842 likes</div>
                 <div id="preview-caption-fold">
-                  <strong>${escHtml(ws.ig_handle)}</strong> ${escHtml(fullText.slice(0, 125))}${fullText.length > 125 ? `<span style="color:#A1A1AA;">... more</span>` : ""}
+                  <strong style="color:#09090B;">${escHtml(ws.ig_handle)}</strong>
+                  <span>${escHtml(ui.composerCaptionExpanded ? fullText : fullText.slice(0, 125))}</span>
+                  ${fullText.length > 125 ? `
+                    <button type="button" id="btn-toggle-preview-fold" style="border:none;background:transparent;padding:0 2px;color:#64748B;font-size:12px;cursor:pointer;">
+                      ${ui.composerCaptionExpanded ? "less" : "...more"}
+                    </button>
+                  ` : ""}
                 </div>
+                ${ui.composerFirstComment ? `
+                  <div style="margin-top:6px;padding-top:6px;border-top:1px solid #F1F5F9;font-size:11.5px;color:#334155;">
+                    <strong>${escHtml(ws.ig_handle)}</strong> ${escHtml(ui.composerFirstComment)}
+                  </div>
+                ` : ""}
+                <div style="margin-top:5px;font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.03em;">Scheduled Preview &middot; ${escHtml(ui.composerAspect)}</div>
               </div>
             </div>
           </div>
         </aside>
       </div>
+
+      ${renderCropStudioModal()}
     </div>
   `;
 }
@@ -378,7 +650,6 @@ export function renderCalendar() {
   const statusFilter = store.ui.calendarStatus || "ALL";
   const filteredPosts = b.posts.filter((p) => statusFilter === "ALL" || p.status === statusFilter);
 
-  // Build October 2026 35-day calendar grid (Oct 1, 2026 is Thursday -> 3 leading days)
   const cells = [];
   for (let i = 28; i <= 30; i++) cells.push({ dateStr: `2026-09-${i}`, day: i, muted: true });
   for (let d = 1; d <= 31; d++) {
@@ -452,20 +723,27 @@ export function renderCalendar() {
                 <th>Status</th>
                 <th>Scheduled Slot</th>
                 <th>Views</th>
+                <th>Saves</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              ${filteredPosts.map((p) => `
+              ${filteredPosts.map((p, idx) => `
                 <tr>
                   <td>
-                    <div style="font-weight:600;">${escHtml(p.title)}</div>
-                    <div style="font-size:12px;color:var(--ink-muted);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.caption)}</div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <img src="${escHtml(getPostVisualUrl(p, idx))}" alt="" style="width:36px;height:45px;border-radius:6px;object-fit:cover;border:1px solid var(--border);" />
+                      <div>
+                        <div style="font-weight:600;">${escHtml(p.title)}</div>
+                        <div style="font-size:12px;color:var(--ink-muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.caption)}</div>
+                      </div>
+                    </div>
                   </td>
                   <td><span class="badge">${escHtml(p.media_type)}</span></td>
                   <td>${statusBadge(p.status)}</td>
                   <td class="tabular">${formatShortDate(p.scheduled_at)}</td>
                   <td class="tabular">${fmtNum(p.views)}</td>
+                  <td class="tabular">${fmtNum(p.saves)}</td>
                   <td>
                     <div style="display:flex;gap:6px;">
                       <button class="btn btn-sm" data-inspect-post="${escHtml(p.id)}">Inspect</button>
@@ -483,27 +761,34 @@ export function renderCalendar() {
 }
 
 /* ============================================================================
-   4. VISUAL PROFILE GRID PLANNER (/app/grid) — Drag & Drop Tile Reordering
+   4. VISUAL PROFILE GRID PLANNER (/app/grid) — Crisp Imagery + Live Post Statistics
    ============================================================================ */
 export function renderGridPlanner() {
   const b = store.bundle;
   const ws = b.activeWorkspace;
   const crop = ws.grid_crop || "4:5";
   const cropCls = `crop-${crop.replace(":", "x")}`;
+  const showStats = store.ui.gridShowStats !== false;
   const gridPosts = b.posts.filter((p) => !(p.is_trial_reel && !p.trial_graduated));
-  const selected = gridPosts.find((p) => p.id === store.ui.selectedGridPostId) || gridPosts[0];
+  const selectedIdx = Math.max(0, gridPosts.findIndex((p) => p.id === store.ui.selectedGridPostId));
+  const selected = gridPosts[selectedIdx] || gridPosts[0];
+  const totalGridViews = gridPosts.reduce((s, p) => s + (p.views || 0), 0);
+  const totalGridSaves = gridPosts.reduce((s, p) => s + (p.saves || 0), 0);
 
   return `
     <div class="stage-animate">
       <div class="page-head">
         <div>
           <h1 class="page-title">Profile Grid Planner</h1>
-          <p class="page-desc">Drag tiles directly on the 3-column grid to swap publishing order, preview feed crops, or add visual planning notes.</p>
+          <p class="page-desc">Inspect real cover artwork, live post engagement metrics, and drag tiles directly to reorder upcoming slots.</p>
         </div>
         <div class="head-actions">
+          <button type="button" class="btn ${showStats ? "btn-primary" : ""}" id="btn-toggle-grid-stats">
+            ${icon("chart", 15)} ${showStats ? "Live Stats: On" : "Live Stats: Off"}
+          </button>
           <div class="segmented">
             ${["4:5", "3:4", "1:1"].map((r) => `
-              <button class="seg-btn ${crop === r ? "is-active" : ""}" data-grid-crop="${r}">${r} Crop</button>
+              <button type="button" class="seg-btn ${crop === r ? "is-active" : ""}" data-grid-crop="${r}">${r} Crop</button>
             `).join("")}
           </div>
           <a href="/app/create" data-link class="btn btn-primary">${icon("plus", 15)} Add Post</a>
@@ -511,25 +796,36 @@ export function renderGridPlanner() {
       </div>
 
       <div class="split-2">
+        <!-- Authentic Light Instagram Profile Feed Card -->
         <div class="ig-profile-shell">
-          <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;">
-            <span class="ws-avatar" style="width:58px;height:58px;font-size:22px;background:${escHtml(ws.avatar_color)};">
-              ${ws.avatar_url ? `<img src="${escHtml(ws.avatar_url)}" alt="" />` : escHtml(ws.ig_handle[0].toUpperCase())}
-            </span>
-            <div style="flex:1;min-width:0;">
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <strong style="font-size:15.5px;">@${escHtml(ws.ig_handle)}</strong>
-                <span class="badge tabular">${fmtNum(ws.followers_count || 48200)} followers</span>
+          <div style="padding:20px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:14px;min-width:0;">
+              <div class="phone-story-ring" style="width:58px;height:58px;padding:2.5px;">
+                <div class="phone-story-ring-inner" style="font-size:20px;background:${escHtml(ws.avatar_color)};color:#FFFFFF;">
+                  ${ws.avatar_url ? `<img src="${escHtml(ws.avatar_url)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />` : escHtml(ws.ig_handle[0].toUpperCase())}
+                </div>
               </div>
-              <p style="font-size:12.5px;color:var(--ink-secondary);margin-top:4px;line-height:1.45;">${escHtml(ws.bio || "")}</p>
+              <div style="min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <strong style="font-size:16px;">@${escHtml(ws.ig_handle)}</strong>
+                  <span class="badge tabular">${fmtNum(ws.followers_count || 48200)} followers</span>
+                </div>
+                <p style="font-size:12.5px;color:var(--ink-secondary);margin-top:4px;line-height:1.45;max-width:420px;">${escHtml(ws.bio || "")}</p>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:18px;text-align:center;" class="tabular">
+              <div><div style="font-weight:700;font-size:15px;">${gridPosts.length}</div><div style="font-size:11px;color:var(--ink-muted);">Grid Tiles</div></div>
+              <div><div style="font-weight:700;font-size:15px;">${fmtNum(totalGridViews)}</div><div style="font-size:11px;color:var(--ink-muted);">Total Views</div></div>
+              <div><div style="font-weight:700;font-size:15px;">${fmtNum(totalGridSaves)}</div><div style="font-size:11px;color:var(--ink-muted);">Total Saves</div></div>
             </div>
           </div>
 
           <div class="ig-tiles">
             ${b.gridPlaceholders.map((ph) => `
-              <div class="ig-tile ${cropCls}" style="background:${escHtml(ph.color)};color:#18181B;">
-                <span style="font-size:10px;font-weight:700;opacity:0.65;">IDEA NOTE</span>
-                <p style="font-size:12px;font-weight:600;line-height:1.35;">${escHtml(ph.note)}</p>
+              <div class="ig-tile ${cropCls}" style="background:${escHtml(ph.color)};color:#18181B;padding:14px;display:flex;flex-direction:column;justify-content:space-between;">
+                <span style="font-size:10px;font-weight:700;opacity:0.65;">PLANNING NOTE</span>
+                <p style="font-size:12.5px;font-weight:600;line-height:1.35;">${escHtml(ph.note)}</p>
                 <div style="display:flex;gap:4px;">
                   <button class="btn btn-sm" style="height:24px;font-size:11px;padding:0 7px;" data-convert-ph="${escHtml(ph.id)}">Convert</button>
                   <button class="btn btn-sm btn-ghost" style="height:24px;padding:0 6px;" data-delete-ph="${escHtml(ph.id)}">${icon("x", 12)}</button>
@@ -537,39 +833,98 @@ export function renderGridPlanner() {
               </div>
             `).join("")}
 
-            ${gridPosts.map((p) => `
-              <div class="ig-tile ${cropCls} cover-${escHtml(p.cover_style || "noir")} ${selected?.id === p.id ? "is-selected" : ""}"
-                   draggable="true"
-                   data-grid-tile="${escHtml(p.id)}">
-                ${p.media_url
-                  ? (p.media_url.startsWith("data:video")
-                    ? `<video class="ig-tile-media" src="${escHtml(p.media_url)}" muted loop playsinline></video>`
-                    : `<img class="ig-tile-media" src="${escHtml(p.media_url)}" alt="" />`)
-                  : ""}
-                <div style="display:flex;justify-content:space-between;align-items:center;font-size:9.5px;font-weight:650;">
-                  <span style="background:rgba(0,0,0,0.52);color:#fff;padding:2px 5px;border-radius:4px;">${escHtml(p.status === "PUBLISHED" ? fmtNum(p.views) : p.status)}</span>
-                  ${p.collab_handle ? `<span style="background:rgba(0,0,0,0.52);color:#fff;padding:2px 5px;border-radius:4px;">+@${escHtml(p.collab_handle)}</span>` : ""}
+            ${gridPosts.map((p, idx) => {
+              const visUrl = getPostVisualUrl(p, idx);
+              const saveRate = p.views > 0 ? (((p.saves || 0) / p.views) * 100).toFixed(1) : "0.0";
+              return `
+                <div class="ig-tile ${cropCls} ${selected?.id === p.id ? "is-selected" : ""}"
+                     draggable="true"
+                     data-grid-tile="${escHtml(p.id)}">
+                  ${visUrl.startsWith("data:video")
+                    ? `<video class="ig-tile-media" src="${escHtml(visUrl)}" muted loop playsinline></video>`
+                    : `<img class="ig-tile-media" src="${escHtml(visUrl)}" alt="${escHtml(p.title)}" />`}
+
+                  <!-- Top Format + Status Pill -->
+                  <div style="position:absolute;top:8px;left:8px;right:8px;z-index:4;display:flex;justify-content:space-between;align-items:center;gap:4px;pointer-events:none;">
+                    <span style="padding:2px 6px;border-radius:5px;background:rgba(255,255,255,0.92);color:#09090B;font-size:9.5px;font-weight:700;">
+                      ${escHtml(p.media_type)}
+                    </span>
+                    ${p.status !== "PUBLISHED" ? `
+                      <span style="padding:2px 6px;border-radius:5px;background:#4F46E5;color:#FFFFFF;font-size:9.5px;font-weight:700;">
+                        ${escHtml(p.status)}
+                      </span>
+                    ` : ""}
+                  </div>
+
+                  <!-- Inline Live Stats Footer Bar -->
+                  ${showStats ? `
+                    <div class="ig-tile-stats-bar">
+                      <span>${p.status === "PUBLISHED" ? `${fmtNum(p.views)} views` : formatShortDate(p.scheduled_at)}</span>
+                      <span>${p.status === "PUBLISHED" ? `${fmtNum(p.saves)} saves` : "Drag to swap"}</span>
+                    </div>
+                  ` : ""}
+
+                  <!-- Rich Hover Post Statistics Breakdown -->
+                  <div class="ig-tile-hover-detail" class="tabular">
+                    <div style="font-size:12px;font-weight:700;line-height:1.25;">${escHtml(p.title.slice(0, 44))}</div>
+                    ${p.status === "PUBLISHED" ? `
+                      <div style="display:flex;gap:10px;font-size:11.5px;font-weight:600;">
+                        <span>&#9829; ${fmtNum(p.likes)}</span>
+                        <span>&middot; ${fmtNum(p.comments_count)} replies</span>
+                        <span>&middot; ${saveRate}% saves</span>
+                      </div>
+                    ` : `<span style="font-size:11px;opacity:0.85;">Scheduled &middot; Click to inspect</span>`}
+                  </div>
                 </div>
-                <strong style="font-family:var(--font-display);font-size:13px;line-height:1.18;text-shadow:0 1px 8px rgba(0,0,0,0.45);">
-                  ${escHtml(p.cover_label || p.title)}
-                </strong>
-              </div>
-            `).join("")}
+              `;
+            }).join("")}
           </div>
         </div>
 
+        <!-- RIGHT SIDEBAR: SELECTED POST STATISTICS + COVER UPLOADER + NOTE TILE -->
         <div style="display:flex;flex-direction:column;gap:16px;">
           ${selected ? `
-            <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card card-pad" style="display:flex;flex-direction:column;gap:14px;">
               <div style="display:flex;align-items:center;justify-content:space-between;">
-                <span class="card-title">Selected Tile Inspector</span>
+                <span class="card-title">Tile Performance &amp; Visual Inspector</span>
                 ${statusBadge(selected.status)}
               </div>
-              <div style="font-weight:650;font-size:15px;">${escHtml(selected.title)}</div>
-              <div style="font-size:12.5px;color:var(--ink-muted);" class="tabular">Scheduled: ${formatShortDate(selected.scheduled_at)}</div>
 
-              <label class="btn" style="justify-content:center;">
-                ${icon("upload", 15)} Upload Custom Tile Cover Photo
+              <div style="display:flex;gap:14px;align-items:center;">
+                <img src="${escHtml(getPostVisualUrl(selected, selectedIdx))}" alt="" style="width:74px;height:92px;border-radius:10px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;" />
+                <div style="min-width:0;">
+                  <div style="font-weight:700;font-size:15px;line-height:1.3;">${escHtml(selected.title)}</div>
+                  <div style="font-size:12px;color:var(--ink-muted);margin-top:4px;" class="tabular">
+                    ${selected.status === "PUBLISHED" ? "Published on Grid" : `Scheduled: ${formatShortDate(selected.scheduled_at)}`}
+                  </div>
+                  <p style="font-size:12px;color:var(--ink-secondary);margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                    ${escHtml(selected.caption)}
+                  </p>
+                </div>
+              </div>
+
+              <!-- 4-Card Post Statistics Grid -->
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" class="tabular">
+                <div style="padding:10px;border-radius:8px;background:var(--bg-subtle);text-align:center;">
+                  <div style="font-size:11px;color:var(--ink-muted);">Views</div>
+                  <strong style="font-size:14.5px;">${fmtNum(selected.views)}</strong>
+                </div>
+                <div style="padding:10px;border-radius:8px;background:var(--bg-subtle);text-align:center;">
+                  <div style="font-size:11px;color:var(--ink-muted);">Likes</div>
+                  <strong style="font-size:14.5px;">${fmtNum(selected.likes)}</strong>
+                </div>
+                <div style="padding:10px;border-radius:8px;background:var(--bg-subtle);text-align:center;">
+                  <div style="font-size:11px;color:var(--ink-muted);">Saves</div>
+                  <strong style="font-size:14.5px;">${fmtNum(selected.saves)}</strong>
+                </div>
+                <div style="padding:10px;border-radius:8px;background:var(--bg-subtle);text-align:center;">
+                  <div style="font-size:11px;color:var(--ink-muted);">Comments</div>
+                  <strong style="font-size:14.5px;">${fmtNum(selected.comments_count)}</strong>
+                </div>
+              </div>
+
+              <label class="btn" style="justify-content:center;cursor:pointer;">
+                ${icon("upload", 15)} Upload Custom Tile Cover Image
                 <input type="file" id="grid-tile-cover-upload" data-post-id="${escHtml(selected.id)}" accept="image/*,video/*" style="display:none;" />
               </label>
 
@@ -581,19 +936,19 @@ export function renderGridPlanner() {
                 </div>
               </div>
 
-              <div style="display:flex;gap:8px;padding-top:6px;border-top:1px solid var(--border);">
-                <button class="btn" data-inspect-post="${escHtml(selected.id)}">Full Post Editor</button>
+              <div style="display:flex;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid var(--border);">
+                <button class="btn" data-inspect-post="${escHtml(selected.id)}">Open Full Post Inspector</button>
                 <button class="btn btn-danger btn-sm" data-delete-post="${escHtml(selected.id)}">${icon("trash", 14)} Remove</button>
               </div>
             </div>
           ` : ""}
 
           <form id="form-add-placeholder" class="card card-pad" style="display:flex;flex-direction:column;gap:12px;">
-            <div class="card-title">Add Visual Planning Note Tile</div>
+            <div class="card-title">Pin Visual Planning Note to Grid</div>
             <textarea class="textarea" name="note" rows="2" maxlength="280" required placeholder="e.g., Client case study carousel (shoot warm studio cover photo)"></textarea>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-              <input type="color" name="color" value="#E2E8F0" style="width:42px;height:34px;border:1px solid var(--border);border-radius:6px;padding:2px;background:transparent;" />
-              <button class="btn btn-primary" type="submit">${icon("plus", 14)} Pin Note to Top of Grid</button>
+              <input type="color" name="color" value="#EEF2FF" style="width:42px;height:34px;border:1px solid var(--border);border-radius:6px;padding:2px;background:transparent;" />
+              <button class="btn btn-primary" type="submit">${icon("plus", 14)} Pin Note Tile</button>
             </div>
           </form>
         </div>
@@ -603,7 +958,7 @@ export function renderGridPlanner() {
 }
 
 /* ============================================================================
-   5. CAROUSEL STUDIO (/app/carousels) — 16 Clean Presets + Custom Colors + PNG Export
+   5. CAROUSEL STUDIO (/app/carousels) — 16 Clean Presets + AI Deck Generator + PNG
    ============================================================================ */
 export function renderCarouselsStudio() {
   const b = store.bundle;
@@ -621,7 +976,7 @@ export function renderCarouselsStudio() {
       <div class="page-head">
         <div>
           <h1 class="page-title">Carousel Studio</h1>
-          <p class="page-desc">Design crisp 1080&times;1350 slide decks with Swiss &amp; editorial typography, custom brand colors, slide photos, and PNG export.</p>
+          <p class="page-desc">Generate multi-slide educational decks with AI, restyle with 16 Swiss &amp; editorial presets, and export 1080&times;1350 PNG slides.</p>
         </div>
         <div class="head-actions">
           <button class="btn" id="btn-export-slide-png">${icon("download", 15)} Export Slide PNG</button>
@@ -629,10 +984,10 @@ export function renderCarouselsStudio() {
         </div>
       </div>
 
-      <!-- Generate New Deck Bar -->
-      <form id="form-generate-carousel" class="card card-pad" style="margin-bottom:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+      <!-- AI Multi-Slide Deck Generator Bar -->
+      <form id="form-generate-carousel" class="card card-pad" style="margin-bottom:18px;border-color:var(--brand-border);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
         <div class="field" style="flex:1;min-width:240px;">
-          <label class="field-label">New Deck Topic</label>
+          <label class="field-label">${icon("wand", 13)} AI Carousel Deck Topic</label>
           <input class="input" name="prompt" required placeholder="e.g., 7 spacing & hierarchy rules that make interfaces feel calm" />
         </div>
         <div class="field" style="width:190px;">
@@ -641,18 +996,17 @@ export function renderCarouselsStudio() {
             ${b.themes.map((t) => `<option value="${escHtml(t.id)}" ${t.id === theme.id ? "selected" : ""}>${escHtml(t.name)}</option>`).join("")}
           </select>
         </div>
-        <div class="field" style="width:110px;">
-          <label class="field-label">Slides</label>
+        <div class="field" style="width:115px;">
+          <label class="field-label">Slide Count</label>
           <select class="select" name="slideCount">
             ${[4, 5, 6, 7, 8].map((n) => `<option value="${n}" ${n === 5 ? "selected" : ""}>${n} slides</option>`).join("")}
           </select>
         </div>
-        <button class="btn btn-primary" type="submit">${icon("plus", 15)} Create Deck</button>
+        <button class="btn btn-primary" type="submit">${icon("wand", 15)} Generate AI Deck</button>
       </form>
 
       ${deck ? `
         <div class="studio-grid">
-          <!-- Left Rail: Saved Decks + Slide List -->
           <div style="display:flex;flex-direction:column;gap:14px;">
             <div class="card card-pad">
               <div class="field-label" style="margin-bottom:8px;">Saved Decks (${b.carousels.length})</div>
@@ -682,12 +1036,11 @@ export function renderCarouselsStudio() {
             </div>
           </div>
 
-          <!-- Center Stage: Live 1080x1350 Slide Preview -->
           <div class="slide-canvas-stage">
             <div id="carousel-live-card" class="slide-card-preview"
                  data-bg="${escHtml(bg)}" data-fg="${escHtml(fg)}" data-accent="${escHtml(accent)}"
                  style="background:${escHtml(bg)};color:${escHtml(fg)};text-align:${slide.align === "center" ? "center" : "left"};">
-              <div style="display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:650;">
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:600;">
                 <span style="padding:3px 9px;border-radius:999px;border:1px solid currentColor;opacity:0.75;">${escHtml(slide.badge || "SLIDE")}</span>
                 <span class="mono">${slideIdx + 1} / ${deck.slides.length}</span>
               </div>
@@ -698,9 +1051,9 @@ export function renderCarouselsStudio() {
                 </div>
               ` : ""}
 
-              <div style="my:auto;">
+              <div>
                 <div style="width:32px;height:3px;background:${escHtml(accent)};border-radius:2px;margin:${slide.align === "center" ? "0 auto 14px" : "0 0 14px"};"></div>
-                <div style="font-family:var(--font-display);font-weight:780;font-size:25px;line-height:1.15;letter-spacing:-0.03em;margin-bottom:12px;">
+                <div style="font-family:var(--font-display);font-weight:700;font-size:25px;line-height:1.15;letter-spacing:-0.03em;margin-bottom:12px;">
                   ${escHtml(slide.headline)}
                 </div>
                 <p style="font-size:13.5px;line-height:1.58;opacity:0.84;">
@@ -720,7 +1073,6 @@ export function renderCarouselsStudio() {
             </div>
           </div>
 
-          <!-- Right Inspector: Edit Copy, Theme Preset, Custom Hex Colors & Photo -->
           <div class="card card-pad" style="display:flex;flex-direction:column;gap:13px;">
             <div class="card-title">Slide ${slideIdx + 1} Inspector</div>
 
@@ -755,7 +1107,7 @@ export function renderCarouselsStudio() {
               <textarea class="textarea" id="car-slide-body" rows="3">${escHtml(slide.body || "")}</textarea>
             </div>
 
-            <label class="btn btn-sm" style="justify-content:center;">
+            <label class="btn btn-sm" style="justify-content:center;cursor:pointer;">
               ${icon("image", 14)} Upload Photo onto Slide ${slideIdx + 1}
               <input type="file" id="car-slide-photo" accept="image/*" style="display:none;" />
             </label>

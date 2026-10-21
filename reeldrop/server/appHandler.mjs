@@ -19,8 +19,12 @@ import { CAROUSEL_THEMES } from "../config/themes.js";
 import { FREE_TOOLS_CATALOG } from "../config/freeToolsCatalog.js";
 import {
   generateCaptions,
+  generateFullAiPostPack,
+  rewriteCaptionWithAi,
+  generateWorkflowFromPrompt,
   generateCarouselSlides,
   generateAiDmReply,
+  summarizeInboxThread,
   analyzeHashtagDensity
 } from "./aiEngine.mjs";
 import {
@@ -450,7 +454,8 @@ export async function handleApiOrMcpRequest(req, res) {
       caption: body.caption || "",
       hashtags: body.hashtags || "",
       first_comment: body.firstComment || "",
-      media_url: body.mediaUrl || "",
+      media_url: body.mediaUrl || `/media/post-${String((state.posts.length % 11) + 1).padStart(2, "0")}.svg`,
+      media_fit: body.mediaFit || "cover",
       slides_media_json: JSON.stringify(body.slidesMedia || []),
       cover_style: body.coverStyle || "noir",
       cover_label: (body.coverLabel || body.title || "NEW POST").slice(0, 36).toUpperCase(),
@@ -625,6 +630,57 @@ export async function handleApiOrMcpRequest(req, res) {
 
   if (pathname === "/api/ai/hashtags" && req.method === "POST") {
     sendJson(res, 200, analyzeHashtagDensity(body.text || ""));
+    return true;
+  }
+
+  if (pathname === "/api/ai/post-pack" && req.method === "POST") {
+    const ws = state.workspaces.find((w) => w.id === body.workspaceId) || state.workspaces[0];
+    ws.ai_captions_used = (ws.ai_captions_used || 0) + 1;
+    saveState();
+    const pack = generateFullAiPostPack({ ...body, igHandle: ws.ig_handle });
+    sendJson(res, 200, { pack, bundle: getWorkspaceBundle(ws.id) });
+    return true;
+  }
+
+  if (pathname === "/api/ai/rewrite" && req.method === "POST") {
+    const rewritten = rewriteCaptionWithAi(body);
+    sendJson(res, 200, { caption: rewritten });
+    return true;
+  }
+
+  if (pathname === "/api/ai/workflow-from-prompt" && req.method === "POST") {
+    const ws = state.workspaces.find((w) => w.id === (body.workspaceId || "ws_maya")) || state.workspaces[0];
+    const draft = generateWorkflowFromPrompt({ prompt: body.prompt, igHandle: ws.ig_handle });
+    if (body.createImmediately !== false) {
+      state.automations.unshift({
+        id: "auto_" + crypto.randomUUID().slice(0, 8),
+        workspace_id: ws.id,
+        name: draft.name,
+        status: "active",
+        trigger_type: draft.trigger_type,
+        post_target: "all_posts",
+        target_post_id: null,
+        keywords_json: JSON.stringify(draft.keywords),
+        public_reply_enabled: draft.public_reply_enabled ? 1 : 0,
+        public_reply_variants_json: JSON.stringify(draft.public_reply_variants),
+        follow_gate_enabled: draft.follow_gate_enabled ? 1 : 0,
+        follow_gate_message: draft.follow_gate_message || "",
+        opening_card_enabled: 0,
+        opening_card_text: "",
+        opening_button_label: "Get Link",
+        dm_message: draft.dm_message,
+        buttons_json: JSON.stringify(draft.buttons),
+        followup_enabled: draft.followup_enabled ? 1 : 0,
+        followup_delay: draft.followup_delay || "2h",
+        followup_message: draft.followup_message || "",
+        ai_prompt: "",
+        dms_sent: 0,
+        link_taps: 0,
+        created_at: new Date().toISOString()
+      });
+      saveState();
+    }
+    sendJson(res, 200, { workflowDraft: draft, bundle: getWorkspaceBundle(ws.id) });
     return true;
   }
 
@@ -906,12 +962,13 @@ export async function handleApiOrMcpRequest(req, res) {
   }
 
   if (pathname === "/api/inbox/ai-suggest" && req.method === "POST") {
-    const { threadId } = body;
+    const { threadId, tone = "helpful" } = body;
     const t = state.inbox_threads.find((x) => x.id === threadId);
     const msgs = state.inbox_messages.filter((m) => m.thread_id === threadId);
     const lastMsg = msgs[msgs.length - 1];
     sendJson(res, 200, {
-      draft: generateAiDmReply({ userMessage: lastMsg?.body || "", handle: t?.participant_handle || "creator" })
+      draft: generateAiDmReply({ userMessage: lastMsg?.body || "", tone, handle: t?.participant_handle || "creator" }),
+      summary: summarizeInboxThread({ messages: msgs, handle: t?.participant_handle || "creator" })
     });
     return true;
   }
