@@ -1632,8 +1632,14 @@ html[data-theme="dark"] .phone-frame {
   border-radius: 14px;
   font-size: 13.5px;
   line-height: 1.5;
-  white-space: pre-wrap;
+  white-space: normal;
   word-break: break-word;
+}
+
+@media (max-width: 960px) {
+  .launch-theatre-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 .bubble.is-them {

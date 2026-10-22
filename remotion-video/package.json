@@ -1,0 +1,22 @@
+{
+  "name": "velora-remotion-reel",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.js --ip 0.0.0.0 --port 3090",
+    "render": "AWS_EXECUTION_ENV=AWS_Lambda_nodejs20.x LD_LIBRARY_PATH=/tmp/al2023/lib node scripts/render-reel.mjs"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.537",
+    "@remotion/cli": "^4.0.537",
+    "@remotion/player": "^4.0.537",
+    "@remotion/renderer": "^4.0.537",
+    "@remotion/transitions": "^4.0.537",
+    "@sparticuz/chromium": "^153.0.0",
+    "playwright-core": "^1.64.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.537"
+  }
+}

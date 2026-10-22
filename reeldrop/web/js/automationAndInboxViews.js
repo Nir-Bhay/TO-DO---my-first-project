@@ -129,7 +129,7 @@ export function renderAutomations() {
                       ${escHtml(a.dm_message || a.ai_prompt)}
                       ${(a.buttons || []).length ? `
                         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
-                          ${a.buttons.map((btn) => `<span class="badge badge-brand">${escHtml(btn.label)} &rarr;</span>`).join("")}
+                          ${a.buttons.map((btn) => `<span class="badge badge-brand">${escHtml(btn.label)} <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></span>`).join("")}
                         </div>
                       ` : ""}
                     </div>
@@ -199,7 +199,7 @@ export function renderAutomations() {
                         <div>${escHtml(m.text)}</div>
                         ${(m.buttons || []).map((btn) => `
                           <div style="margin-top:8px;padding:7px 10px;border-radius:8px;background:#4F46E5;color:#FFFFFF;text-align:center;font-weight:600;font-size:12px;">
-                            ${escHtml(btn.label)} &rarr;
+                            ${escHtml(btn.label)} <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg>
                           </div>
                         `).join("")}
                       </div>
@@ -353,8 +353,8 @@ export function renderInbox() {
                     <div style="font-weight:600;font-size:14px;">${escHtml(activeThread.participant_name)} <span style="color:var(--ink-muted);font-weight:400;">@${escHtml(activeThread.participant_handle)}</span></div>
                     <div style="font-size:11.5px;color:var(--ink-muted);">
                       ${activeThread.windowOpen
-                        ? `<span style="color:var(--success);">&#9679;</span> 24h Meta reply window active (${activeThread.windowHoursRemaining}h left)`
-                        : `<span style="color:var(--warning);">&#9679;</span> 24h window closed — simulate incoming message to re-open`}
+                        ? `<span style="color:var(--success);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;vertical-align:1px;margin-right:3px;"></span></span> 24h Meta reply window active (${activeThread.windowHoursRemaining}h left)`
+                        : `<span style="color:var(--warning);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;vertical-align:1px;margin-right:3px;"></span></span> 24h window closed — simulate incoming message to re-open`}
                     </div>
                   </div>
                 </div>
@@ -384,7 +384,7 @@ export function renderInbox() {
                     <div>${escHtml(m.body)}</div>
                     ${(m.buttons || []).map((btn) => `
                       <a href="${escHtml(btn.url)}" target="_blank" rel="noopener" style="display:block;margin-top:8px;padding:6px 10px;border-radius:7px;background:rgba(255,255,255,0.16);text-align:center;font-size:12px;font-weight:600;">
-                        ${escHtml(btn.label)} &rarr;
+                        ${escHtml(btn.label)} <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg>
                       </a>
                     `).join("")}
                   </div>
@@ -655,7 +655,7 @@ export function renderSettings() {
                 : `<span class="badge badge-warning">Not Connected</span>`}
             </div>
             <p style="font-size:13px;color:var(--ink-secondary);line-height:1.55;">
-              Configure these URLs inside <code class="mono">developers.facebook.com</code> &rarr; Your Business App &rarr; Instagram API with Instagram Login:
+              Configure these URLs inside <code class="mono">developers.facebook.com</code> <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg> Your Business App <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg> Instagram API with Instagram Login:
             </p>
             <div class="field">
               <label class="field-label">OAuth Redirect URI</label>

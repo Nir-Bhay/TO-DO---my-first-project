@@ -113,7 +113,7 @@ export function renderOverview() {
                 <div style="font-weight:600;font-size:14px;margin:4px 0;">Compose Your First Post</div>
                 <p style="font-size:12px;color:var(--ink-muted);">Upload any image/MP4, crop to 4:5 or 9:16, or generate a full post pack with AI.</p>
               </div>
-              <a href="/app/create" data-link class="btn btn-sm">Open Composer &rarr;</a>
+              <a href="/app/create" data-link class="btn btn-sm">Open Composer <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></a>
             </div>
             <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
               <div>
@@ -121,7 +121,7 @@ export function renderOverview() {
                 <div style="font-weight:600;font-size:14px;margin:4px 0;">Activate Keyword DM Rule</div>
                 <p style="font-size:12px;color:var(--ink-muted);">Auto-send links on comments &amp; Story replies with public reply rotation.</p>
               </div>
-              <a href="/app/automations" data-link class="btn btn-sm">Create Rule &rarr;</a>
+              <a href="/app/automations" data-link class="btn btn-sm">Create Rule <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></a>
             </div>
             <div class="card card-pad" style="background:var(--bg-page);display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
               <div>
@@ -129,7 +129,7 @@ export function renderOverview() {
                 <div style="font-weight:600;font-size:14px;margin:4px 0;">Connect Claude / Cursor MCP</div>
                 <p style="font-size:12px;color:var(--ink-muted);">Point any MCP client at <code class="mono">/mcp</code> to run all 58 studio tools.</p>
               </div>
-              <a href="/app/settings" data-link class="btn btn-sm">MCP Settings &rarr;</a>
+              <a href="/app/settings" data-link class="btn btn-sm">MCP Settings <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></a>
             </div>
           </div>
         </div>
@@ -225,7 +225,7 @@ export function renderOverview() {
             <div>
               ${b.automations.length === 0 ? `
                 <div style="padding:22px 18px;text-align:center;font-size:12.5px;color:var(--ink-muted);">
-                  No keyword workflows active yet. <a href="/app/automations" data-link style="color:var(--brand);font-weight:600;">Create first rule &rarr;</a>
+                  No keyword workflows active yet. <a href="/app/automations" data-link style="color:var(--brand);font-weight:600;">Create first rule <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></a>
                 </div>
               ` : b.automations.slice(0, 3).map((a) => {
                 const ctr = a.dms_sent ? ((a.link_taps / a.dms_sent) * 100).toFixed(1) : "0.0";
@@ -682,7 +682,7 @@ export function renderCreatePost() {
                   <div style="min-width:0;">
                     <div style="display:flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:#09090B;">
                       <span>${escHtml(ws.ig_handle)}</span>
-                      <span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#3B82F6;color:#FFFFFF;align-items:center;justify-content:center;font-size:8.5px;">&#10003;</span>
+                      <span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#3B82F6;color:#FFFFFF;align-items:center;justify-content:center;font-size:8.5px;"><svg width="8.5" height="8.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 6.4l2.5 2.5L9.8 3.6"/></svg></span>
                     </div>
                     <div id="preview-location-text" style="font-size:10.5px;color:#64748B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                       ${escHtml(ui.composerLocation || "Bengaluru · Studio")}
@@ -797,9 +797,9 @@ export function renderCalendar() {
               <span class="badge">Drag &amp; Drop Enabled</span>
             </div>
             <div style="display:flex;gap:12px;font-size:12px;color:var(--ink-muted);">
-              <span><span style="color:var(--info);">&#9679;</span> Scheduled</span>
-              <span><span style="color:var(--success);">&#9679;</span> Published</span>
-              <span><span style="color:var(--danger);">&#9679;</span> Needs Attention</span>
+              <span><span style="color:var(--info);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;vertical-align:1px;margin-right:3px;"></span></span> Scheduled</span>
+              <span><span style="color:var(--success);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;vertical-align:1px;margin-right:3px;"></span></span> Published</span>
+              <span><span style="color:var(--danger);"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;vertical-align:1px;margin-right:3px;"></span></span> Needs Attention</span>
             </div>
           </div>
           <div class="cal-scroll-wrap">
@@ -842,7 +842,7 @@ export function renderCalendar() {
               ${filteredPosts.length === 0 ? `
                 <tr>
                   <td colspan="7" style="text-align:center;padding:38px 20px;color:var(--ink-muted);">
-                    No scheduled or published posts in this workspace yet. <a href="/app/create" data-link style="color:var(--brand);font-weight:600;">Create your first post &rarr;</a>
+                    No scheduled or published posts in this workspace yet. <a href="/app/create" data-link style="color:var(--brand);font-weight:600;">Create your first post <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></a>
                   </td>
                 </tr>
               ` : filteredPosts.map((p, idx) => `
@@ -996,7 +996,7 @@ export function renderGridPlanner() {
                     <div style="font-size:12px;font-weight:700;line-height:1.25;">${escHtml(p.title.slice(0, 44))}</div>
                     ${p.status === "PUBLISHED" ? `
                       <div style="display:flex;gap:10px;font-size:11.5px;font-weight:600;">
-                        <span>&#9829; ${fmtNum(p.likes)}</span>
+                        <span><svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="display:inline-block;vertical-align:-1px;"><path d="M8 14s-5.5-3.4-5.5-7.4A3.1 3.1 0 0 1 8 4.5a3.1 3.1 0 0 1 5.5 2.1C13.5 10.6 8 14 8 14z"/></svg> ${fmtNum(p.likes)}</span>
                         <span>&middot; ${fmtNum(p.comments_count)} replies</span>
                         <span>&middot; ${saveRate}% saves</span>
                       </div>
@@ -1204,7 +1204,7 @@ export function renderCarouselsStudio() {
 
               <div style="display:flex;align-items:center;justify-content:space-between;font-size:11.5px;opacity:0.68;padding-top:12px;border-top:1px solid rgba(128,128,128,0.22);">
                 <span>@${escHtml(b.activeWorkspace.ig_handle)}</span>
-                <span>Swipe &rarr;</span>
+                <span>Swipe <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></span>
               </div>
             </div>
 

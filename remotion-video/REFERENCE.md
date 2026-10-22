@@ -1,0 +1,15 @@
+# Motion Engineering Reference & Research Audit — Velora Studio v2.0 (60 FPS Kinetic Edition)
+
+## 1. Critique of v1.0 Pass & Root-Cause Diagnosis
+User review of v1.0 (`30fps`, isolated static cards with plain crossfades) identified four concrete experiential gaps:
+1. **Low Temporal Fluidity (`30 FPS`)**: Fast UI springs, cursor arcs, and typography entrances stepped visibly between frames compared to modern `60 FPS` Apple / Linear / Raycast product launch films.
+2. **Slide-Deck Feel (`Static Screen + Plain Opacity Cut`)**: Isolated scenes fading slowly with zero inter-scene velocity, zero camera depth travel, and polite sine tones felt like separate presentation slides rather than one continuous motion film.
+3. **Slow Cold Opening (`0.0s – 5.0s`)**: Opening immediately on a quiet static dashboard lacked a punchy kinetic problem-solution hook and musical beat drop.
+4. **Live App Glyph & Snapshot Footprint Audit**: Inspecting live `2x` headless Chromium captures (`3200×1920`) uncovered Unicode arrow/key entities (`&rarr;`, `&#8984;K`, `&#10003;`, `&#9679;`) and `.bubble` whitespace wrapping, which were converted to crisp inline SVGs across all frontend modules; assets use compact WebP (`quality: 90`), `192 kbps` stereo `.m4a` stems, single-copy `crf: 23` `60fps` MP4 masters, and clean root symlinks (`< 15 MB` total repository footprint).
+
+## 2. Production Research Synthesis (`Vincentwei1021/video-shotcraft` + `Remocn/remocn`)
+- **`60 FPS` + Apple/Linear Curves (`Remocn/launch-anything/motion.ts`)**: Rendered natively at **`60 FPS` (`1,440 frames = 24.000s`)** with `SETTLE_EASE = Easing.bezier(0.16, 1, 0.3, 1)` and `WHIP_EASE = Easing.bezier(0.65, 0, 0.25, 1)`.
+- **Shared-Geometry Button-to-Portal Morph (`launch-anything` `ActionFrame`)**: Act 1 delivers high-contrast dark-obsidian kinetic stomps (`Beat 0`, `Beat 2`, `Beat 4`), clicks `[ Enter Live Studio -> ]` at `F195`, and expands the button itself into the live 3D studio right on the **Bar-3 Tech-House Bass Drop at `F240` (`4.000s`)**.
+- **True `@remotion/transitions` `TransitionSeries` with Mid-Whip Shutter Blur (`Remocn/a1-product-demo/foundation.tsx`)**: Every scene boundary uses a distinct `24–26 frame` (`0.40s`) motion-graphics presentation (`opticalIrisPortal`, `velocityWhipPush("left")`, `cameraCraneWhip`, `velocityWhipPush("right")`, `diagonalShutterPrism`) with directional blur peaking at `progress = 0.5`.
+- **2.5D Perspective Camera Over Real `3200×1920` Live App Textures (`video-shotcraft` `PageCam2D`)**: Real `2x` captures (`screen-create.webp`, `screen-automations.webp` -> `screen-automations-sent.webp`, `screen-grid.webp`, `screen-inbox.webp` -> `screen-empty.webp`) glide continuously in `perspective(1550px)` 3D windows while foreground cards hold readably.
+- **Measured `120.000 BPM` Beat Grid & Sample-Aligned Studio Foley (`video-shotcraft` `music-beat-sync.md`)**: `bgm-tech-house.mp3` (`123.99 BPM`) resampled by `123.99 / 120.00` locks every kick drum to exact `30-frame` (`0.500s`) boundaries at `60 FPS`, with trimmed foley peaks within `<= 1.7 frames`.

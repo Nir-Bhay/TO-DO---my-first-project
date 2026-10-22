@@ -7,8 +7,10 @@ export function renderMarketingNavbar(activePath = "/") {
   const isEmptyMode = store.bundle?.dataMode === "empty";
   return `
     <div style="background:var(--bg-inverse);color:var(--ink-inverse);font-size:12.5px;padding:8px 16px;text-align:center;border-bottom:1px solid var(--border);">
-      <span style="font-weight:600;">Velora Studio 3.0</span> &mdash; AI Post Co-Pilot, Smart Image Crop Studio, Live Stats Profile Grid &amp; 58-Tool MCP API &middot;
-      <a href="/app/overview" data-link style="color:#A5B4FC;font-weight:700;margin-left:6px;text-decoration:underline;">Open Live Studio &rarr;</a>
+      <span style="font-weight:600;">Velora Studio 3.0</span> &mdash; 60 FPS Official Launch Film, Smart 4:5 Studio &amp; 58-Tool MCP API &middot;
+      <a href="/launch" data-link style="color:#93C5FD;font-weight:700;margin-left:6px;text-decoration:underline;">Watch 60 FPS Launch Film</a>
+      &middot;
+      <a href="/app/overview" data-link style="color:#A5B4FC;font-weight:700;margin-left:6px;text-decoration:underline;">Open Live Studio</a>
     </div>
     <header class="mkt-nav">
       <div class="mkt-nav-inner">
@@ -16,6 +18,7 @@ export function renderMarketingNavbar(activePath = "/") {
           <a href="/" data-link>${brandLogo(true)}</a>
           <nav class="mkt-links" aria-label="Main Navigation">
             <a href="/" data-link class="mkt-link ${activePath === "/" ? "is-active" : ""}">Product</a>
+            <a href="/launch" data-link class="mkt-link ${activePath === "/launch" ? "is-active" : ""}">Launch Film</a>
             <a href="/pricing" data-link class="mkt-link ${activePath === "/pricing" ? "is-active" : ""}">Pricing</a>
             <a href="/tools" data-link class="mkt-link ${activePath.startsWith("/tools") ? "is-active" : ""}">Creator Tools</a>
             <a href="/partners" data-link class="mkt-link ${activePath === "/partners" ? "is-active" : ""}">Partners</a>
@@ -219,7 +222,7 @@ export function renderHeroShowcaseMain() {
                 <div style="font-family:var(--font-display);font-weight:700;font-size:17px;line-height:1.22;margin-bottom:8px;">${h}</div>
                 <p style="font-size:12.5px;opacity:0.82;line-height:1.5;">${body}</p>
               </div>
-              <div style="font-size:11px;opacity:0.62;">@maya.studio &rarr;</div>
+              <div style="font-size:11px;opacity:0.62;">@maya.studio <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></div>
             </div>
           `).join("")}
         </div>
@@ -264,7 +267,7 @@ export function renderHeroShowcaseMain() {
                 Confirmed 60s workflow walkthrough + 2 Story link frames. Contract draft scheduled for Friday 11:00 AM.
               </div>
             </div>
-            <a href="/app/inbox" data-link class="btn btn-sm" style="width:100%;">Open Full CRM Thread &rarr;</a>
+            <a href="/app/inbox" data-link class="btn btn-sm" style="width:100%;">Open Full CRM Thread <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></a>
           </div>
         </div>
       </div>
@@ -303,7 +306,7 @@ export function renderHeroShowcaseMain() {
     <div class="pane-crossfade" style="padding:24px 26px;height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
       <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
         <div>
-          <div style="font-weight:700;font-size:16px;">Interactive Keyword &rarr; Instant Messenger DM</div>
+          <div style="font-weight:700;font-size:16px;">Interactive Keyword <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg> Instant Messenger DM</div>
           <div style="font-size:13px;color:var(--ink-muted);">Click a scenario below to preview how Velora handles comments, follow gates, and Story replies</div>
         </div>
         <div class="segmented" style="flex-wrap:wrap;">
@@ -348,7 +351,7 @@ export function renderHeroShowcaseMain() {
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink-muted);" class="tabular">
             <span>${escHtml(cur.stats)}</span>
-            <a href="/app/automations" data-link style="color:var(--brand);font-weight:600;white-space:nowrap;">Open Builder &rarr;</a>
+            <a href="/app/automations" data-link style="color:var(--brand);font-weight:600;white-space:nowrap;">Open Builder <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></a>
           </div>
         </div>
       </div>
@@ -554,7 +557,10 @@ export function renderLandingPage() {
               <a href="/app/overview" data-link class="btn btn-primary btn-lg" style="height:48px;padding:0 26px;font-size:15px;">
                 Explore Live Studio ${icon("arrowRight", 16)}
               </a>
-              <a href="/sign-up" data-link class="btn btn-lg" style="height:48px;padding:0 24px;font-size:15px;">
+              <a href="/launch" data-link class="btn btn-lg" style="height:48px;padding:0 24px;font-size:15px;">
+                ${icon("play", 15)} Watch 60 FPS Launch Film
+              </a>
+              <a href="/sign-up" data-link class="btn btn-ghost btn-lg" style="height:48px;padding:0 20px;font-size:15px;">
                 Create Free Account
               </a>
               <a href="/tools" data-link class="btn btn-ghost btn-lg" style="height:48px;">
@@ -684,7 +690,7 @@ export function renderLandingPage() {
               </div>
               <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink-primary);font-weight:600;">
                 <span>1 workspace &middot; Zero per-DM fees</span>
-                <a href="/app/overview" data-link style="color:var(--brand);">Open Live Studio &rarr;</a>
+                <a href="/app/overview" data-link style="color:var(--brand);">Open Live Studio <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg></a>
               </div>
             </div>
           </div>
@@ -775,7 +781,7 @@ export function renderLandingPage() {
                       <div>
                         <div style="display:flex;align-items:center;gap:4px;font-weight:700;font-size:13px;color:#09090B;">
                           <span>maya.studio</span>
-                          <span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#3B82F6;color:#FFFFFF;align-items:center;justify-content:center;font-size:9px;">&#10003;</span>
+                          <span style="display:inline-flex;width:13px;height:13px;border-radius:50%;background:#3B82F6;color:#FFFFFF;align-items:center;justify-content:center;font-size:9px;"><svg width="8.5" height="8.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 6.4l2.5 2.5L9.8 3.6"/></svg></span>
                         </div>
                         <div style="font-size:10.5px;color:#059669;font-weight:600;">Active now &middot; Official Messenger API</div>
                       </div>
@@ -874,7 +880,7 @@ export function renderLandingPage() {
           <div class="mkt-sec-head-center">
             <h2 class="mkt-h2">Nine tightly integrated tools. One fast keyboard-first workspace.</h2>
             <p style="font-size:15.5px;color:var(--ink-secondary);">
-              Press <kbd class="kbd">&#8984;K</kbd> anywhere inside Velora to jump between modules, switch brand accounts, or run the publishing queue worker in milliseconds.
+              Press <kbd class="kbd">Ctrl K</kbd> anywhere inside Velora to jump between modules, switch brand accounts, or run the publishing queue worker in milliseconds.
             </p>
           </div>
 
@@ -1212,9 +1218,256 @@ export function renderAuthPage(mode = "sign-in") {
           ${isSignUp
             ? `<span>Already have an account? <a href="/sign-in" data-link style="color:var(--ink-primary);font-weight:600;">Sign in</a></span>`
             : `<span>New here? <a href="/sign-up" data-link style="color:var(--ink-primary);font-weight:600;">Create account</a></span>`}
-          <a href="/app/overview" data-link style="color:var(--brand);font-weight:600;">Instant Demo &rarr;</a>
+          <a href="/app/overview" data-link style="color:var(--brand);font-weight:600;">Instant Demo</a>
         </div>
       </div>
+    </main>
+    ${renderMarketingFooter()}
+  `;
+}
+
+/* ============================================================================
+   DEDICATED 60 FPS PRODUCT DEMO & OFFICIAL LAUNCH FILM SHOWCASE PAGE (/launch)
+   ============================================================================ */
+export function renderLaunchPage() {
+  const fmt = store.ui.launchVideoFormat || "16x9";
+  const copyTab = store.ui.launchCopyTab || "client";
+  const showSpec = Boolean(store.ui.launchShowBriefSpec);
+  const isWide = fmt === "16x9";
+
+  const chapters = [
+    { sec: 0, frames: "F000 – F264", time: "00:00", title: "01 · Kinetic Hook & Portal Drop", desc: "Beat-locked 60fps kinetic stomps + shared-geometry button morphing into full studio on the 4.0s bass drop." },
+    { sec: 4.1, frames: "F240 – F534", time: "00:04.1", title: "02 · Live 4:5 Safe Crop Studio", desc: "2.5D camera glides across live Create Post UI as Smart Fit locks 1080x1350 with zero edge clipping." },
+    { sec: 8.6, frames: "F510 – F810", time: "00:08.6", title: "03 · Comment -> 0.8s Meta DM", desc: "Velocity shutter-blur whip into live DM Workflows morphing unsent -> sent Messenger card + 76.1% CTR roll." },
+    { sec: 13.2, frames: "F786 – F1050", time: "00:13.2", title: "04 · 3D Profile Grid Tile Swap", desc: "Camera crane transition into live 3x3 4:5 Grid Planner with mid-air floating schedule swap." },
+    { sec: 17.2, frames: "F1026 – F1266", time: "00:17.2", title: "05 · CRM, 58 MCP & Optical Mode Scan", desc: "Live laser scanline wipes With Data directly into clean Without Data OAuth mode + 58 MCP tools." },
+    { sec: 20.8, frames: "F1240 – F1439", time: "00:20.8", title: "06 · Bento Orbit & Seamless Loop", desc: "Diagonal prism wipe into 4-screen orbit convergence + Hero Brand Lockup (loops seamlessly into 00:00)." }
+  ];
+
+  const copyPresets = {
+    client: `Hi — sharing our Official 60 FPS Launch Film (24s, beat-synced at 120 BPM) for Velora Studio v3.0, our Official Instagram Graph & Messenger publishing platform.
+
+In 24 seconds at silky 60fps it demonstrates live 2x Retina workflows:
+1. Kinetic Problem-to-Portal Hook -> Automatic 4:5 Safe-Fit image cropping (zero cut-off screenshots)
+2. Keyword Comment ("LINK") -> 0.8s Instant Official Meta Rich DM Card (76.1% CTR, zero bots)
+3. Mid-air drag-and-drop 4:5 Profile Grid Planner swap + live Views/Saves telemetry
+4. 58 Claude/Cursor Streamable HTTP MCP tools + 1-click laser scan switch between [ With Data ] & [ Without Data ]
+
+Watch both the 16:9 Client Demo & 9:16 Social Reel live at: ${location.origin}/launch`,
+    instagram: `Posting Reels daily — only to get cropped covers and buried comments?
+
+Meet Velora Studio v3.0 (60 FPS Official Launch Reel). One calm workspace to auto-fit 4:5 covers, plan your visual grid in 3D, run 58 AI MCP tools, and fire instant Official Meta DMs in 0.8 seconds.
+
+Comment "LINK" below to test instant Official API delivery!
+
+#BuildInPublic #MotionDesign #Remotion #SaaS #ProductLaunch #CreatorEconomy #WebDev #60FPS`,
+    linkedin: `Just shipped the v2.0 60 FPS Kinetic Launch Film for Velora Studio — engineered programmatically in React + Remotion at 1920x1080 & 1080x1920 (60fps, beat-locked to 120.000 BPM = exact 30 frames/beat).
+
+Motion & engineering highlights:
+- Shared-geometry portal expansion morphing the CTA pill directly into the live 3200x1920 Retina app on the Bar-3 drop
+- Custom @remotion/transitions presentations with mid-whip directional shutter blur, optical circular iris portals & diagonal prism wipes
+- Continuous 2.5D perspective camera glides + live optical scan-wipe between [ With Data ] and [ Without Data ] OAuth states
+- Sample-trimmed stereo foley stems synced within <= 1.7 frames of every UI press and transition peak
+
+Watch the interactive 60fps player & download both masters at: ${location.origin}/launch`
+  };
+
+  return `
+    ${renderMarketingNavbar("/launch")}
+    <main class="stage-animate">
+      <section class="mkt-section" style="padding:52px 0 64px;border-bottom:1px solid var(--border-subtle);">
+        <div class="mkt-container">
+          <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:28px;">
+            <div style="max-width:680px;">
+              <h1 class="mkt-h1" style="text-align:left;font-size:clamp(30px,4vw,46px);margin:0 0 10px;">
+                Product Walkthrough &amp; Official 60 FPS Launch Film
+              </h1>
+              <p style="font-size:16px;color:var(--ink-secondary);line-height:1.6;margin:0;">
+                Engineered at silky <strong>60 FPS &middot; 120 BPM Beat-Sync (24s)</strong> with shared-geometry portal morphs, velocity shutter-blur transitions, and live 2x Retina Studio captures — ready for client demos (<strong>16:9</strong>) and social publishing (<strong>9:16</strong>).
+              </p>
+            </div>
+
+            <div class="segmented" role="tablist" aria-label="Video Aspect Ratio Format">
+              <button type="button" class="seg-btn ${isWide ? "is-active" : ""}" data-launch-format="16x9">
+                16:9 Client Demo (1920&times;1080 &middot; 60fps)
+              </button>
+              <button type="button" class="seg-btn ${!isWide ? "is-active" : ""}" data-launch-format="9x16">
+                9:16 Social Reel (1080&times;1920 &middot; 60fps)
+              </button>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:${isWide ? "1fr" : "minmax(0,390px) minmax(0,1fr)"};gap:28px;align-items:start;" class="launch-theatre-grid">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+              <div style="width:100%;${isWide ? "" : "max-width:368px;"}padding:${isWide ? "14px" : "12px"};border-radius:${isWide ? "26px" : "38px"};background:linear-gradient(180deg,#FFFFFF 0%,#EEF2F7 100%);border:2px solid var(--border-strong);box-shadow:0 28px 70px rgba(15,23,42,0.10);">
+                <div style="border-radius:${isWide ? "16px" : "28px"};overflow:hidden;border:1px solid var(--border-subtle);background:#050914;aspect-ratio:${isWide ? "16/9" : "9/16"};">
+                  <video
+                    id="velora-main-reel-video"
+                    src="${isWide ? "/media/velora-launch-demo-16x9.mp4" : "/media/velora-social-reel-9x16.mp4"}"
+                    poster="${isWide ? "/media/velora-launch-poster-16x9.png" : "/media/velora-intro-poster.png"}"
+                    controls
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    style="width:100%;height:100%;object-fit:cover;display:block;"
+                  ></video>
+                </div>
+              </div>
+
+              <div style="width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-radius:16px;background:var(--bg-surface);border:1px solid var(--border);">
+                <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                  <button type="button" class="btn btn-primary" id="btn-unmute-reel">
+                    ${icon("play", 15)} Unmute &amp; Play with Sound
+                  </button>
+                  <a href="/download/velora-launch-demo-16x9.mp4" download="velora-launch-demo-1920x1080-60fps.mp4" class="btn">
+                    ${icon("download", 15)} Download 16:9 Client MP4
+                  </a>
+                  <a href="/download/velora-social-reel-9x16.mp4" download="velora-social-reel-1080x1920-60fps.mp4" class="btn">
+                    ${icon("download", 15)} Download 9:16 Social Reel MP4
+                  </a>
+                </div>
+                <a href="/app/overview" data-link class="btn btn-ghost">
+                  Open Live Interactive Studio ${icon("arrowRight", 15)}
+                </a>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-family:var(--font-display);font-weight:700;font-size:17px;">
+                  Interactive Chapter Timeline (Click Any Scene to Jump)
+                </span>
+                <span class="mono" style="font-size:12px;color:var(--ink-muted);">60 FPS &middot; 120 BPM &middot; 1,440 Frames</span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(${isWide ? "3" : "1"},minmax(0,1fr));gap:12px;" class="equal-cards">
+                ${chapters.map((ch) => `
+                  <button
+                    type="button"
+                    data-seek-sec="${ch.sec}"
+                    class="card card-pad"
+                    style="text-align:left;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:8px;transition:border-color 140ms ease,transform 140ms ease;"
+                  >
+                    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                      <span class="badge badge-brand">${ch.time}</span>
+                      <span class="mono" style="font-size:11.5px;color:var(--ink-muted);">${ch.frames}</span>
+                    </div>
+                    <div>
+                      <div style="font-weight:700;font-size:14.5px;color:var(--ink-primary);margin-bottom:4px;">${ch.title}</div>
+                      <div style="font-size:12.5px;color:var(--ink-secondary);line-height:1.5;">${ch.desc}</div>
+                    </div>
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mkt-section" style="padding:60px 0;background:var(--bg-subtle);border-bottom:1px solid var(--border-subtle);">
+        <div class="mkt-container">
+          <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px;">
+            <div>
+              <h2 class="mkt-h2" style="text-align:left;margin:0 0 6px;">Approved Keyframe Stills</h2>
+              <p style="font-size:14.5px;color:var(--ink-secondary);margin:0;">
+                Click any keyframe below to jump directly to that moment in the 60 FPS player above — verified for 2-line max headlines, live 2x Retina studio textures, and &ge;42px cursor clearance.
+              </p>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
+            ${[
+              ["/media/still-01-opening.png", "Frame 156 · Kinetic Hook & Portal CTA", "2.6s", 2.1],
+              ["/media/still-02-crop-action.png", "Frame 390 · Live 2x Smart 4:5 Crop", "6.5s", 5.2],
+              ["/media/still-03-autadm-result.png", "Frame 660 · 0.8s Meta DM + 76.1% CTR", "11.0s", 9.6],
+              ["/media/still-04-closing-card.png", "Frame 1340 · 4-Screen Orbit Finale", "22.3s", 21.0]
+            ].map(([src, label, ts, seek]) => `
+              <div class="card" style="overflow:hidden;cursor:pointer;" data-seek-sec="${seek}">
+                <img src="${src}" alt="${escHtml(label)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;border-bottom:1px solid var(--border-subtle);" />
+                <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                  <span style="font-weight:600;font-size:13px;">${label}</span>
+                  <span class="mono" style="font-size:11.5px;color:var(--brand);font-weight:700;">${ts}</span>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </section>
+
+      <section class="mkt-section" style="padding:64px 0;">
+        <div class="mkt-container" style="display:flex;flex-direction:column;gap:28px;">
+          <div class="card card-pad" style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+              <div>
+                <h3 style="font-family:var(--font-display);font-size:20px;font-weight:700;margin:0;">
+                  Client Demo Pitch &amp; Social Media Publishing Copy
+                </h3>
+                <p style="font-size:13.5px;color:var(--ink-muted);margin:4px 0 0;">
+                  Switch channel preset and copy ready-to-send messaging alongside your downloaded 60 FPS MP4 video.
+                </p>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+                <div class="segmented">
+                  <button type="button" class="seg-btn ${copyTab === "client" ? "is-active" : ""}" data-copy-tab="client">Client Pitch</button>
+                  <button type="button" class="seg-btn ${copyTab === "instagram" ? "is-active" : ""}" data-copy-tab="instagram">Instagram / Shorts</button>
+                  <button type="button" class="seg-btn ${copyTab === "linkedin" ? "is-active" : ""}" data-copy-tab="linkedin">LinkedIn / X</button>
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-copy-reel-caption">
+                  ${icon("copy", 14)} Copy Text
+                </button>
+              </div>
+            </div>
+
+            <textarea id="social-reel-caption-box" class="textarea" rows="6" style="font-size:13.5px;line-height:1.6;">${escHtml(copyPresets[copyTab])}</textarea>
+          </div>
+
+          <div class="card" style="overflow:hidden;">
+            <button
+              type="button"
+              id="btn-toggle-brief-spec"
+              style="width:100%;padding:18px 22px;background:transparent;border:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer;text-align:left;"
+            >
+              <div>
+                <div style="font-family:var(--font-display);font-weight:700;font-size:16.5px;color:var(--ink-primary);">
+                  60 FPS Motion Engineering Brief &amp; Sample-Accurate Audio Cue Sheet (remotion-video/BRIEF.md)
+                </div>
+                <div style="font-size:13px;color:var(--ink-muted);margin-top:2px;">
+                  Click to ${showSpec ? "collapse" : "inspect"} exact 60fps global frame numbers, shutter-blur transition presentations, and beat-locked foley cues
+                </div>
+              </div>
+              <span style="transform:rotate(${showSpec ? "90deg" : "0deg"});transition:transform 150ms ease;display:inline-flex;">
+                ${icon("chevronRight", 18)}
+              </span>
+            </button>
+
+            ${showSpec ? `
+              <div style="padding:0 22px 22px;border-top:1px solid var(--border-subtle);overflow-x:auto;">
+                <table class="table" style="margin-top:14px;">
+                  <thead>
+                    <tr>
+                      <th>Global Frame</th>
+                      <th>Timestamp (@60fps)</th>
+                      <th>Shot / Transition</th>
+                      <th>60 FPS Kinetic, Camera &amp; Cursor Rule</th>
+                      <th>Sample-Aligned Audio Cue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td class="mono">F002 / F060</td><td class="mono">0.03s / 1.00s</td><td>Kinetic Stomp Hook #1 &amp; #2</td><td>Masked split-line stomps locked to 120 BPM kicks (30f/beat)</td><td class="mono">sfx-stomp.mp3 + sfx-snap.mp3</td></tr>
+                    <tr><td class="mono">F195 &ndash; F240</td><td class="mono">3.25s &ndash; 4.00s</td><td>Portal Button Morph &amp; Iris Drop</td><td>Clicked pill expands into full 3D Studio on Bar-3 bass drop</td><td class="mono">sfx-click.mp3 + sfx-portal.mp3</td></tr>
+                    <tr><td class="mono">F336</td><td class="mono">5.60s</td><td>Live 2x Smart 4:5 Safe Crop</td><td>2.5D camera push-in; cursor presses &amp; departs &ge;48px clean</td><td class="mono">sfx-click.mp3 + sfx-shutter.mp3</td></tr>
+                    <tr><td class="mono">F510 &ndash; F600</td><td class="mono">8.50s &ndash; 10.00s</td><td>Shutter Whip + 0.8s Meta DM</td><td>Velocity whip-push (8.5px blur) + live app morph + 76.1% CTR roll</td><td class="mono">sfx-whip.mp3 + sfx-sparkle.mp3</td></tr>
+                    <tr><td class="mono">F840 &ndash; F900</td><td class="mono">14.00s &ndash; 15.00s</td><td>3D Mid-Air Grid Tile Swap</td><td>Floating 4:5 cards cross bezier arcs &amp; lock on exact Beat 30</td><td class="mono">sfx-whip.mp3 + sfx-shutter.mp3</td></tr>
+                    <tr><td class="mono">F1110</td><td class="mono">18.50s</td><td>With / Without Data Laser Scan</td><td>Optical scan-beam wipes live Inbox into clean OAuth zero-state</td><td class="mono">sfx-click.mp3 + sfx-snap.mp3</td></tr>
+                    <tr><td class="mono">F1260 &ndash; F1439</td><td class="mono">21.00s &ndash; 24.00s</td><td>Bento Orbit &amp; Seamless Loop</td><td>Diagonal prism wipe + 4-screen orbit + 2.50s loop-ready lockup</td><td class="mono">sfx-stomp.mp3 + fade tail</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            ` : ""}
+          </div>
+        </div>
+      </section>
     </main>
     ${renderMarketingFooter()}
   `;

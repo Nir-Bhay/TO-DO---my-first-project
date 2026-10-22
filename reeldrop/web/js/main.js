@@ -18,6 +18,7 @@ import {
 import { icon, brandLogo } from "./icons.js";
 import {
   renderLandingPage,
+  renderLaunchPage,
   renderHeroShowcaseMain,
   renderLandingPhoneChatMessages,
   renderPricingPage,
@@ -143,7 +144,7 @@ function renderAppShell(activeRouteId, stageHtml) {
                 ${icon("search", 15)}
                 <span class="cmd-trigger-text">Quick jump or run action...</span>
               </span>
-              <span class="kbd">&#8984;K</span>
+              <span class="kbd">Ctrl K</span>
             </button>
           </div>
 
@@ -152,6 +153,7 @@ function renderAppShell(activeRouteId, stageHtml) {
               <button type="button" class="seg-btn ${b.dataMode !== "empty" ? "is-active" : ""}" data-switch-mode="sample">With Data</button>
               <button type="button" class="seg-btn ${b.dataMode === "empty" ? "is-active" : ""}" data-switch-mode="empty">Without Data</button>
             </div>
+            <a href="/launch" data-link class="btn btn-sm mkt-hide-mobile">${icon("play", 13)} Launch Film</a>
             <a href="/" data-link class="btn btn-sm mkt-hide-mobile">Landing Page</a>
             <button class="icon-btn" id="btn-theme-toggle" title="Switch light/dark theme" aria-label="Switch theme">
               ${icon(isDark ? "sun" : "moon", 16)}
@@ -255,7 +257,8 @@ export function renderRoute(opts = {}) {
   }
 
   // Marketing & Auth Routes
-  if (path === "/pricing") root.innerHTML = renderPricingPage();
+  if (path === "/launch" || path === "/demo" || path === "/reel") root.innerHTML = renderLaunchPage();
+  else if (path === "/pricing") root.innerHTML = renderPricingPage();
   else if (path === "/partners" || path === "/campaigns") root.innerHTML = renderPartnersPage();
   else if (path.startsWith("/docs")) root.innerHTML = renderDocsPage();
   else if (path === "/sign-in") root.innerHTML = renderAuthPage("sign-in");
@@ -2027,6 +2030,63 @@ document.addEventListener("click", async (e) => {
         : "Switched to With Data (4 Connected Workspaces Loaded)"
     );
     renderRoute({ forceShell: true });
+    return;
+  }
+
+  const launchFmtBtn = e.target.closest("[data-launch-format]");
+  if (launchFmtBtn) {
+    e.preventDefault();
+    store.ui.launchVideoFormat = launchFmtBtn.dataset.launchFormat;
+    renderRoute();
+    return;
+  }
+
+  const seekBtn = e.target.closest("[data-seek-sec]");
+  if (seekBtn) {
+    e.preventDefault();
+    const vid = document.getElementById("velora-main-reel-video");
+    if (vid) {
+      vid.currentTime = Number(seekBtn.dataset.seekSec || 0);
+      vid.play().catch(() => {});
+    }
+    return;
+  }
+
+  const copyTabBtn = e.target.closest("[data-copy-tab]");
+  if (copyTabBtn) {
+    e.preventDefault();
+    store.ui.launchCopyTab = copyTabBtn.dataset.copyTab;
+    renderRoute();
+    return;
+  }
+
+  if (e.target.closest("#btn-copy-reel-caption")) {
+    e.preventDefault();
+    const box = document.getElementById("social-reel-caption-box");
+    if (box) {
+      navigator.clipboard?.writeText(box.value).catch(() => {});
+      showToast("Copied pitch / publishing text to clipboard!");
+    }
+    return;
+  }
+
+  if (e.target.closest("#btn-unmute-reel")) {
+    e.preventDefault();
+    const vid = document.getElementById("velora-main-reel-video");
+    if (vid) {
+      vid.muted = false;
+      vid.volume = 1;
+      vid.currentTime = 0;
+      vid.play().catch(() => {});
+      showToast("Playing 60 FPS Launch Film with stereo audio!");
+    }
+    return;
+  }
+
+  if (e.target.closest("#btn-toggle-brief-spec")) {
+    e.preventDefault();
+    store.ui.launchShowBriefSpec = !store.ui.launchShowBriefSpec;
+    renderRoute();
     return;
   }
 
