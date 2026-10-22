@@ -184,10 +184,14 @@ export function renderAutomations() {
                     <span style="font-size:10.5px;color:#64748B;font-weight:600;">Live Test</span>
                   </div>
 
-                  <div id="sim-chat-stream" style="height:270px;overflow-y:auto;padding:14px;background:#FAFAFA;display:flex;flex-direction:column;gap:9px;">
+                  <div id="sim-chat-stream" style="height:270px;overflow-y:auto;padding:14px;background:#F8FAFC;display:flex;flex-direction:column;gap:9px;">
                     ${simMsgs.length === 0 ? `
-                      <div style="margin:auto;text-align:center;color:#64748B;font-size:12.5px;max-width:250px;">
-                        Send <code class="mono" style="background:#EEF2FF;color:#4338CA;padding:2px 6px;border-radius:4px;">${escHtml(selectedAuto?.keywords?.[0] || "REPO")}</code> below — watch public reply rotation &amp; Messenger button cards fire instantly.
+                      <div style="align-self:flex-end;max-width:86%;padding:9px 12px;border-radius:14px;background:#EEF2FF;color:#1E1B4B;border:1px solid #C7D2FE;font-size:12.5px;">
+                        <div style="font-size:10px;color:#4338CA;font-weight:700;margin-bottom:2px;">@arjun.codes &middot; Reel Comment</div>
+                        Commented <strong>"${escHtml(selectedAuto?.keywords?.[0] || "REPO")}"</strong> on Reel #04
+                      </div>
+                      <div style="margin:auto 0 4px;padding:10px 12px;border-radius:12px;background:#FFFFFF;border:1px dashed #CBD5E1;text-align:center;color:#475569;font-size:12px;line-height:1.45;">
+                        Click <strong>Send</strong> below to fire rotated public reply &amp; Official Meta Rich DM Card in 0.8s
                       </div>
                     ` : simMsgs.map((m) => `
                       <div style="align-self:${m.role === "user" ? "flex-end" : "flex-start"};max-width:86%;padding:10px 13px;border-radius:14px;font-size:12.5px;line-height:1.45;${
@@ -377,13 +381,13 @@ export function renderInbox() {
 
               <div class="inbox-messages" id="inbox-msg-scroll">
                 ${activeThread.messages.map((m) => `
-                  <div class="bubble ${m.sender === "me" ? "is-me" : "is-them"}">
-                    ${m.shared_reel_title ? `<div style="font-size:11px;opacity:0.7;margin-bottom:4px;">Replied to post: "${escHtml(m.shared_reel_title)}"</div>` : ""}
-                    ${m.via_automation ? `<div style="font-size:10.5px;opacity:0.75;margin-bottom:4px;">Automated via ${escHtml(m.via_automation)}</div>` : ""}
-                    ${m.media_url ? `<img src="${escHtml(m.media_url)}" alt="" style="max-width:220px;border-radius:8px;margin-bottom:6px;display:block;" />` : ""}
-                    <div>${escHtml(m.body)}</div>
+                  <div class="bubble ${m.sender === "me" ? "is-me" : "is-them"}" style="${m.media_url ? "background:#FFFFFF;color:#0F172A;border:1px solid #CBD5E1;box-shadow:0 6px 18px rgba(15,23,42,0.06);max-width:300px;" : ""}">
+                    ${m.shared_reel_title ? `<div style="font-size:11px;opacity:0.75;margin-bottom:4px;">Replied to post: "${escHtml(m.shared_reel_title)}"</div>` : ""}
+                    ${m.via_automation ? `<div style="font-size:10.5px;font-weight:700;color:${m.media_url ? "#1D4ED8" : "inherit"};opacity:${m.media_url ? "1" : "0.8"};margin-bottom:6px;">Automated via ${escHtml(m.via_automation)}</div>` : ""}
+                    ${m.media_url ? `<img src="${escHtml(m.media_url)}" alt="" style="width:100%;max-width:268px;border-radius:10px;border:1px solid #E2E8F0;margin-bottom:8px;display:block;" />` : ""}
+                    <div style="line-height:1.45;">${escHtml(m.body)}</div>
                     ${(m.buttons || []).map((btn) => `
-                      <a href="${escHtml(btn.url)}" target="_blank" rel="noopener" style="display:block;margin-top:8px;padding:6px 10px;border-radius:7px;background:rgba(255,255,255,0.16);text-align:center;font-size:12px;font-weight:600;">
+                      <a href="${escHtml(btn.url)}" target="_blank" rel="noopener" style="display:block;margin-top:9px;padding:7px 12px;border-radius:8px;background:${m.media_url ? "#1D4ED8" : "rgba(255,255,255,0.16)"};color:#FFFFFF;text-align:center;font-size:12px;font-weight:600;">
                         ${escHtml(btn.label)} <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M2.5 6h7M6.5 3l3 3-3 3"/></svg>
                       </a>
                     `).join("")}

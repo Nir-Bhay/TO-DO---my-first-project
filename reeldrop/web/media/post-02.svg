@@ -44,10 +44,10 @@
     <rect x="792" y="668" width="116" height="14" rx="7" fill="#4F46E5" fill-opacity="0.4"/>
   </g>
 
-  <!-- Crisp Editorial Bottom Typography inside 4:5 & 3:4 Safe Zone -->
+  <!-- Crisp Editorial Bottom Typography inside 4:5 &amp; 3:4 Safe Zone -->
   <text x="88" y="925" font-family="Plus Jakarta Sans, Inter, system-ui, sans-serif" font-size="64" font-weight="800" letter-spacing="-1.8" fill="#0F172A">8 Optical Spacing Rules</text>
   <text x="88" y="1002" font-family="Plus Jakarta Sans, Inter, system-ui, sans-serif" font-size="64" font-weight="800" letter-spacing="-1.8" fill="#0F172A">for Clean Type</text>
-  <text x="88" y="1072" font-family="Inter, system-ui, sans-serif" font-size="29" font-weight="500" fill="#475569">Line height, tracking & hierarchy at scale</text>
+  <text x="88" y="1072" font-family="Inter, system-ui, sans-serif" font-size="29" font-weight="500" fill="#475569">Line height, tracking &amp; hierarchy at scale</text>
 
   <line x1="88" y1="1158" x2="992" y2="1158" stroke="#0F172A" stroke-opacity="0.12" stroke-width="2"/>
   <text x="88" y="1218" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="700" fill="#0F172A">@velora.studio</text>

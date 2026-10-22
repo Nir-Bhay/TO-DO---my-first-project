@@ -16,39 +16,29 @@ fs.mkdirSync(OUT_DIR, { recursive: true });
 
 const SAMPLE_RATE = 44100;
 
-const DOWNLOADS = [
-  ["bgm-tech-house.mp3", "assets/audio/bgm/bgm-tech-house.mp3"],
-  ["house-vibez.mp3", "assets/audio/bgm/house-vibez.mp3"],
-  ["click-camera.mp3", "assets/audio/sfx/camera/click-camera.mp3"],
-  ["camera-shutter-hard.mp3", "assets/audio/sfx/camera/camera-shutter-hard.mp3"],
-  ["transition-snap.mp3", "assets/audio/sfx/transition/transition-snap.mp3"],
-  ["swoosh-quick.mp3", "assets/audio/sfx/transition/swoosh-quick.mp3"],
-  ["whoosh-fast.mp3", "assets/audio/sfx/transition/whoosh-fast.mp3"],
-  ["impact-zoom-quick.mp3", "assets/audio/sfx/impact/impact-zoom-quick.mp3"],
-  ["impact-deep-whoosh.mp3", "assets/audio/sfx/impact/impact-deep-whoosh.mp3"],
-  ["bass-hit-short.mp3", "assets/audio/sfx/impact/bass-hit-short.mp3"],
-  ["shimmer-sparkle-sweep.mp3", "assets/audio/sfx/light/shimmer-sparkle-sweep.mp3"]
-];
-
-for (const [localName, remotePath] of DOWNLOADS) {
-  const dest = path.join(SRC_DIR, localName);
-  if (!fs.existsSync(dest) || fs.statSync(dest).size < 1024) {
-    console.log(`Downloading ${remotePath} -> /tmp/velora-audio-src/${localName}`);
-    const raw = execFileSync(
-      "gh",
-      ["api", `repos/Vincentwei1021/video-shotcraft/contents/${remotePath}`, "-H", "Accept: application/vnd.github.raw"],
-      { maxBuffer: 32 * 1024 * 1024 }
-    );
-    fs.writeFileSync(dest, raw);
-  }
+if (!fs.existsSync(path.join(SRC_DIR, "house-vibez.mp3")) || !fs.existsSync(path.join(SRC_DIR, "switch-tap.mp3"))) {
+  execFileSync("bash", [
+    "-lc",
+    `rm -rf /tmp/vs-audio && git clone --depth=1 --filter=blob:none --sparse https://github.com/Vincentwei1021/video-shotcraft.git /tmp/vs-audio && git -C /tmp/vs-audio sparse-checkout set assets/audio && find /tmp/vs-audio/assets/audio -name "*.mp3" -exec cp {} ${SRC_DIR}/ \\; && rm -rf /tmp/vs-audio`
+  ]);
 }
 
 function decodeStereoFloat(mp3Path) {
   const wavTmp = `${mp3Path}.tmp.wav`;
-  execFileSync(
-    FFMPEG,
-    ["-y", "-v", "error", "-i", mp3Path, "-ac", "2", "-ar", String(SAMPLE_RATE), "-f", "wav", wavTmp]
-  );
+  execFileSync(FFMPEG, [
+    "-y",
+    "-v",
+    "error",
+    "-i",
+    mp3Path,
+    "-ac",
+    "2",
+    "-ar",
+    String(SAMPLE_RATE),
+    "-f",
+    "wav",
+    wavTmp
+  ]);
   const buf = fs.readFileSync(wavTmp);
   fs.unlinkSync(wavTmp);
 
@@ -163,39 +153,56 @@ function writeM4a(filename, { L, R }, normalizePeak = 0.9) {
   console.log(`Wrote ${filename} (${(numFrames / SAMPLE_RATE).toFixed(3)}s, ${kb} KB)`);
 }
 
-// 1. Exact 120.000 BPM 24.000s Tech-House Master Bed
-const rawBgm = decodeStereoFloat(path.join(SRC_DIR, "bgm-tech-house.mp3"));
-const bgm120 = resampleStereo(rawBgm, 123.99 / 120.0);
+// Measured FFT/onset analysis on house-vibez.mp3:
+// First kick at t = 0.060s; exact measured interval = 0.491935s/beat = 121.967 BPM!
+// Resampling by (121.967 / 120.000) sets EVERY kick interval to 0.50000s (30.00 frames @ 60fps)!
+// Starting at Bar 30 (pre-drop build) places the Bar-32 FULL BASS DROP squarely at t = 4.000s (Frame 240)!
+const MEASURED_BPM = 121.967;
+const TARGET_BPM = 120.0;
+const SPEED_FACTOR = MEASURED_BPM / TARGET_BPM;
 
-const dropSample120 = Math.round((15.71 / (123.99 / 120.0)) * SAMPLE_RATE);
-const bedStart = dropSample120 - Math.round(4.0 * SAMPLE_RATE);
-const bedLen = Math.round(24.0 * SAMPLE_RATE);
+const rawHouse = decodeStereoFloat(path.join(SRC_DIR, "house-vibez.mp3"));
+// Trim the 0.060s leading offset first so sample 0 IS exact Kick #0!
+const kickZeroOffset = Math.round(0.06 * SAMPLE_RATE);
+const alignedRaw = {
+  L: rawHouse.L.slice(kickZeroOffset),
+  R: rawHouse.R.slice(kickZeroOffset)
+};
+const house120 = resampleStereo(alignedRaw, SPEED_FACTOR);
+
+// Bar 30 = 30 * 4 * 0.5s = 60.000s -> 2 bars build (0..4.0s) -> FULL DROP AT 4.000s (Frame 240)!
+const startSample = Math.round(60.0 * SAMPLE_RATE);
+const bedLen = Math.round(28.0 * SAMPLE_RATE); // Exact 28.000s = 1,680 frames = 56 beats = 14 bars
 
 const bedL = new Float32Array(bedLen);
 const bedR = new Float32Array(bedLen);
 for (let i = 0; i < bedLen; i++) {
-  const s = (bedStart + i) % bgm120.L.length;
-  const fadeIn = Math.min(1, i / (0.12 * SAMPLE_RATE));
+  const s = (startSample + i) % house120.L.length;
+  const fadeIn = Math.min(1, i / (0.06 * SAMPLE_RATE));
   const fadeOut = Math.min(1, (bedLen - 1 - i) / (1.35 * SAMPLE_RATE));
-  const preDropBuild = i >= 3.55 * SAMPLE_RATE && i < 4.0 * SAMPLE_RATE ? 0.86 : 1.0;
-  const g = fadeIn * fadeOut * preDropBuild;
-  bedL[i] = bgm120.L[s] * g;
-  bedR[i] = bgm120.R[s] * g;
+  const g = fadeIn * fadeOut;
+  bedL[i] = house120.L[s] * g;
+  bedR[i] = house120.R[s] * g;
 }
-writeM4a("music-bed.m4a", { L: bedL, R: bedR }, 0.84);
+writeM4a("music-bed.m4a", { L: bedL, R: bedR }, 0.86);
 
-// 2. Sample-Accurate Studio Foley Stems
+// Sample-accurate foley stems locked to the 30-frame beat grid
 const clickCam = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "click-camera.mp3")), 0.03, 0.35);
 const shutter = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "camera-shutter-hard.mp3")), 0.03, 0.45);
 const snap = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "transition-snap.mp3")), 0.03, 0.42);
-const swoosh = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "swoosh-quick.mp3")), 0.02, 0.48);
+const swoosh = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "swoosh-quick.mp3")), 0.02, 0.44);
 const whooshFast = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "whoosh-fast.mp3")), 0.02, 0.52);
 const impactZoom = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "impact-zoom-quick.mp3")), 0.025, 0.65);
 const deepWhoosh = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "impact-deep-whoosh.mp3")), 0.02, 0.9);
 const bassHit = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "bass-hit-short.mp3")), 0.03, 0.75);
 const sparkle = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "shimmer-sparkle-sweep.mp3")), 0.015, 1.15);
+const switchTap = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "switch-tap.mp3")), 0.02, 0.28);
+const popUi = trimLeadingSilence(decodeStereoFloat(path.join(SRC_DIR, "ui-message-pop.mp3")), 0.02, 0.36);
 
 writeM4a("sfx-click.m4a", clickCam, 0.9);
+writeM4a("sfx-tap.m4a", switchTap, 0.88);
+writeM4a("sfx-pop.m4a", popUi, 0.88);
+writeM4a("sfx-swoosh.m4a", swoosh, 0.82);
 writeM4a("sfx-shutter.m4a", shutter, 0.88);
 writeM4a("sfx-snap.m4a", snap, 0.88);
 writeM4a("sfx-whip.m4a", mixStems(whooshFast, 0.72, swoosh, 0.55), 0.9);

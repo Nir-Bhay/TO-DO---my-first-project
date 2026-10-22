@@ -41,12 +41,15 @@ async function main() {
     chromiumOptions: chromeOptions
   });
 
-  // Render crisp JPEG-compressed PNG/JPEG stills + posters into web/media/
+  // Render crisp JPEG stills across ALL key visual hooks & 3D acts for visual inspection + web gallery
   const keyStills = [
-    [156, "still-01-opening.png"],
-    [390, "still-02-crop-action.png"],
-    [660, "still-03-autadm-result.png"],
-    [1340, "still-04-closing-card.png"]
+    [90, "still-01-opening.png"],
+    [168, "still-01b-hook-wings.png"],
+    [400, "still-02-crop-action.png"],
+    [640, "still-03-autadm-result.png"],
+    [900, "still-04a-grid-drag.png"],
+    [1110, "still-04b-mcp-agent.png"],
+    [1560, "still-04-closing-card.png"]
   ];
 
   for (const [frame, name] of keyStills) {
@@ -68,7 +71,7 @@ async function main() {
     composition: comp16x9,
     serveUrl: bundleLocation,
     output: path.join(WEB_MEDIA_DIR, "velora-launch-poster-16x9.png"),
-    frame: 156,
+    frame: 168,
     imageFormat: "jpeg",
     jpegQuality: 90,
     browserExecutable,
@@ -79,7 +82,7 @@ async function main() {
     composition: comp9x16,
     serveUrl: bundleLocation,
     output: path.join(WEB_MEDIA_DIR, "velora-intro-poster.png"),
-    frame: 156,
+    frame: 168,
     imageFormat: "jpeg",
     jpegQuality: 90,
     browserExecutable,

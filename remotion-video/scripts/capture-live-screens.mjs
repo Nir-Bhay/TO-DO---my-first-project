@@ -45,38 +45,41 @@ async function run() {
     ["screen-create.webp", "/app/create"],
     ["screen-automations.webp", "/app/automations"],
     ["screen-grid.webp", "/app/grid"],
-    ["screen-inbox.webp", "/app/inbox"]
+    ["screen-inbox.webp", "/app/inbox"],
+    ["screen-calendar.webp", "/app/calendar"],
+    ["screen-analytics.webp", "/app/analytics"],
+    ["screen-tools.webp", "/tools"]
   ];
 
   for (const [filename, route] of routes) {
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle" });
-    await page.waitForTimeout(450);
+    await page.waitForTimeout(420);
 
     if (route === "/app/automations") {
-      const png1 = await page.screenshot({ type: "jpeg", quality: 92 });
-      fs.writeFileSync(path.join(SCREENS_DIR, filename), png1);
-      console.log(`Captured ${filename} (${(png1.length / 1024).toFixed(1)} KB)`);
+      const jpg1 = await page.screenshot({ type: "jpeg", quality: 90 });
+      fs.writeFileSync(path.join(SCREENS_DIR, filename), jpg1);
+      console.log(`Captured ${filename} (${(jpg1.length / 1024).toFixed(1)} KB)`);
 
-      const testBtn = page.locator("#btn-test-trigger");
+      const testBtn = page.locator('#form-live-sim button[type="submit"]');
       if (await testBtn.count()) {
         await testBtn.click();
-        await page.waitForTimeout(450);
+        await page.waitForTimeout(1050);
       }
-      const png2 = await page.screenshot({ type: "jpeg", quality: 92 });
-      fs.writeFileSync(path.join(SCREENS_DIR, "screen-automations-sent.webp"), png2);
-      console.log(`Captured screen-automations-sent.webp (${(png2.length / 1024).toFixed(1)} KB)`);
+      const jpg2 = await page.screenshot({ type: "jpeg", quality: 90 });
+      fs.writeFileSync(path.join(SCREENS_DIR, "screen-automations-sent.webp"), jpg2);
+      console.log(`Captured screen-automations-sent.webp (${(jpg2.length / 1024).toFixed(1)} KB)`);
       continue;
     }
 
-    const buf = await page.screenshot({ type: "jpeg", quality: 92 });
+    const buf = await page.screenshot({ type: "jpeg", quality: 90 });
     fs.writeFileSync(path.join(SCREENS_DIR, filename), buf);
     console.log(`Captured ${filename} (${(buf.length / 1024).toFixed(1)} KB)`);
   }
 
   await setDataMode("empty");
   await page.goto(`${BASE}/app/overview`, { waitUntil: "networkidle" });
-  await page.waitForTimeout(450);
-  const emptyBuf = await page.screenshot({ type: "jpeg", quality: 92 });
+  await page.waitForTimeout(420);
+  const emptyBuf = await page.screenshot({ type: "jpeg", quality: 90 });
   fs.writeFileSync(path.join(SCREENS_DIR, "screen-empty.webp"), emptyBuf);
   console.log(`Captured screen-empty.webp (${(emptyBuf.length / 1024).toFixed(1)} KB)`);
 

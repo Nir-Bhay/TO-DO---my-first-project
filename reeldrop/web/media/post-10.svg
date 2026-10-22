@@ -44,7 +44,7 @@
     <rect x="792" y="668" width="116" height="14" rx="7" fill="#78350F" fill-opacity="0.4"/>
   </g>
 
-  <!-- Crisp Editorial Bottom Typography inside 4:5 & 3:4 Safe Zone -->
+  <!-- Crisp Editorial Bottom Typography inside 4:5 &amp; 3:4 Safe Zone -->
   <text x="88" y="925" font-family="Plus Jakarta Sans, Inter, system-ui, sans-serif" font-size="64" font-weight="800" letter-spacing="-1.8" fill="#292524">Stoneware Glaze Firing</text>
   <text x="88" y="1002" font-family="Plus Jakarta Sans, Inter, system-ui, sans-serif" font-size="64" font-weight="800" letter-spacing="-1.8" fill="#292524">Log #14</text>
   <text x="88" y="1072" font-family="Inter, system-ui, sans-serif" font-size="29" font-weight="500" fill="#475569">Cone 6 reduction · speckled raw clay finish</text>

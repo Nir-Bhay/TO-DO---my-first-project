@@ -1236,22 +1236,23 @@ export function renderLaunchPage() {
   const isWide = fmt === "16x9";
 
   const chapters = [
-    { sec: 0, frames: "F000 – F264", time: "00:00", title: "01 · Kinetic Hook & Portal Drop", desc: "Beat-locked 60fps kinetic stomps + shared-geometry button morphing into full studio on the 4.0s bass drop." },
-    { sec: 4.1, frames: "F240 – F534", time: "00:04.1", title: "02 · Live 4:5 Safe Crop Studio", desc: "2.5D camera glides across live Create Post UI as Smart Fit locks 1080x1350 with zero edge clipping." },
-    { sec: 8.6, frames: "F510 – F810", time: "00:08.6", title: "03 · Comment -> 0.8s Meta DM", desc: "Velocity shutter-blur whip into live DM Workflows morphing unsent -> sent Messenger card + 76.1% CTR roll." },
-    { sec: 13.2, frames: "F786 – F1050", time: "00:13.2", title: "04 · 3D Profile Grid Tile Swap", desc: "Camera crane transition into live 3x3 4:5 Grid Planner with mid-air floating schedule swap." },
-    { sec: 17.2, frames: "F1026 – F1266", time: "00:17.2", title: "05 · CRM, 58 MCP & Optical Mode Scan", desc: "Live laser scanline wipes With Data directly into clean Without Data OAuth mode + 58 MCP tools." },
-    { sec: 20.8, frames: "F1240 – F1439", time: "00:20.8", title: "06 · Bento Orbit & Seamless Loop", desc: "Diagonal prism wipe into 4-screen orbit convergence + Hero Brand Lockup (loops seamlessly into 00:00)." }
+    { sec: 0, frames: "F000 – F119", time: "00:00", title: "01A · Beat-Synced Crop & DM Hook", desc: "4-beat Feed Previewer cycling Reel covers + live unanswered comment feed on every kick." },
+    { sec: 2.0, frames: "F120 – F239", time: "00:02.0", title: "01B · 4:5 Safe Flip & Drop Launch", desc: "Beat-4 emerald flip to 1080x1350 SAFE 4:5 + 0.8s DMs -> portal expansion on Bar-32 drop." },
+    { sec: 4.2, frames: "F240 – F479", time: "00:04.2", title: "02 · AI Hook (96/100) + 4:5 Studio", desc: "Clean left-column telemetry + live 2x Retina Create Studio with 2-click Smart Fit." },
+    { sec: 8.2, frames: "F480 – F719", time: "00:08.2", title: "03 · 0.8s Official Meta Rich DM", desc: "Live Messenger Previewer fires rotated public reply & rich button card in 0.8s (76.1% CTR)." },
+    { sec: 12.2, frames: "F720 – F959", time: "00:12.2", title: "04 · 4:5 Grid Drag & 314.8K Views", desc: "Grabbing-hand cursor swaps scheduled Reels across 4:5, 3:4 & 1:1 grid ratios." },
+    { sec: 16.2, frames: "F960 – F1199", time: "00:16.2", title: "05 · Priority CRM & 58 MCP Tools", desc: "Side-by-side Unified Priority Inbox + Claude/Cursor 58-tool Streamable HTTP MCP card." },
+    { sec: 20.2, frames: "F1200 – F1679", time: "00:20.2", title: "06–07 · OAuth Scan & 8-Card 3D Orbit", desc: "Live With/Without Data scan wipe + 20 Free Tools -> 120 BPM 8-Screen 3D Orbit Finale." }
   ];
 
   const copyPresets = {
-    client: `Hi — sharing our Official 60 FPS Launch Film (24s, beat-synced at 120 BPM) for Velora Studio v3.0, our Official Instagram Graph & Messenger publishing platform.
+    client: `Hi — sharing our Official 60 FPS Launch Film (28s, sample-locked to 120.000 BPM = 30.00 frames/beat) for Velora Studio v3.0, our Official Instagram Graph & Messenger publishing platform.
 
-In 24 seconds at silky 60fps it demonstrates live 2x Retina workflows:
-1. Kinetic Problem-to-Portal Hook -> Automatic 4:5 Safe-Fit image cropping (zero cut-off screenshots)
-2. Keyword Comment ("LINK") -> 0.8s Instant Official Meta Rich DM Card (76.1% CTR, zero bots)
-3. Mid-air drag-and-drop 4:5 Profile Grid Planner swap + live Views/Saves telemetry
-4. 58 Claude/Cursor Streamable HTTP MCP tools + 1-click laser scan switch between [ With Data ] & [ Without Data ]
+In 28 seconds at silky 60fps it demonstrates live 2x Retina workflows:
+1. Beat-Synced Feed Previewer Hook -> Automatic 4:5 Safe-Fit image cropping (zero cut-off screenshots)
+2. Keyword Comment ("REPO" / "LINK") -> 0.8s Instant Official Meta Rich DM Card (76.1% CTR, zero bots)
+3. Interactive 4:5 Profile Grid Planner swap + 314.8K Views telemetry
+4. 58 Claude/Cursor Streamable HTTP MCP tools + 1-click scan wipe between [ With Data ] & [ Without Data ]
 
 Watch both the 16:9 Client Demo & 9:16 Social Reel live at: ${location.origin}/launch`,
     instagram: `Posting Reels daily — only to get cropped covers and buried comments?
@@ -1283,7 +1284,7 @@ Watch the interactive 60fps player & download both masters at: ${location.origin
                 Product Walkthrough &amp; Official 60 FPS Launch Film
               </h1>
               <p style="font-size:16px;color:var(--ink-secondary);line-height:1.6;margin:0;">
-                Engineered at silky <strong>60 FPS &middot; 120 BPM Beat-Sync (24s)</strong> with shared-geometry portal morphs, velocity shutter-blur transitions, and live 2x Retina Studio captures — ready for client demos (<strong>16:9</strong>) and social publishing (<strong>9:16</strong>).
+                Engineered at silky <strong>60 FPS &middot; 120.000 BPM Beat-Sync (28.0s / 1,680 frames)</strong> with sample-accurate kick alignment, clean Velora previewer UI, and live 2x Retina Studio captures — ready for client demos (<strong>16:9</strong>) and social publishing (<strong>9:16</strong>).
               </p>
             </div>
 
@@ -1297,10 +1298,21 @@ Watch the interactive 60fps player & download both masters at: ${location.origin
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:${isWide ? "1fr" : "minmax(0,390px) minmax(0,1fr)"};gap:28px;align-items:start;" class="launch-theatre-grid">
+          <div style="display:grid;grid-template-columns:${isWide ? "1fr" : "minmax(0,400px) minmax(0,1fr)"};gap:28px;align-items:start;" class="launch-theatre-grid">
             <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
-              <div style="width:100%;${isWide ? "" : "max-width:368px;"}padding:${isWide ? "14px" : "12px"};border-radius:${isWide ? "26px" : "38px"};background:linear-gradient(180deg,#FFFFFF 0%,#EEF2F7 100%);border:2px solid var(--border-strong);box-shadow:0 28px 70px rgba(15,23,42,0.10);">
-                <div style="border-radius:${isWide ? "16px" : "28px"};overflow:hidden;border:1px solid var(--border-subtle);background:#050914;aspect-ratio:${isWide ? "16/9" : "9/16"};">
+              <div style="width:100%;${isWide ? "" : "max-width:380px;"}border-radius:${isWide ? "22px" : "32px"};background:#FFFFFF;border:1px solid var(--border);box-shadow:0 24px 64px rgba(15,23,42,0.09);overflow:hidden;">
+                <div style="height:40px;padding:0 16px;background:var(--bg-subtle);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="width:9px;height:9px;border-radius:50%;background:#FCA5A5;"></span>
+                    <span style="width:9px;height:9px;border-radius:50%;background:#FCD34D;"></span>
+                    <span style="width:9px;height:9px;border-radius:50%;background:#86EFAC;"></span>
+                  </div>
+                  <span class="mono" style="font-size:11.5px;color:var(--ink-secondary);font-weight:600;">
+                    velora.so/launch &middot; ${isWide ? "1920x1080 Widescreen" : "1080x1920 Social Reel"}
+                  </span>
+                  <span class="badge badge-brand" style="font-size:10.5px;">120 BPM SYNC</span>
+                </div>
+                <div style="background:#050B18;aspect-ratio:${isWide ? "16/9" : "9/16"};">
                   <video
                     id="velora-main-reel-video"
                     src="${isWide ? "/media/velora-launch-demo-16x9.mp4" : "/media/velora-social-reel-9x16.mp4"}"
@@ -1338,7 +1350,7 @@ Watch the interactive 60fps player & download both masters at: ${location.origin
                 <span style="font-family:var(--font-display);font-weight:700;font-size:17px;">
                   Interactive Chapter Timeline (Click Any Scene to Jump)
                 </span>
-                <span class="mono" style="font-size:12px;color:var(--ink-muted);">60 FPS &middot; 120 BPM &middot; 1,440 Frames</span>
+                <span class="mono" style="font-size:12px;color:var(--ink-muted);">60 FPS &middot; 120.000 BPM &middot; 1,680 Frames (28.0s)</span>
               </div>
 
               <div style="display:grid;grid-template-columns:repeat(${isWide ? "3" : "1"},minmax(0,1fr));gap:12px;" class="equal-cards">
@@ -1376,12 +1388,14 @@ Watch the interactive 60fps player & download both masters at: ${location.origin
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px;">
             ${[
-              ["/media/still-01-opening.png", "Frame 156 · Kinetic Hook & Portal CTA", "2.6s", 2.1],
-              ["/media/still-02-crop-action.png", "Frame 390 · Live 2x Smart 4:5 Crop", "6.5s", 5.2],
-              ["/media/still-03-autadm-result.png", "Frame 660 · 0.8s Meta DM + 76.1% CTR", "11.0s", 9.6],
-              ["/media/still-04-closing-card.png", "Frame 1340 · 4-Screen Orbit Finale", "22.3s", 21.0]
+              ["/media/still-01-opening.png", "Frame 090 · Beat-Synced Crop & DM Hook", "1.5s", 0.2],
+              ["/media/still-01b-hook-wings.png", "Frame 168 · 1080x1350 Safe 4:5 & 0.8s Flip", "2.8s", 2.1],
+              ["/media/still-02-crop-action.png", "Frame 400 · AI Hook (96/100) + 4:5 Safe Crop", "6.7s", 4.3],
+              ["/media/still-03-autadm-result.png", "Frame 640 · Live 0.8s Meta Rich DM Card", "10.7s", 8.3],
+              ["/media/still-04a-grid-drag.png", "Frame 900 · 4:5 Grid Planner & 314.8K Views", "15.0s", 12.3],
+              ["/media/still-04b-mcp-agent.png", "Frame 1110 · Priority CRM & 58 MCP Tools", "18.5s", 16.3]
             ].map(([src, label, ts, seek]) => `
               <div class="card" style="overflow:hidden;cursor:pointer;" data-seek-sec="${seek}">
                 <img src="${src}" alt="${escHtml(label)}" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;border-bottom:1px solid var(--border-subtle);" />
